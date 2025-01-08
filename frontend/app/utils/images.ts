@@ -1,0 +1,1 @@
+export const user_image = require('@/assets/images/user image.jpg')
