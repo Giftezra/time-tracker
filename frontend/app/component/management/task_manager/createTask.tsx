@@ -4,7 +4,6 @@ import {
   Button,
   Image,
   Modal,
-  Pressable,
   StyleSheet,
   ScrollView,
   Text,
@@ -21,24 +20,25 @@ import { DatePickerModal, TimePickerModal } from "react-native-paper-dates";
 import { EmployeeType } from "@/app/types/management/employee";
 import { user_image } from "@/app/utils/images";
 import { ContractListType } from "@/app/types/management/task";
-import { useManagementTask } from "@/app/context/management/task manager/createTaskContext";
 import { get } from "react-native/Libraries/TurboModule/TurboModuleRegistry";
 import ButtonComponent from "../../helper/buttons";
 import TextInputComponent from "../../helper/textInput";
 import SubmitButtonComponent from "../../helper/submitButton";
+import { useManagementTask } from "@/app/context/management/task manager/managementTaskProvider";
 
 const CreateTaskComponent = () => {
   const {
-    getContractList,
-    getAvailableEmployees,
     onConfirmDate,
-    onConfirmTime,
+    onConfirmStartTime,
+    onConfirmEndTime,
     onDateDismiss,
-    onTimeDismiss,
+    onStartTimeDismiss,
+    onEndTimeDismiss,
     handleDateDisplay,
     handleTimeDisplay,
     dateVisible,
-    timeVisible,
+    startTimeVisible,
+    endTimeVisible
   } = useManagementTask();
 
   const primary = useThemeColor({}, "primaryColor");
@@ -61,10 +61,9 @@ const CreateTaskComponent = () => {
   );
 
   const [amount, setAmount] = useState<string | undefined>(undefined);
-
   const [selected, setSelected] = useState<string>("");
-
   const [description, setDescription] = useState<string | undefined>(undefined);
+  const [taskSerial, setTaskSerial] = useState<string | undefined>(undefined);
 
   const handleToggleSites = (selected: string) => {
     if (selected === "contracts" || selected === "employees") {
@@ -75,25 +74,6 @@ const CreateTaskComponent = () => {
   };
 
   const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
-      try {
-        const employees = await getAvailableEmployees();
-
-        if (!contracts || !employees) {
-          throw new Error("Error fetching contracts and employees");
-        }
-        setEmployees(employees);
-      } catch (error: any) {
-        console.log("Error while fetching employees", error.message);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchData();
-  }, [getAvailableEmployees, getContractList]);
 
   return (
     <View style={styles.maincontainer}>
@@ -122,7 +102,9 @@ const CreateTaskComponent = () => {
               {isLoading ? (
                 <ActivityIndicator size={15} color={text} />
               ) : (
-                <Text style={styles.headerText}>select contract</Text>
+                <Text style={[styles.headerText, { color: text }]}>
+                  select contract
+                </Text>
               )}
             </TouchableOpacity>
 
@@ -229,6 +211,7 @@ const CreateTaskComponent = () => {
               </ScrollView>
             )}
           </View>
+
           {/* Conditionally render the apps information display when the user is yet to select  a staff member and an employee*/}
           {siteSelected && employeeSelected === null && (
             <View style={{ marginHorizontal: 10 }}>
@@ -275,6 +258,7 @@ const CreateTaskComponent = () => {
             </View>
           </View>
 
+          {/* Buttons to toggle the date and time selection */}
           <View style={styles.dateTimeButtonContainer}>
             <ButtonComponent title="date" onPress={handleDateDisplay} />
             <ButtonComponent title="time" onPress={handleTimeDisplay} />
@@ -292,31 +276,23 @@ const CreateTaskComponent = () => {
           />
 
           <TimePickerModal
-            visible={timeVisible}
-            onDismiss={onTimeDismiss}
-            onConfirm={onConfirmTime}
+            visible={startTimeVisible}
+            onDismiss={onStartTimeDismiss}
+            onConfirm={onConfirmStartTime}
             animationType="slide"
             label="Select time"
             cancelLabel="Cancel"
           />
 
-          {/* Date modal displays the date for the selection of the start date.
-          
-          
+          <TimePickerModal
+            visible={endTimeVisible}
+            onDismiss={onEndTimeDismiss}
+            onConfirm={onConfirmEndTime}
+            animationType="slide"
+            label="Select time"
+            cancelLabel="Cancel"
+          />
 
-          
-
-          <Text style={[styles.text, { color: text }]}>selected date:</Text>
-          {dates.map((date, index) => (
-            <Text key={index} style={[styles.text, { color: hightlight }]}>
-              {date.toISOString().slice(0, 10)}
-            </Text>
-          ))}
-          <Text style={[styles.text, { color: hightlight }]}>
-            {`selected time: ${time.hours} : ${time.minutes}`}
-          </Text>
-
-          {/* View contains the description component */}
           <View style={{ width: "100%", marginVertical: 10 }}>
             <TextInputComponent
               text="amount"
@@ -331,6 +307,12 @@ const CreateTaskComponent = () => {
               placeholder="description"
               isMultiline={true}
               lines={2}
+            />
+            <TextInputComponent
+              text="task serial"
+              value={taskSerial}
+              setValue={setTaskSerial}
+              placeholder="task serial"
             />
           </View>
           <SubmitButtonComponent

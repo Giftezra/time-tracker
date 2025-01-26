@@ -13,7 +13,6 @@ class UserSerializer(serializers.ModelSerializer):
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
   def validate(self, attrs):
-      print(f"Attributes: {attrs}")
       try:
           data = super().validate(attrs)
       except ValidationError as e:
@@ -21,7 +20,6 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
           raise e
 
       user = self.user
-      print(f"User: {user}")
 
       # Check if the user is a staff member and has a Staff profile
       company = None

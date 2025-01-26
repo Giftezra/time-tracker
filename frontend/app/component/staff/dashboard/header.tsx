@@ -72,7 +72,7 @@ const styles = StyleSheet.create({
 
   container: {
     padding: 2,
-    columnGap: 10,
+    marginVertical: 5,
   },
 
   nameText: {

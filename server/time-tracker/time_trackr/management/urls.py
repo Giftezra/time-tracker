@@ -5,7 +5,7 @@ from .view.main.dashboard import create_company, update_company, delete_company
 
 from .view.main.employees import get_available_employees, get_all_employees, get_shift_details
 
-from .view.main.client import create_client, create_contract, get_contract_and_shifts, get_client_and_contracts, update_contract, complete_contract
+from .view.main.client import create_client, create_contract, getContractsAndJobDetails, getClientAndContracts, update_contract, complete_contract
 
 from .view.main.task_manager import get_active_shifts, get_clients_shifts, create_shift, create_task,assign_task,terminate_shift,approve_task, get_all_contracts, get_all_unassigned_task
 
@@ -51,8 +51,8 @@ urlpatterns = [
     
     path('get/shifts/', get_shifts, name='get_shifts'),
     path('get/all/contracts/', get_all_contracts, name='get_all_contracts'),
-    path('get/contract/shifts/details/', get_contract_and_shifts, name='get_contract'),
-    path('get/client/contracts/', get_client_and_contracts, name='get_contract'),
+    path('get/contract/shifts/details/', getContractsAndJobDetails, name='get_contract'),
+    path('get/client/contracts/', getClientAndContracts, name='get_contract'),
     path('get/employees/', get_all_employees, name='get_all_employees'),
     path('get/employee/shift/', get_shift_details, name='get_shift_details'),
     path('get/available/employees/', get_available_employees, name='get_available_employees'),

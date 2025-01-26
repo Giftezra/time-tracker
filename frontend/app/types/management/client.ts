@@ -30,6 +30,14 @@ export type ClientDetailsType = {
   contracts: ContractDetailsType[];
 };
 
+export type ResponseType = {
+  message: string;
+}
+
+export type ClientDetailsResponseType = {
+  response: Promise<ResponseType>;
+}
+
 export type ClientContextType = {
   jobDetailsData: JobDetailsType[];
   clientDetailsData: ClientDetailsType[];
@@ -41,6 +49,8 @@ export type ClientContextType = {
   newContract: ContractDetailsType | undefined;
   handleAddContractInput: (key: string, value:string) => void;
   createContract: () => void;
+  clients: ClientDetail[];
+  isLoading: boolean;
 };
 
 export type JobDetailsType = {
@@ -48,11 +58,10 @@ export type JobDetailsType = {
   task_serial?: string;
   task_start_time?: string;
   task_end_time?: string;
-  task_start_date?: Date;
+  task_start_date?: string;
   pay?: number;
   contract_name?: string;
   contract_address?: string;
   contract_postcode?: string;
   employee: EmployeeDetailsComponentType[];
-
 };

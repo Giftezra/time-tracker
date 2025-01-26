@@ -6,6 +6,9 @@ from django.conf import settings
 
 from staff.models import Staff
 
+from django.db import models
+from django.conf import settings
+
 ROLE_PERMISSIONs = {
   'owner': {
     'can_view': ['owner', 'staff', 'admin'],
@@ -183,7 +186,6 @@ class Client(models.Model):
 class Contracts(models.Model):
   client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='client_contract')
   name = models.CharField(max_length=100)
-  description = models.TextField(blank=True, null=True)
   address = models.CharField(max_length=100)
   postcode = models.CharField(max_length=15)
   city = models.CharField(max_length=100)
@@ -196,10 +198,7 @@ class Contracts(models.Model):
   def __str__(self):
     return f'{self.name} - {self.client}'
   
-  
-  
-from django.db import models
-from django.conf import settings
+
 
 class Task(models.Model):
     contract = models.ForeignKey('Contracts', on_delete=models.CASCADE)

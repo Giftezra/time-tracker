@@ -1,5 +1,7 @@
 import {
   ClientContextType,
+  ClientDetail,
+  ClientDetailsResponseType,
   ClientDetailsType,
   ContractDetailsType,
   JobDetailsType,
@@ -20,33 +22,164 @@ import { Alert, Linking, Platform } from "react-native";
 const ClientContext = createContext<ClientContextType | undefined>(undefined);
 
 const ClientProvider = ({ children }: { children: ReactNode }) => {
+  const clientContractDetailsData: ClientDetailsType[] = [
+    {
+      clients: {
+        client_id: "1",
+        name: "John Doe",
+        address: "123 Main St",
+        postcode: "12345",
+        email: "john.doe@example.com",
+        phone: "555-1234",
+        city: "Anytown",
+        country: "USA",
+      },
+      contracts: [
+        {
+          contract_id: "101",
+          name: "Contract A",
+          address: "123 Main St",
+          postcode: "12345",
+          description: "Description of Contract A",
+          city: "Anytown",
+          country: "USA",
+          start_date: "2025-01-20",
+          end_date: "2025-01-21",
+          information: "Additional information about Contract A",
+          contract_type: "Type A",
+        },
+        {
+          contract_id: "102",
+          name: "Contract B",
+          address: "456 Elm St",
+          postcode: "67890",
+          description: "Description of Contract B",
+          city: "Othertown",
+          country: "USA",
+          start_date: "2025-01-20",
+          end_date: "2025-01-21",
+          information: "Additional information about Contract B",
+          contract_type: "Type B",
+        },
+      ],
+    },
+    {
+      clients: {
+        client_id: "2",
+        name: "Jane Smith",
+        address: "456 Elm St",
+        postcode: "67890",
+        email: "jane.smith@example.com",
+        phone: "555-5678",
+        city: "Othertown",
+        country: "USA",
+      },
+      contracts: [
+        {
+          contract_id: "103",
+          name: "Contract C",
+          address: "789 Oak St",
+          postcode: "11223",
+          description: "Description of Contract C",
+          city: "Sometown",
+          country: "USA",
+          start_date: "2023-03-01",
+          end_date: "2023-10-31",
+          information: "Additional information about Contract C",
+          contract_type: "Type C",
+        },
+      ],
+    },
+  ];
+
+  const clientJobDetailsData: JobDetailsType[] = [
+    {
+      client: "Acme Corp",
+      task_serial: "TS3456",
+      task_start_time: "09:00",
+      task_end_time: "17:00",
+      task_start_date: "2025-01-20",
+      pay: 15,
+      contract_name: "Acme Corp Contract",
+      contract_address: "123 Acme St, Springfield",
+      contract_postcode: "12345",
+      employee: [
+        {
+          name: "John Doe",
+          id: "E123",
+          email: "johndoe@gmail.com",
+          phone: "1234567890",
+        },
+        {
+          name: "Jane Doe",
+          id: "D123",
+          email: "janedoe@gmail.com",
+          phone: "1234567890",
+        },
+      ],
+    },
+    {
+      client: "Amberstone Corp",
+      task_serial: "TS1256",
+      task_start_time: "09:00",
+      task_end_time: "17:00",
+      task_start_date: "2025-01-20",
+      pay: 15,
+      contract_name: "Acme Corp Contract",
+      contract_address: "123 Acme St, Springfield",
+      contract_postcode: "12345",
+      employee: [
+        {
+          name: "John Doe",
+          id: "E123",
+          email: "johndoe@gmail.com",
+          phone: "1234567890",
+        },
+        {
+          name: "Jane Doe",
+          id: "D123",
+          email: "janedoe@gmail.com",
+          phone: "1234567890",
+        },
+      ],
+    },
+  ];
+
   const [countDown, setCountdown] = useState<string | null>(null);
   const [timeElapsed, setTimeElapsed] = useState<string>("");
-  const [jobDetailsData, setJobDetailsData] = useState<JobDetailsType[]>([]);
-  const [clientDetailsData, setClientDetailsData] = useState<
-    ClientDetailsType[]
-  >([]);
+  const [clients, setClients] = useState<ClientDetail[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  // const [jobDetailsData, setJobDetailsData] = useState<JobDetailsType[]>([]);
+  // const [clientDetailsData, setClientDetailsData] = useState<
+  //   ClientDetailsType[]
+  // >([]);
 
   // Manages the state of the user input for the contract creation
   const [newContract, setNewContract] = useState<
     ContractDetailsType | undefined
   >(undefined);
 
+  /**
+   * This hook is used to update the countdown timer for the task start time.
+   * The countdown timer is updated only when the jobdetail is available.
+   * if no job details are available, it sets the countdown to null and set the time elapsed to "No job details available"
+   */
   useEffect(() => {
     const updateCountdown = () => {
-      if (jobDetailsData.length === 0 || !jobDetailsData[0]) {
+      if (clientJobDetailsData.length === 0 || !clientJobDetailsData[0]) {
         setCountdown(null);
         setTimeElapsed("No job details available");
         return;
       }
 
-      const timeDifference = calculateTaskStartTime(jobDetailsData[0]);
+      const timeDifference = calculateTaskStartTime(clientJobDetailsData[0]);
       if (timeDifference <= 0) {
         setTimeElapsed("Task has started");
         setCountdown(null);
         return;
       }
 
+      // Calculate the time elapsed for the tasks for the seconds and the minutes and the hours.
       const totalseconds = Math.max(timeDifference / 1000, 0);
       const hours = Math.floor(totalseconds / 3600);
       const minutes = Math.floor((totalseconds % 3600) / 60);
@@ -55,25 +188,37 @@ const ClientProvider = ({ children }: { children: ReactNode }) => {
     };
 
     updateCountdown();
-    const interval = setInterval(updateCountdown, 1000);
+    const interval = setInterval(updateCountdown, 1000); // Set the interval to update the countdown every second
     return () => clearInterval(interval);
-  }, [jobDetailsData]);
+  }, [clientJobDetailsData]);
 
+  /**
+   * This hook is used to fetch the client data from the server.
+   * IF the request is successfull, it set the returned data to the appopriate state.
+   * If the request fails, it logs the error to the console.
+   */
   useEffect(() => {
     const fetchClientAndJobDetails = async () => {
+      setIsLoading(true);
       try {
         const token = await loadToken();
-        const jobDetails = await fetchJobDetails(token);
-        const clientDetails = await fetchClientContractDetails(token);
-        setJobDetailsData(jobDetails);
-        setClientDetailsData(clientDetails);
+        const clients = await fetchAllClients();
+        setClients(clients);
       } catch (error) {
         console.error("Error fetching details:", error);
+        alert("Error fetching details");
+      }finally{
+        setIsLoading(false);
       }
     };
     fetchClientAndJobDetails();
   }, []);
 
+  /**
+   * This method is used to collect the user data input required to create a new contract.
+   * @param key is the string key of the input field
+   * @param value  is the value of the input field to populate the contract details
+   */
   const handleAddContractInput = (key: string, value: string) => {
     setNewContract(
       (prev) =>
@@ -94,6 +239,7 @@ const ClientProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
+    // Use the try catch to ensure no data is lost in the process that would throw an unprecedented error.
     try {
       const response = await fetch(`${BASE_URL}/api/create/contract/`, {
         method: "POST",
@@ -104,9 +250,12 @@ const ClientProvider = ({ children }: { children: ReactNode }) => {
         body: JSON.stringify(newContract),
       });
       if (!response.ok) {
-        throw new Error("Error creating contract");
+        throw new Error(
+          `Error creating contract: ${response.statusText} with status ${response.status}`
+        );
       }
-      const responseData = await response.json();
+
+      const responseData: ClientDetailsResponseType = await response.json();
       console.log("Contract created", responseData);
       return responseData;
     } catch (error) {
@@ -118,9 +267,10 @@ const ClientProvider = ({ children }: { children: ReactNode }) => {
    * @params {token} string is the token used to authenticate the user
    * which will be retrieved using the loadToken method.
    * @returns {Promise<ClientDetailsType[]>} which is the list of clients returned from the server.
+   * The method will return an empty array if no valid data is returned from the server.
    */
   const fetchClientContractDetails = async (
-    token: string | null
+    token: string
   ): Promise<ClientDetailsType[]> => {
     console.log("fetching client details", token);
     // Create a fetch request to the server to get the client list
@@ -139,14 +289,16 @@ const ClientProvider = ({ children }: { children: ReactNode }) => {
       // Check the response ok.
       // Throw error if response is not ok
       if (!response.ok) {
-        throw new Error("Error fetching client details");
+        throw new Error(
+          `error fetching client details: ${response.statusText}`
+        );
       }
 
       // Get the data from the response
       // Check the data is valid not null.
       const responseData = await response.json();
       if (!responseData) {
-        throw new Error("Error fetching client details");
+        return [];
       }
       // Return the data
       const data: ClientDetailsType[] = responseData.client_details;
@@ -157,13 +309,22 @@ const ClientProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const fetchJobDetails = async (
-    token: string | null
+  /**
+   * The method is used to fetch the clients and the task details associated with the client.
+   * @param token is the token to be used for the authentication of the user.
+   * @returns a promise of the job details type which is the list of job details returned from the server.
+   */
+  const fetchContractAndJobDetails = async (
+    token: string
   ): Promise<JobDetailsType[]> => {
     console.log("fetching job details", token);
     if (!token) {
       return [];
     }
+    /**
+     * Get the response from the server and check if the response is ok before
+     * returning the data.
+     */
     try {
       const response = await fetch(
         `${BASE_URL}/api/get/contract/shifts/details/`,
@@ -176,12 +337,12 @@ const ClientProvider = ({ children }: { children: ReactNode }) => {
         }
       );
       if (!response.ok) {
-        throw new Error("Error fetching job details");
+        throw new Error(`Error fetching job details: ${response.statusText}`);
       }
 
       const responseData = await response.json();
       if (!responseData) {
-        throw new Error("Error fetching job details");
+        return [];
       }
       const data: JobDetailsType[] = responseData.client_contract_details;
       return data;
@@ -189,6 +350,36 @@ const ClientProvider = ({ children }: { children: ReactNode }) => {
       console.error("Error fetching job details", error);
       return [];
     }
+  };
+
+  /**
+   * This method is used to get all the clients that are associated with the company.
+   * The method will return an empty array if no valid data is returned from the server.
+   */
+  const fetchAllClients = async (): Promise<ClientDetail[]> => {
+    // Check if the token is valid
+    const token = await loadToken();
+    // Fetch the client list from the server
+    const response = await fetch(`${BASE_URL}/api/get/all/clients/`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    // Check if the response is ok
+    if (!response.ok) {
+      throw new Error(`Error fetching clients: ${response.statusText}`);
+    }
+    // Get the data from the response
+    const responseData = await response.json();
+    if (!responseData) {
+      return [];
+    }
+
+    // Return the data
+    const data: ClientDetail[] = responseData.clients;
+    return data;
   };
 
   /** Method is used to handle the calling of a staff member assigned to task directly.
@@ -257,8 +448,8 @@ const ClientProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const value = {
-    jobDetailsData,
-    clientDetailsData,
+    jobDetailsData: clientJobDetailsData,
+    clientDetailsData: clientContractDetailsData,
     handlePhone,
     handleMessage,
     calculateTaskStartTime,
@@ -267,7 +458,10 @@ const ClientProvider = ({ children }: { children: ReactNode }) => {
     newContract,
     handleAddContractInput,
     createContract,
+    clients,
+    isLoading,
   };
+
   return (
     <ClientContext.Provider value={value}>{children}</ClientContext.Provider>
   );

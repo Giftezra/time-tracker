@@ -14,46 +14,48 @@ from django.shortcuts import get_object_or_404
 from .validation import owner_required, staff_required, admin_required, superuser_required
 from django.core.exceptions import ValidationError
 from ...models import Company, Client, Contracts, Shift
+from staff.models import Staff
 
 
 from ...serializer import ContractsSerializer, ClientSerializer
 from datetime import datetime
-
-
-""" Method creates a new client.
-    The permission validation is checked to ensure only the owner and the admin can create a new client.
-    The client details are passed in the request body."""
     
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 @admin_required
 def create_client(request):
-    # Retrieve the company from the company tag assoicated with the request user
-    try:
-      company = request.user.company
-    except Company.DoesNotExist:
-      return Response({"error": "This user is unassigned to a company"}, status=status.HTTP_400_BAD_REQUEST)
-
+  # First get the valid company if the user is the owner of the company
+    company = None
+    owner_company = get_object_or_404(Company, owner=request.user)
+    staff = get_object_or_404(Staff, user=request.user)
+    
+    # Set the company to the owner company if the user is the owner of the company
+    # Set the company to the staff company if the user is a staff member
+    if owner_company:
+        company = owner_company
+    elif staff:
+        company = staff.company
+    
     # Create a new client with request data
     # Return a success message if the client is created successfully
     # Return an error message if the client is not created successfully
     try:
-      client = Client.objects.create(
-        company=company,
-        name=request.data.get('name'),
-        email=request.data.get('email'),
-        phone=request.data.get('phone'),
-        address=request.data.get('address'),
-        postcode=request.data.get('postcode'),
-        city=request.data.get('city'),
-        country=request.data.get('country'),
-        created_by=request.user
-      )
-      client.save()
-      return Response({"message": "Client created successfully"}, status=status.HTTP_201_CREATED)
+        client = Client.objects.create(
+            company=company,
+            name=request.data.get('name'),
+            email=request.data.get('email'),
+            phone=request.data.get('phone'),
+            address=request.data.get('address'),
+            postcode=request.data.get('postcode'),
+            city=request.data.get('city'),
+            country=request.data.get('country'),
+            created_by=request.user
+        )
+        client.save()
+        return Response({"message": "Client created successfully"}, status=status.HTTP_201_CREATED)
     except ValidationError as e:
-      return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-    
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
 
 """ Create a new contract for the client"""
 @api_view(['POST'])
@@ -94,14 +96,13 @@ def create_contract(request):
     return Response({"error": "Client does not exist"}, status=status.HTTP_400_BAD_REQUEST)
   
   
+
   
-  
-""" Use the client id to retrieve the client object and all the associated contracts.
-    Serialize the contracts and return the data."""
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 @admin_required
-def get_contract_and_shifts(request):
+def getContractsAndJobDetails(request):
   # Retrieve the client id from the request
   # Use the client id to retrieve the client object
   try:
@@ -116,8 +117,11 @@ def get_contract_and_shifts(request):
     for contract in contracts:
       staff_list = []
       
+      # Get all the tasks associated with the contract
       tasks = contract.task_set.all()
+      # Loop throught the tasks and get the shift details which will include the details of the staffs associated with the shift
       for task in tasks:
+        # Get the shift details of the task
         shift = Shift.objects.get(task=task)
         # Get the details of the staff associated with the shift
         shift_members = set(
@@ -157,19 +161,41 @@ def get_contract_and_shifts(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 @admin_required
-def get_client_and_contracts(request):
+def getClientAndContracts(request):
+    """
+    Retrieve clients and their associated contracts for a company based on the request user.
+    Args:
+      request (HttpRequest): The HTTP request object containing user information.
+    Returns:
+      Response: A JSON response containing client details and their associated contracts,
+            or an error message if the client does not exist.
+    Raises:
+      Http404: If the Company or Staff object does not exist for the request user.
+    """
     # Retrieve the company id from the request
     # Use the company id to retrieve the company object
     client_list = []
+    contract_list = []
     
     try:
-      company = request.user.company
+      company = None;
+      owner_company = get_object_or_404(Company, owner=request.user)
+      staff = get_object_or_404(Staff, user=request.user)
+
+      # Check if the owner is making the request or a staff member
+      if owner_company:
+        company = owner_company
+      elif staff:
+        company = staff.company
+
+      # Get all clients associated with the company
       clients = Client.objects.filter(company=company)
+
       
       for client in clients:
+        # Get all the contracts associated with the client
         contracts = Contracts.objects.filter(client=client)
-        contract_list = []
-        
+
         for contract in contracts:
           contract_list.append({
             'contract_id': contract.id,
@@ -181,6 +207,8 @@ def get_client_and_contracts(request):
             'start_date': contract.start_date,
             'end_date': contract.end_date,
           })
+        # Append the client and contract details to the client_list
+        # This would return all the clients and their associated contracts
         client_list.append({
           'client_id': client.id,
           'name': client.name,
@@ -192,6 +220,7 @@ def get_client_and_contracts(request):
           'country': client.country,
           'contracts': contract_list
         })
+        
       return Response({'client_details': client_list}, status=status.HTTP_200_OK)
     except Client.DoesNotExist:
       return Response({"error": "Client does not exist"}, status=status.HTTP_400_BAD_REQUEST)

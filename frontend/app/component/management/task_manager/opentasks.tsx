@@ -22,11 +22,39 @@ import CustomModal from "../../helper/customModal";
 
 import { OpenTaskProps } from "@/app/types/management/task";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { useOpenTask } from "@/app/context/management/task manager/open-task-context";
 import SearchInputContainer from "../../helper/searchInput";
 
 const OpenTaskComponents = () => {
-  const { getUnassignedTask, filteredTask, unassignedTask } = useOpenTask();
+  const unassignedTask: OpenTaskProps[] = [
+    {
+      task_id: "123",
+      contract_name: "John Doe",
+      task_serial: "1234",
+      contract_address: "1234",
+      contract_postcode: "1234",
+      task_description: "1234",
+      task_status: "1234",
+      task_start_date: "1234",
+      task_end_date: "1234",
+      created_by: "1234",
+      task_priority: "1234",
+      task_created_at: "1234",
+    },
+    {
+      task_id: "123",
+      contract_name: "John Doe",
+      task_serial: "1234",
+      contract_address: "1234",
+      contract_postcode: "1234",
+      task_description: "1234",
+      task_status: "1234",
+      task_start_date: "1234",
+      task_end_date: "1234",
+      created_by: "1234",
+      task_priority: "1234",
+      task_created_at: "1234",
+    },
+  ];
 
   const inactivebtn = useThemeColor({}, "inactivebtn");
   const primaryColor = useThemeColor({}, "primaryColor");

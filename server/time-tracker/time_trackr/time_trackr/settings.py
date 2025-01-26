@@ -1,6 +1,8 @@
 from pathlib import Path
 from datetime import timedelta
 from django.conf import settings
+from corsheaders.defaults import default_headers
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -51,6 +53,10 @@ MIDDLEWARE = [
 
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    "Authorization",
+    "Content-Type"
+]
 
 ROOT_URLCONF = 'time_trackr.urls'
 

@@ -16,26 +16,39 @@ from ...serializer import UserSerializer, ShiftSerializer
 
 
 from ...models import Company
+from staff.models import Staff
 
 """ Method is designed to retrieve all employees that are available and has no shift assigned to them in the next 24 hours."""
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 @admin_required
 def get_available_employees(request):
+    """ Method retrieves all employees that are available and has no shift assigned to them in the next 24 hours.
+    The employees are returned in a list of dictionaries with the employee name and id."""
+    company = None
     try:
-        employee_list = []
-        # Get current time and 24 hour 
+        owner_company = get_object_or_404(Company, owner=request.user)
+        staff_company = get_object_or_404(Staff, user=request.user)
+        # Check if the request user is an owner or staff
+        if owner_company:
+            company = owner_company
+        elif staff_company:
+            company = staff_company.company
+        else:
+            return Response({'error': 'User does not have a company'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        employee_list = [] # Create an empty list to hold the employee details
+        # Create a time to simulate the next 24 hours
         now = datetime.now()
         later = now + timedelta(days=1)
         
-        # filter the users based on the company associated with the request user
-        company = request.user.company
-        user = User.objects.filter(company=company)
+        # Get all available staff members that are not on a shift in the next 24 hours
+        staff = Staff.objects.filter(company=company)
         
         # Get all available user and check if they have a shift in the next 24 hours
         # Serialize the user and return the response
         
-        available_user = user.filter(availability__start_date__lte=now, availability__start_date__gte=later)
+        available_user = staff.filter(availability__start_date__lte=now, availability__start_date__gte=later)
         available_staff = available_user.exclude(shift__start__gte=now, shift__start__lte=later)
         
         employee_list = [{

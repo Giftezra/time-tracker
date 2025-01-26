@@ -1,3 +1,4 @@
+import datetime
 from django.forms import ValidationError
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
@@ -7,6 +8,7 @@ from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 
 from ...models import Company
+from staff.models import Staff
 
 from .validation import owner_required, staff_required, admin_required, superuser_required
 
@@ -75,10 +77,51 @@ def update_company(request):
 @permission_classes([IsAuthenticated])
 @owner_required
 def delete_company(request):
+  """ This method is used to delete the company associated with the owner. """
   company = get_object_or_404(Company, owner=request.user)
   try:
     company.delete()
     return Response({"message": "Company deleted successfully"}, status=status.HTTP_200_OK)
   except Exception as e:
     return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@admin_required
+def get_today_events(request):
+  """ This method is used to retrieve the date of birth of staff members associated with the company.
+  The method checks through all the staffs and returns the details of the staff who has their birthday today."""
+    
+  company = None  # initialize the company variable to none
+  try:
+    # Get the company associated with the owner and the staff
+    owner_company = get_object_or_404(Company, owner=request.user)
+    staff_company = get_object_or_404(Staff, user=request.user)
+
+    # Check if the user is an owner or staff and use the associated company to initialize the company variable
+    if owner_company:
+      company = owner_company
+    elif staff_company:
+      company = staff_company.company
+      
+    # Filter the staffs associated with the company and check if their date of birth is today
+    today = datetime.date.today()
+    staffs = Staff.objects.filter(company=company)
+    todays_events = []
+
+    for staff in staffs:
+      if staff.user.dob.month == today.month and staff.user.dob.day == today.day:
+        todays_events.append(staff)  # Append the staff to the staff_birthdays list if their date of birth is today
+
+    return Response({"events": todays_events}, status=status.HTTP_200_OK) # Return the event list
+          
+  except Company.DoesNotExist:  # Return an error message if the user is not associated with a company
+    return Response({"error": "This user is unassigned to a company"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@admin_required
+def get_employees_on_leave(request):
+  """ This method is used to retrieve the staff members associated with the request users company who are not available for work or on leave """

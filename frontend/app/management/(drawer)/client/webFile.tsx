@@ -65,11 +65,13 @@ const WebClientComponent = () => {
             nestedScrollEnabled={true}
             showsHorizontalScrollIndicator={false}
           >
-            {jobDetailsData.map((job, index) => (
-              <View key={index} style={styles.employee}>
-                <JobDetailsComponent {...job} />
-              </View>
-            ))}
+            <View>
+              {jobDetailsData.map((job, index) => (
+                <View key={index}>
+                  <JobDetailsComponent {...job} />
+                </View>
+              ))}
+            </View>
           </ScrollView>
         </View>
       </View>

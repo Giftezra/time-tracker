@@ -3,7 +3,6 @@
  * the input is used to send a request to the server with the client name. the response which will be an array object will be rendered in the view.
  */
 import {
-  ActivityIndicator,
   Platform,
   Pressable,
   StyleSheet,
@@ -11,30 +10,55 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import React, { useEffect, useState } from "react";
-import { router } from "expo-router";
+import React, { useState } from "react";
 import { useThemeColor } from "@/hooks/useThemeColor";
-
-import PopupButton from "../../helper/popupButton";
 import { AntDesign, MaterialIcons } from "@expo/vector-icons";
 import { useClientContext } from "@/app/context/management/client/clientContext";
-import { JobDetailsType } from "@/app/types/management/client";
+import { ClientDetail, JobDetailsType } from "@/app/types/management/client";
+import { ContractListType } from "@/app/types/management/task";
+import { FlatList } from "react-native-gesture-handler";
+import ClientAndContractDetails from "./clientAndContract";
+
+const client: ContractListType[] = [
+  {
+    client_id: "1",
+    client_name: "client 1",
+    contract_id: "1",
+    contract_name: "contract 1",
+    contract_address: "address 1",
+    contract_postcode: "postcode 1",
+    contract_city: "city 1",
+  },
+  {
+    client_id: "3",
+    client_name: "client 3",
+    contract_id: "3",
+    contract_name: "contract 3",
+    contract_address: "address 3",
+    contract_postcode: "postcode 3",
+    contract_city: "city 3",
+  },
+];
 
 /* The component displays the job details and which employee was assigned to a shift.
 
 Each shift has a pay range , and other data to simulate a site.*/
-const JobDetailsComponent: React.FC<JobDetailsType> = (props) => {
-  const { handlePhone, handleMessage, countDown, timeElapsed } =
-    useClientContext();
+const JobDetailsComponent = () => {
+  const {
+    handlePhone,
+    handleMessage,
+    countDown,
+    timeElapsed,
+    clients,
+    isLoading,
+  } = useClientContext();
 
   /**
    * Use the useThemeColor hook to get the color of the theme based on the device color scheme
    *
    */
   const primary = useThemeColor({}, "primaryColor");
-  const secondaryColor = useThemeColor({}, "secondaryColor");
   const innerbackground = useThemeColor({}, "innerBackground");
-  const highlight = useThemeColor({}, "highlight");
   const text = useThemeColor({}, "text");
   const otherText = useThemeColor({}, "otherText");
   const [toggleContract, setToggleContract] = useState(false);
@@ -42,43 +66,18 @@ const JobDetailsComponent: React.FC<JobDetailsType> = (props) => {
   const toggleContractDisplay = () => setToggleContract(!toggleContract);
 
   return (
-    <Pressable
-      style={[styles.maincontainer, { backgroundColor: innerbackground }]}
-      onPress={toggleContractDisplay}
-    >
-      <View
-        style={{
-          flexDirection: "row",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
-        <Text style={[styles.headerText, { color: otherText }]}>
-          client: {props.client}
-        </Text>
-        <AntDesign
-          name={toggleContract ? "down" : "up"}
-          size={18}
-          color={otherText}
-        />
-      </View>
-
-      <View style={styles.container}>
-        <View></View>
-        <Text style={[styles.text, { color: text }]}>
-          {props.contract_name}
-        </Text>
-        <Text style={[styles.text, { color: text }]}>
-          {props.contract_address}
-        </Text>
-        <Text style={[styles.text, { color: text }]}>
-          {props.contract_postcode}
-        </Text>
-      </View>
+    <View style={[styles.maincontainer, { backgroundColor: innerbackground }]}>
+      {/* Display the list of contracts and the jobdetails connected to those contracts when clicked.
+       */}
+      <FlatList
+        data={client}
+        renderItem={({ item }) => <ClientAndContractDetails {...item} />}
+        keyExtractor={(item) => item.contract_id}
+      />
 
       {/* Conditionally render the contract details when the contract is toggled.
       This will display the shift details includint the employees assigned to the task */}
-      {toggleContract && (
+      {/* {toggleContract && (
         <View>
           <View>
             <Text
@@ -133,7 +132,7 @@ const JobDetailsComponent: React.FC<JobDetailsType> = (props) => {
                 start date
               </Text>
               <Text style={{ fontFamily: "BarlowLight", fontSize: 13 }}>
-                {props.task_start_date?.toDateString()}
+                {props.task_start_date?.split("T")[0]}
               </Text>
             </View>
             {countDown === null ? (
@@ -156,8 +155,8 @@ const JobDetailsComponent: React.FC<JobDetailsType> = (props) => {
             )}
           </View>
         </View>
-      )}
-    </Pressable>
+      )} */}
+    </View>
   );
 };
 
@@ -166,11 +165,11 @@ export default JobDetailsComponent;
 const styles = StyleSheet.create({
   maincontainer: {
     flex: 1,
-    width: "100%",
     borderRadius: 5,
     elevation: 10,
     shadowRadius: 10,
     shadowOpacity: 0.5,
+    marginVertical: 2
   },
 
   containerContainer: {

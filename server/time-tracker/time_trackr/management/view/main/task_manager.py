@@ -10,7 +10,8 @@ from ...models import User, Task, Shift, Contracts, Client, User
 
 from datetime import datetime, timedelta
 
-from staff.models import Availability
+from staff.models import Availability, Staff
+from management.models import Company
 
 
 
@@ -31,20 +32,16 @@ def create_task(request):
     # Create a new shift object using the company and user id
     # Save the shift object
     # Return the response
-    client_id = request.data.get('client_id')
     contract_id = request.data.get('contract_id')
     
     try:
       contract = get_object_or_404(Contracts, id=contract_id)
-      client = get_object_or_404(Client, id=client_id)
     
       task = Task.objects.create(
-          client=client,
           contract=contract,
           task_serial = request.data.get('task_serial'),
           description=request.data.get('description'),
           start_date=request.data.get('start_date'),
-          end_date=request.data.get('end_date'),
           start_time=request.data.get('start_time'),
           end_time=request.data.get('end_time'),
           amount=request.data.get('amount'),
@@ -56,8 +53,58 @@ def create_task(request):
       return Response({'success': 'Task created successfully'}, status=status.HTTP_201_CREATED)
     except Exception as e:
       return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@admin_required
+def get_all_contracts(request):
+    """ The method is used to retrieve all the clients that are associated with a the request user's company.
+    The method only returns the contracts that are not completed or expired."""
+
+    contract_list = [] # Create a list to store all the contracts
+
+
+    company = None # Create an empty company object to store the company details
+    try:
+      # Get the company object from the request user
+      owner_company = get_object_or_404(Company, owner=request.user)
+      staff_company = get_object_or_404(Staff, user=request.user)
+
+      # Check if the user is an owner or a staff member and assign the company object to the company variable
+      if owner_company:
+        company = owner_company
+      elif staff_company:
+        company = staff_company.company
+      else:
+        return Response({'error': 'User does not have a company'}, status=status.HTTP_400_BAD_REQUEST)
     
-    
+    # Get all the clients associated with the company
+    # Get the company associated with the client
+    # Filter the contracts that are not completed or expired
+    # Append the contract details to the contract list
+      clients = Client.objects.filter(company=company)
+      contracts = Contracts.objects.filter(client__in=clients, is_completed=False)
+      for contract in contracts:
+        contract_list.append({
+          'client_name': contract.client.name,
+          'contract_id': contract.id,
+          'contract_name': contract.name,
+          'contract_address': contract.address,
+          'contract_postcode': contract.postcode,
+          'contract_city': contract.city,
+        })
+        # Return the contract list if the contracts are found
+        # Return corresponding error message if no contracts are found
+      return Response({'contract_list': contract_list}, status=status.HTTP_200_OK)
+    except Client.DoesNotExist:
+      return Response({'error': 'No contracts found'}, status=status.HTTP_400_BAD_REQUEST)
+    except contract.DoesNotExist:
+      return Response({'error': 'No contracts found'}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+      return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 @admin_required
@@ -248,14 +295,28 @@ def assign_task(request):
 @permission_classes([IsAuthenticated])
 @admin_required
 def get_active_shifts(request):
+  company = None
   try:
-    # Filter all shifts with the status ongoing
-    shifts = Shift.objects.filter(status='ongoing')
+    owner_company = get_object_or_404(Company, owner=request.user)
+    staff_company = get_object_or_404(Staff, user=request.user)
+    
+    if request.user.is_owner:
+      company = owner_company
+    elif request.user.is_admin:
+      company = staff_company.company
+    else:
+      return Response({'error': 'User does not have a company'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Get all the shifts associated with the company and filter the shifts that has been started
+    shifts = Shift.objects.filter(task__contract__client__company=company, status='started')
+    
+    # Filter the shift data and append the shift details to shift data list
+    # Create a list for the shift and another for the employees assigned to the shift
     shift_data = []
-
+    employee_list = []
     for shift in shifts:
+      # Get the employees assigned to the shift
       employees = shift.staff.all()
-      employee_list = []
       for employee in employees:
         employee_list.append({
           'employee_name': employee.first_name + ' ' + employee.last_name,
@@ -264,18 +325,14 @@ def get_active_shifts(request):
       shift_data.append({
         'shift_id': shift.id,
         'task_serial': shift.task.task_serial,
-        'client_name': shift.task.client.name,
+        'client_name': shift.task.contract.client.name,
         'employees': employee_list,
         'start_time': shift.start_time,
       })
-
     return Response({'active_shifts': shift_data}, status=status.HTTP_200_OK)
   except Exception as e:
     return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-    
-    
-    
-    
+
 
 
 @api_view(['POST'])
@@ -398,10 +455,8 @@ def get_clients_shifts(request):
     return Response({'shift_details': shift_details}, status=status.HTTP_200_OK)
   except Exception as e:
     return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-  
-  
-  
-  
+
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 @admin_required
@@ -433,40 +488,3 @@ def approve_task(request):
       return Response({'success': 'Task assigned to staff successfully'}, status=status.HTTP_200_OK)
     except Exception as e:
       return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-    
-    
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-@admin_required
-def get_all_contracts(request):
-    """ Given the user, the list of associated contracts is returned based on the associated company and client"""
-    
-    contract_list = []
-    try:
-        company = request.user.company
-        clients = Client.objects.filter(company=company)
-        
-        if not clients.exists():
-            return Response({'error': 'No clients found'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        contracts = Contracts.objects.filter(client__in=clients, is_completed=False)
-        
-        if not contracts.exists():
-            return Response({'error': 'No contracts found'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        contract_list = [
-            {
-                'contract_id': contract.id,
-                'client_name': contract.client.name,
-                'contract_name': contract.name,
-                'contract_city': contract.city,
-                'contract_address': contract.address,
-            }
-            for contract in contracts
-        ]
-        return Response({'contracts': contract_list}, status=status.HTTP_200_OK)
-    except Client.DoesNotExist:
-        return Response({'error': 'Client does not exist'}, status=status.HTTP_400_BAD_REQUEST)
-    except Exception as e:
-        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)

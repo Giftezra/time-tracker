@@ -54,31 +54,22 @@ export type EmployeeDetailsComponentType = {
   phone: string;
 };
 
-export type CreateTaskContextType = {
-  employeeList: EmployeeType[] | undefined;
-  contractList: ContractListType[] | undefined;
-  onDateDismiss: () => void;
-  onTimeDismiss: () => void;
-  onConfirmDate: (params: any) => void;
-  onConfirmTime: ({
-    hours,
-    minutes,
-  }: {
-    hours: number;
-    minutes: number;
-  }) => void;
-  handleDateDisplay: () => void;
-  handleTimeDisplay: () => void;
-  dateVisible: boolean;
-  timeVisible: boolean;
-  getContractList: () => Promise<ContractListType[] | undefined>;
-  getAvailableEmployees: () => Promise<EmployeeType[] | undefined>;
+export type CreateTaskType = {
+  task_serial: string;
+  description: string;
+  contract_id: string;
+  employee_id?: string;
+  start_time: string;
+  end_time?: string;
+  start_date: string;
+  amount: number;
 };
 
 export type ContractListType = {
   contract_id: string;
   contract_name: string;
   contract_address: string;
+  contract_postcode?: string;
   contract_city: string;
   client_name: string;
 };
@@ -93,4 +84,30 @@ export type ActiveTaskContextType = {
   renderPopupButton: (id: string, onPress: () => void) => JSX.Element;
   activeTasks: ActiveTaskType[] | undefined;
   isLoading: boolean;
+  getContractList: () => Promise<ContractListType[] | undefined>;
+  onDateDismiss: () => void;
+  onStartTimeDismiss: () => void;
+  onEndTimeDismiss: () => void;
+  onConfirmDate: (params: any) => void;
+  onConfirmStartTime: ({
+    hours,
+    minutes,
+  }: {
+    hours: number;
+    minutes: number;
+  }) => void;
+  onConfirmEndTime: ({
+    hours,
+    minutes,
+  }: {
+    hours: number;
+    minutes: number;
+  }) => void;
+  handleDateDisplay: () => void;
+  handleTimeDisplay: () => void;
+  getAvailableEmployees: () => Promise<EmployeeType[] | undefined>;
+  dateVisible: boolean;
+  startTimeVisible: boolean;
+  endTimeVisible: boolean;
+
 };

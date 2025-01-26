@@ -23,9 +23,6 @@ import ActiveTaskComponent from "@/app/component/management/task_manager/activet
 import CreateTaskComponent from "@/app/component/management/task_manager/createTask";
 import OpenTaskComponents from "@/app/component/management/task_manager/opentasks";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import ManagementTaskProvider from "@/app/context/management/task manager/createTaskContext";
-import OpenTaskProvider from "@/app/context/management/task manager/open-task-context";
-import ActiveTaskProvider from "@/app/context/management/task manager/active-task-context";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { useAuth } from "@/app/context/management/authentication";
 import SideComponent from "@/app/component/helper/sideComponent";
@@ -55,9 +52,6 @@ const MainEmployeeTaskManager = () => {
   const innerBackground = useThemeColor({}, "innerBackground");
 
   return (
-    <ManagementTaskProvider>
-      <OpenTaskProvider>
-        <ActiveTaskProvider>
           <SafeAreaProvider style={{ flex: 1 }}>
             <KeyboardAvoidingView
               style={[
@@ -67,14 +61,19 @@ const MainEmployeeTaskManager = () => {
             >
               {/* Display the views based on the plaform */}
               {Platform.OS === "web" ? (
-                <View style={{flex: 1, width: windowWidth, flexDirection: "row"}}>
-                  <View style = {{width:windowWidth * 0.2}}>
-                    <SideComponent/>
+                <View
+                  style={{ flex: 1, width: windowWidth, flexDirection: "row" }}
+                >
+                  <View style={{ width: windowWidth * 0.2 }}>
+                    <SideComponent />
                   </View>
                   <View
                     style={[
                       styles.rowContainer,
-                      { backgroundColor: innerBackground, width: windowWidth * 0.8 },
+                      {
+                        backgroundColor: innerBackground,
+                        width: windowWidth * 0.8,
+                      },
                     ]}
                   >
                     <View style={styles.columnContainer}>
@@ -181,9 +180,6 @@ const MainEmployeeTaskManager = () => {
               )}
             </KeyboardAvoidingView>
           </SafeAreaProvider>
-        </ActiveTaskProvider>
-      </OpenTaskProvider>
-    </ManagementTaskProvider>
   );
 };
 

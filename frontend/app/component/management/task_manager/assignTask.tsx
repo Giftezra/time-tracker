@@ -56,38 +56,15 @@ const AssignTaskModal: React.FC<AssignTaskModalProps> = ({
   setTime,
   onClose,
 }) => {
-  const [dateVisible, setDateVisible] = useState(false);
-  const [timeVisible, setTimeVisible] = useState(false);
   const [employeeSelected, setEmployeeSelected] = useState<EmployeeType>();
   const [employeeToggle, setEmployeeToggle] = useState(false);
 
   const handleEmployeeDisplay = () => setEmployeeToggle(!employeeToggle);
-  const handleDateDisplay = () => setDateVisible(true);
-  const handleTimeDisplay = () => setTimeVisible(true);
-
-  const onDateDismiss = useCallback(() => setDateVisible(false), []);
-  const onTimeDismiss = useCallback(() => setTimeVisible(false), []);
-
   const innerBackground = useThemeColor({}, "innerBackground");
   const text = useThemeColor({}, "text");
   const primaryColor = useThemeColor({}, "primaryColor");
   const inactivebtn = useThemeColor({}, "inactivebtn");
   const highlight = useThemeColor({}, "highlight");
-
-  const onConfirmTime = React.useCallback(
-    ({ hours, minutes }: { hours: number; minutes: number }) => {
-      setTimeVisible(false);
-      setTime({ hours, minutes });
-      console.log({ hours, minutes });
-    },
-    [setTimeVisible]
-  );
-
-  const onConfirmDate = React.useCallback((params: any) => {
-    setDates(params.dates);
-    setDateVisible(false);
-    console.log("[on-change-multi]", params);
-  }, []);
 
   return (
     /**

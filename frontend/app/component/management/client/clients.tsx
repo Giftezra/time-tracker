@@ -19,20 +19,20 @@ import {
   View,
 } from "react-native";
 import React, { useState } from "react";
-import { useLoadedFonts } from "@/hooks/useLoadedFonts";
 import { AntDesign, MaterialIcons } from "@expo/vector-icons";
 import { useThemeColor } from "@/hooks/useThemeColor";
 
-import { ClientDetailsType } from "@/app/types/management/client";
+import { ClientDetail, ClientDetailsType } from "@/app/types/management/client";
 import { ScrollView } from "react-native-gesture-handler";
 import { useClientContext } from "@/app/context/management/client/clientContext";
+
 
 /* This displays a client view which defines the total client a superadmin has on his contract list */
 const ClientDetailsComponent: React.FC<{
   props: ClientDetailsType;
   onModalVisible: () => void;
 }> = ({ props, onModalVisible }) => {
-  const { handlePhone } = useClientContext();
+  const { handlePhone} = useClientContext();
 
   const [siteToggle, setSiteToggle] = useState(false);
 

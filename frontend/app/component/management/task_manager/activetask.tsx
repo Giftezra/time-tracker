@@ -17,50 +17,10 @@ import {
 } from "react-native";
 import React, { useState } from "react";
 import { ScrollView, TextInput } from "react-native-gesture-handler";
-import PopupButton from "../../helper/popupButton";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { AntDesign } from "@expo/vector-icons";
 import { ActiveTaskType } from "@/app/types/management/task";
-import Index from "@/app";
-import { EmployeeType } from "@/app/types/management/employee";
-import { useActiveTask } from "@/app/context/management/task manager/active-task-context";
-import { isLoaded, isLoading } from "expo-font";
+import { useManagementTask } from "@/app/context/management/task manager/managementTaskProvider";
 import SearchInputContainer from "../../helper/searchInput";
-
-const activeTasks: ActiveTaskType[] = [
-  {
-    shift_id: "123",
-    task_serial: "1234",
-    client_name: "John Doe",
-    employee: [
-      {
-        employee_id: "1234",
-        employee_name: "John Doe",
-      },
-      {
-        employee_id: "1235",
-        employee_name: "Jane Doe",
-      },
-    ],
-    start_time: "12:00",
-  },
-  {
-    shift_id: "123",
-    task_serial: "1234",
-    client_name: "John Doe",
-    employee: [
-      {
-        employee_id: "1234",
-        employee_name: "John Doe",
-      },
-      {
-        employee_id: "1235",
-        employee_name: "Jane Doe",
-      },
-    ],
-    start_time: "12:00",
-  },
-];
 
 /* Constant value for the sub headers representing each mapped item */
 const subHeaders = [
@@ -82,7 +42,7 @@ const ActiveTaskComponent = () => {
     renderPopupButton,
     isLoading,
     activeTasks,
-  } = useActiveTask();
+  } = useManagementTask();
 
   const [search, setSearch] = useState<string>("");
   const [isPopupVisible, setIsPopupVisible] = useState(false);
