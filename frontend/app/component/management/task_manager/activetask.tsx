@@ -33,13 +33,13 @@ const subHeaders = [
 
 const ActiveTaskComponent = () => {
   const {
-    gotoMessageScreen,
-    handleIsTaskClicked,
+    goto_message_screen: gotoMessageScreen,
+    handle_is_task_clicked: handleIsTaskClicked,
     isTaskClicked,
     isModalVisible,
     employee,
     hideModal,
-    renderPopupButton,
+    render_popup_button: renderPopupButton,
     isLoading,
     activeTasks,
   } = useManagementTask();

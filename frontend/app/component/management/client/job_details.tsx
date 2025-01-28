@@ -19,31 +19,12 @@ import { ContractListType } from "@/app/types/management/task";
 import { FlatList } from "react-native-gesture-handler";
 import ClientAndContractDetails from "./clientAndContract";
 
-const client: ContractListType[] = [
-  {
-    client_id: "1",
-    client_name: "client 1",
-    contract_id: "1",
-    contract_name: "contract 1",
-    contract_address: "address 1",
-    contract_postcode: "postcode 1",
-    contract_city: "city 1",
-  },
-  {
-    client_id: "3",
-    client_name: "client 3",
-    contract_id: "3",
-    contract_name: "contract 3",
-    contract_address: "address 3",
-    contract_postcode: "postcode 3",
-    contract_city: "city 3",
-  },
-];
+
 
 /* The component displays the job details and which employee was assigned to a shift.
 
 Each shift has a pay range , and other data to simulate a site.*/
-const JobDetailsComponent = () => {
+const JobDetailsComponent:React.FC<JobDetailsType> = (props) => {
   const {
     handlePhone,
     handleMessage,
@@ -61,7 +42,7 @@ const JobDetailsComponent = () => {
   const innerbackground = useThemeColor({}, "innerBackground");
   const text = useThemeColor({}, "text");
   const otherText = useThemeColor({}, "otherText");
-  const [toggleContract, setToggleContract] = useState(false);
+  const [toggleContract, setToggleContract] = useState(true);
 
   const toggleContractDisplay = () => setToggleContract(!toggleContract);
 
@@ -69,15 +50,9 @@ const JobDetailsComponent = () => {
     <View style={[styles.maincontainer, { backgroundColor: innerbackground }]}>
       {/* Display the list of contracts and the jobdetails connected to those contracts when clicked.
        */}
-      <FlatList
-        data={client}
-        renderItem={({ item }) => <ClientAndContractDetails {...item} />}
-        keyExtractor={(item) => item.contract_id}
-      />
-
       {/* Conditionally render the contract details when the contract is toggled.
       This will display the shift details includint the employees assigned to the task */}
-      {/* {toggleContract && (
+      {toggleContract && (
         <View>
           <View>
             <Text
@@ -155,7 +130,7 @@ const JobDetailsComponent = () => {
             )}
           </View>
         </View>
-      )} */}
+      )}
     </View>
   );
 };

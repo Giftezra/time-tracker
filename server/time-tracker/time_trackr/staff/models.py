@@ -8,10 +8,6 @@ from django.contrib.auth.models import BaseUserManager
 from django.contrib.auth import get_user_model
 
 
-class StaffManager(models.Manager):
-  ''
-
-
 class Staff(models.Model):
   user = models.OneToOneField('management.User', on_delete=models.CASCADE, related_name='staff')
   company = models.ForeignKey('management.Company', on_delete=models.SET_NULL, related_name='staff_member', null=True)
@@ -26,12 +22,12 @@ class Staff(models.Model):
   
 class Availability(models.Model):
   
-  staff = models.ForeignKey(Staff, on_delete=models.CASCADE)
+  staff = models.ForeignKey(Staff, on_delete=models.CASCADE, related_name='staff_availability')
   start_date = models.DateField(blank=True, null=True)
   end_date = models.DateField(blank=True, null=True)
   start_time = models.TimeField(blank=True, null=True)
   end_time = models.TimeField(blank=True, null=True)
-  updated_at = models.DateTimeField(auto_now=True)
+  updated_at = models.DateTimeField(auto_now_add=True)
   
   def __str__(self):
     return f'{self.staff} - {self.start_date} - {self.end_time}'

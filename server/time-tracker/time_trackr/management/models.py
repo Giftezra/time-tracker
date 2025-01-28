@@ -57,7 +57,12 @@ class UserManager(BaseUserManager):
     extra_fields.setdefault('is_admin', True)
     extra_fields.setdefault('is_active', True)
     user = self.create_user(email, password, **extra_fields)
-    Staff.objects.create(user=user, company=company)
+    # Ensure staff creation is correct or roll back the user creation
+    try:
+      Staff.objects.create(user=user, company=company)
+    except Exception as e:
+      user.delete()
+      raise ValueError(f'Error creating admin account: {e}')
     return user
 
 
@@ -65,7 +70,12 @@ class UserManager(BaseUserManager):
     extra_fields.setdefault('is_staff', True)
     extra_fields.setdefault('is_active', True)
     user = self.create_user(email, password, **extra_fields)
-    Staff.objects.create(user=user, company=company)
+    # Ensure staff creation is correct or roll back the user creation
+    try:
+      Staff.objects.create(user=user, company=company)
+    except Exception as e:
+      user.delete()
+      raise ValueError(f'Error creating staff account: {e}')
     return user
       
 
@@ -149,7 +159,7 @@ class Identity(models.Model):
 class Company(models.Model):
   """ The company model describes a company database model that identifies all the company details
     """
-  owner = models.ForeignKey(User, on_delete=models.PROTECT, null=True, related_name='company_owner')
+  owner = models.ForeignKey(User, on_delete=models.CASCADE, null=True, related_name='company_owner')
   name = models.CharField(max_length=100)
   registration_number = models.CharField(max_length=100, blank=True, null=True)
   email = models.EmailField()
@@ -214,7 +224,6 @@ class Task(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='task_creator')
     status = models.CharField(max_length=20, choices=[('pending', 'Pending'), ('assigned', 'Assigned'), ('selected', 'Selected'), ('completed', 'Completed')], default='pending')
-    priority = models.CharField(max_length=20, choices=[('low', 'Low'), ('medium', 'Medium'), ('high', 'High')], default='medium')
     
     def __str__(self):
         return f'{self.name} - {self.contract} - {self.status}'

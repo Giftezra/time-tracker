@@ -5,6 +5,10 @@
 
 import { EmployeeType } from "./employee";
 
+export type ResponseType = {
+  message:string;
+}
+
 export type ActiveTaskType = {
   shift_id: string;
   task_serial: string;
@@ -55,36 +59,39 @@ export type EmployeeDetailsComponentType = {
 };
 
 export type CreateTaskType = {
-  task_serial: string;
-  description: string;
-  contract_id: string;
+  task_serial?: string;
+  description?: string;
+  contract_id?: string;
   employee_id?: string;
-  start_time: string;
-  end_time?: string;
-  start_date: string;
-  amount: number;
+  start_time: { hours: number; minutes: number };
+  end_time: { hours: number; minutes: number };
+  dates: Date[];
+  amount?: number;
 };
 
 export type ContractListType = {
-  contract_id: string;
-  contract_name: string;
-  contract_address: string;
+  contract_id?: string;
+  contract_name?: string;
+  contract_address?: string;
   contract_postcode?: string;
-  contract_city: string;
-  client_name: string;
+  contract_city?: string;
+  client_name?: string;
 };
 
 export type ActiveTaskContextType = {
-  gotoMessageScreen: (employee: EmployeeType) => void;
-  handleIsTaskClicked: (employee: EmployeeType[]) => void;
+  contractList: ContractListType[] | undefined;
+  unassignedTask: OpenTaskProps[] | undefined;
+  activeTasks: ActiveTaskType[] | undefined;
+  employeeList: EmployeeType[] | undefined;
+  goto_message_screen: (employee: EmployeeType) => void;
+  handle_is_task_clicked: (employee: EmployeeType[]) => void;
   isModalVisible: boolean;
   isTaskClicked: boolean;
   employee: EmployeeType[] | undefined;
   hideModal: () => void;
-  renderPopupButton: (id: string, onPress: () => void) => JSX.Element;
-  activeTasks: ActiveTaskType[] | undefined;
+  render_popup_button: (id: string, onPress: () => void) => JSX.Element;
   isLoading: boolean;
-  getContractList: () => Promise<ContractListType[] | undefined>;
+  get_contract_list: () => Promise<ContractListType[] | undefined>;
   onDateDismiss: () => void;
   onStartTimeDismiss: () => void;
   onEndTimeDismiss: () => void;
@@ -103,11 +110,15 @@ export type ActiveTaskContextType = {
     hours: number;
     minutes: number;
   }) => void;
-  handleDateDisplay: () => void;
-  handleTimeDisplay: () => void;
-  getAvailableEmployees: () => Promise<EmployeeType[] | undefined>;
+  handle_date_display: () => void;
+  handle_time_display: () => void;
+  get_available_employees: () => Promise<EmployeeType[] | undefined>;
   dateVisible: boolean;
-  startTimeVisible: boolean;
+  start_time_visible: boolean;
   endTimeVisible: boolean;
-
+  create_shift: (params: CreateTaskType) => Promise<void>;
+  create_task: (params: CreateTaskType) => Promise<void>;
+  start_time: {hours: number, minutes: number};
+  end_time: {hours: number, minutes: number};
+  dates: Date[];
 };

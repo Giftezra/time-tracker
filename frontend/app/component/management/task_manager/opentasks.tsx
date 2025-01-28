@@ -6,10 +6,8 @@ import {
   Alert,
   Modal,
   Platform,
-  Pressable,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -57,7 +55,6 @@ const OpenTaskComponents = () => {
   ];
 
   const inactivebtn = useThemeColor({}, "inactivebtn");
-  const primaryColor = useThemeColor({}, "primaryColor");
   const innerBackground = useThemeColor({}, "innerBackground");
   const text = useThemeColor({}, "text");
   const textinput = useThemeColor({}, "textinput");
@@ -284,16 +281,14 @@ const styles = StyleSheet.create({
   },
 
   centeredmodalView: {
-    width: "100%",
-    flexGrow: 1,
+    flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    padding: 5,
+    padding: 2,
   },
 
   modalView: {
     flexGrow: 1,
-    width: Platform.OS === "web" ? "60%" : "90%",
   },
 
   searchContainer: {

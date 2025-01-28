@@ -15,11 +15,11 @@ import {
 import React, { useEffect, useLayoutEffect, useState } from "react";
 import { useThemeColor } from "@/hooks/useThemeColor";
 
-import { DatePickerModal, TimePickerModal } from "react-native-paper-dates";
+import { ca, DatePickerModal, TimePickerModal } from "react-native-paper-dates";
 
 import { EmployeeType } from "@/app/types/management/employee";
 import { user_image } from "@/app/utils/images";
-import { ContractListType } from "@/app/types/management/task";
+import { ContractListType, CreateTaskType } from "@/app/types/management/task";
 import { get } from "react-native/Libraries/TurboModule/TurboModuleRegistry";
 import ButtonComponent from "../../helper/buttons";
 import TextInputComponent from "../../helper/textInput";
@@ -34,11 +34,17 @@ const CreateTaskComponent = () => {
     onDateDismiss,
     onStartTimeDismiss,
     onEndTimeDismiss,
-    handleDateDisplay,
-    handleTimeDisplay,
+    handle_date_display: handleDateDisplay,
+    handle_time_display: handleTimeDisplay,
     dateVisible,
-    startTimeVisible,
-    endTimeVisible
+    start_time_visible: startTimeVisible,
+    endTimeVisible,
+    isLoading,
+    create_task,
+    create_shift,
+    dates,
+    start_time,
+    end_time,
   } = useManagementTask();
 
   const primary = useThemeColor({}, "primaryColor");
@@ -47,6 +53,7 @@ const CreateTaskComponent = () => {
   const innerBackground = useThemeColor({}, "innerBackground");
   const hightlight = useThemeColor({}, "highlight");
   const textinput = useThemeColor({}, "textinput");
+  const otherText = useThemeColor({}, "otherText");
 
   const [contracts, setContracts] = useState<ContractListType[] | undefined>(
     []
@@ -64,7 +71,17 @@ const CreateTaskComponent = () => {
   const [selected, setSelected] = useState<string>("");
   const [description, setDescription] = useState<string | undefined>(undefined);
   const [taskSerial, setTaskSerial] = useState<string | undefined>(undefined);
+  const [amount_error, setAmountError] = useState<string>("");
+  const [description_error, setDescriptionError] = useState<string>("");
+  const [task_serial_error, setTaskSerialError] = useState<string>("");
+  const [isTaskCreated, setIsTaskCreated] = useState<boolean>(false);
 
+  /**
+   * The method is used to handle the toggling of the contract list and the list of employees.
+   * When one is selected, the other is unselected so it is closed.
+   * @param selected the selected item
+   * @returns void
+   */
   const handleToggleSites = (selected: string) => {
     if (selected === "contracts" || selected === "employees") {
       setSelected((prevSelected) =>
@@ -73,15 +90,88 @@ const CreateTaskComponent = () => {
     }
   };
 
-  const [isLoading, setIsLoading] = useState(true);
+  /**
+   * This method is used to gather all of the selected component, and would handle the creation of the task
+   * To do this, it will call the create_task method from the management task context and pass the required parameters
+   */
+  const handleCreateTask = async () => {
+    alert("Creating task");
+    // MAke sure all of the fields are selected before creating the task or return an error
+    // if (!siteSelected) {
+    //   console.error("site not selected");
+    //   return;
+    // }
+    // if (amount === undefined) {
+    //   console.error("amount not selected");
+    //   setAmountError("amount is required");
+    //   return;
+    // }
+    // if (description === undefined) {
+    //   console.error("description not selected");
+    //   setDescriptionError("description is required");
+    //   return;
+    // }
+    // if (taskSerial === undefined) {
+    //   console.error("Task serial not provided");
+    //   setTaskSerialError("task serial is required");
+    //   return;
+    // }
+    // if (!employeeSelected) {
+    //   console.error("employee not selected");
+    //   return;
+    // }
+    // if (!dates) {
+    //   console.error("Date not provided");
+    //   return;
+    // }
+    // if (!start_time) {
+    //   console.error("Start time not provided");
+    //   return;
+    // }
+    // if (!end_time) {
+    //   console.error("Task end time not provided");
+    //   return;
+    // }
+    /* Check if the employee is selected and call the approiprate method */
+    const task: CreateTaskType = {
+      task_serial: taskSerial,
+      description,
+      contract_id: siteSelected?.contract_id,
+      employee_id: employeeSelected?.employee_id,
+      start_time,
+      end_time,
+      dates,
+      amount: amount ? parseInt(amount) : 0,
+    };
+    // Check if the employee id is empty and call the create task method
+    try {
+      setIsTaskCreated(true);
+      if (employeeSelected === null) {
+        await create_task(task);
+        console.log("task created");
+      } else {
+        await create_shift(task);
+        console.log("task assigned");
+      }
+    } catch (e) {
+      console.error("Failed to create task resulting in error ", e);
+    }finally{
+      setIsTaskCreated(false);
+    }
+  };
 
   return (
     <View style={styles.maincontainer}>
-      <Text style={[styles.headerText, { marginVertical: 10, fontSize: 14 }]}>
+      <Text
+        style={[
+          styles.headerText,
+          { marginVertical: 10, fontSize: 14, color: otherText },
+        ]}
+      >
         Create Task
       </Text>
       <ScrollView
-        style={{ flex: 1, width: "100%" }}
+        style={{ flex: 1 }}
         showsVerticalScrollIndicator={false}
         nestedScrollEnabled={true}
       >
@@ -294,32 +384,45 @@ const CreateTaskComponent = () => {
           />
 
           <View style={{ width: "100%", marginVertical: 10 }}>
-            <TextInputComponent
-              text="amount"
-              value={amount}
-              setValue={setAmount}
-              placeholder="amount"
-            />
-            <TextInputComponent
-              text="description"
-              value={description}
-              setValue={setDescription}
-              placeholder="description"
-              isMultiline={true}
-              lines={2}
-            />
-            <TextInputComponent
-              text="task serial"
-              value={taskSerial}
-              setValue={setTaskSerial}
-              placeholder="task serial"
-            />
+            <View>
+              <Text>{amount_error}</Text>
+              <TextInputComponent
+                text="amount"
+                value={amount}
+                setValue={setAmount}
+                placeholder="amount"
+              />
+            </View>
+
+            <View>
+              <TextInputComponent
+                text="description"
+                value={description}
+                setValue={setDescription}
+                placeholder="description"
+                isMultiline={true}
+                lines={2}
+              />
+            </View>
+
+            <View>
+              <TextInputComponent
+                text="task serial"
+                value={taskSerial}
+                setValue={setTaskSerial}
+                placeholder="task serial"
+              />
+            </View>
           </View>
           <SubmitButtonComponent
             title={
-              employeeSelected === null ? "create new task" : "assign shift"
+              isTaskCreated
+                ? "Creating task"
+                : employeeSelected === null
+                ? "create new task"
+                : "assign shift"
             }
-            onPress={() => console.log("create task")}
+            onPress={handleCreateTask}
           />
         </View>
       </ScrollView>

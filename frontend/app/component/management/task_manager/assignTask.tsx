@@ -150,11 +150,9 @@ const styles = StyleSheet.create({
   mainContainer: {
     flex: 1,
     flexDirection: "column",
-    width: "100%",
     padding: 5,
-    borderRadius: 5,
-    flexGrow: 1,
-    marginVertical: 10,
+    borderRadius: 1,
+    marginVertical: 1,
   },
 
   headerText: {

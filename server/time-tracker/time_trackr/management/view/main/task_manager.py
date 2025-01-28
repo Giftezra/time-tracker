@@ -32,10 +32,8 @@ def create_task(request):
     # Create a new shift object using the company and user id
     # Save the shift object
     # Return the response
-    contract_id = request.data.get('contract_id')
-    
     try:
-      contract = get_object_or_404(Contracts, id=contract_id)
+      contract = get_object_or_404(Contracts, id=request.data.get('contract_id'))
     
       task = Task.objects.create(
           contract=contract,
@@ -47,12 +45,90 @@ def create_task(request):
           amount=request.data.get('amount'),
           created_by=request.user,
           status = 'pending',
-          priority = request.data.get('priority')
         )
       task.save()
       return Response({'success': 'Task created successfully'}, status=status.HTTP_201_CREATED)
     except Exception as e:
       return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+@admin_required
+def create_shift(request):
+    """ Method is used to create a new shift and assign it to a staff member."""
+    if not request.data:
+        return Response({'error': 'Please provide the shift details'}, status=status.HTTP_400_BAD_REQUEST)
+      
+    
+    try:
+      # Use the id to retrieve the client, contract and staff objects
+      contract = get_object_or_404(Contracts, id=request.data.get('contract_id'))
+      staff = get_object_or_404(User, id=request.data.get('employee_id'))
+      employee = get_object_or_404(Staff, user=staff)
+      
+      # Create a new task object with the client, contract and staff details
+      task = Task.objects.create(
+          contract=contract,
+          task_serial = request.data.get('task_serial'),
+          description=request.data.get('description'),
+          start_date=request.data.get('start_date'),
+          start_time=request.data.get('start_time'),
+          end_time=request.data.get('end_time'),
+          amount=request.data.get('amount'),
+          created_by=request.user,
+          status = 'pending',
+        )
+      
+      # After creating the task, assign the task to the staff with the specified id.
+      # The staff to be updated would only be staff member who have open availability for the next 24 hours.
+      # this is to ensure the time frame for the task is covered by the staff availability.
+      # 
+      # Check the staff availability and ensure they are available for the task
+      # If the staff is available, create a new shift object and assign the task to the staff
+      shift = get_object_or_404(Shift, staff=employee, status=['pending', 'assigned'])
+      old_task = shift.task
+      
+      # Returns a boolean value if the new task is conflicting with an existing task
+      is_conflicting_task = (
+        task.start_date <= old_task.start_date or
+        task.end_date <= old_task.end_date or
+        task.start_time <= old_task.start_time or
+        task.end_time <= old_task.end_time
+        )
+      
+      # Throw value error if the shift is conflicting with and existing task
+      if is_conflicting_task:
+        raise ValueError('Staff is already assigned to a task within the same time frame')
+      
+      # If everything is valid, create a new shift object and assign the task to the staff
+      if employee:
+        shift = Shift.objects.create(
+            task=task,
+            staff=employee,
+            status='assigned',
+            created_by=request.user
+          )
+        shift.save()
+        task.status = 'assigned'
+        task.save()
+        
+        # Update the staff availability so they become unavailable for the task duration
+        availability = Availability.objects.create(
+            staff=employee,
+            start_date=task.start_date,
+            end_date=task.end_date,
+            start_time=task.start_time,
+            end_time=task.end_time
+          ).first()
+        availability.save()
+        return Response({'success': 'Task created and assigned to staff successfully'}, status=status.HTTP_201_CREATED)
+      else:
+        return Response({'error': 'Staff not valid'}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+      return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    
+    
 
 
 @api_view(['GET'])
@@ -138,106 +214,6 @@ def get_all_unassigned_task(request):
     return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
   
   
-  
-  
-    
-    
-    
-    
-    
-""" A task is created and assigned to the staff is valid.
-
-    After creating the task, send the an email to the user with the task details and a link to the task confirmation page.
-"""
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-@admin_required
-def create_shift(request):
-    if not request.data:
-        return Response({'error': 'Please provide the shift details'}, status=status.HTTP_400_BAD_REQUEST)
-      
-      # Retrieve the necceassary data from the request data
-    client_id = request.data.get('client_id')
-    contract_id = request.data.get('contract_id')
-    staff_id = request.data.get('staff_id')
-    
-    try:
-      # Use the id to retrieve the client, contract and staff objects
-      contract = get_object_or_404(Contracts, id=contract_id)
-      staff = get_object_or_404(User, id=staff_id)
-      
-      # Create a new task object with the client, contract and staff details
-      task = Task.objects.create(
-          contract=contract,
-          task_serial = request.data.get('task_serial'),
-          description=request.data.get('description'),
-          start_date=request.data.get('start_date'),
-          end_date=request.data.get('end_date'),
-          start_time=request.data.get('start_time'),
-          end_time=request.data.get('end_time'),
-          amount=request.data.get('amount'),
-          created_by=request.user,
-          status = 'pending',
-          priority = request.data.get('priority'),
-        )
-      
-      # After creating the task, assign the task to the staff with the specified id.
-      # The staff to be updated would only be staff member who have open availability for the next 24 hours.
-      # this is to ensure the time frame for the task is covered by the staff availability.
-      # 
-      # Check the staff availability and ensure they are available for the task
-      # If the staff is available, create a new shift object and assign the task to the staff
-      shift = get_object_or_404(Shift, staff=staff, status=['pending', 'assigned'])
-      task = shift.task
-      
-      # Returns a boolean value if the new task is conflicting with an existing task
-      is_conflicting_task = (
-        task.start_date <= shift.start_date <= task.end_date or
-        task.start_date <= shift.end_date <= task.end_date and 
-        task.start_time <= shift.start_time <= task.end_time or
-        task.start_time <= shift.end_time <= task.end_time
-        )
-      
-      # Throw value error if the shift is conflicting with and existing task
-      if is_conflicting_task:
-        raise ValueError('Staff is already assigned to a task within the same time frame')
-      
-      # If everything is valid, create a new shift object and assign the task to the staff
-      if staff:
-        shift = Shift.objects.create(
-            task=task,
-            staff=staff,
-            status='pending',
-            created_by=request.user
-          )
-        shift.save()
-        task.status = 'assigned'
-        task.save()
-        
-        # Update the staff availability so they become unavailable for the task duration
-        availability = Availability.objects.create(
-            staff=staff,
-            start_date=task.start_date,
-            end_date=task.end_date,
-            start_time=task.start_time,
-            end_time=task.end_time
-          ).first()
-        
-        if availability:
-          availability.save()
-        else:
-          return Response({'error': 'Could not update staff availability'}, status=status.HTTP_400_BAD_REQUEST)
-        return Response({'success': 'Task created and assigned to staff successfully'}, status=status.HTTP_201_CREATED)
-      else:
-        return Response({'error': 'Staff not valid'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        # after successfully creating the shift and assigning it to a staff send am email to the staff with the shift details
-      
-        return Response({'success': 'Task created and assigned to staff successfully'}, status=status.HTTP_201_CREATED)
-    except Exception as e:
-      return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-    
-    
     
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])

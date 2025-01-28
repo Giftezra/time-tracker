@@ -4,6 +4,7 @@ import {
   ActiveTaskContextType,
   ActiveTaskType,
   ContractListType,
+  CreateTaskType,
   OpenTaskProps,
 } from "@/app/types/management/task";
 import { loadToken } from "@/app/utils/loadData";
@@ -17,6 +18,7 @@ import {
   useEffect,
   useCallback,
 } from "react";
+import { FeTurbulence } from "react-native-svg";
 
 /**
  * Create a context for the management task context.
@@ -39,12 +41,18 @@ const ManagementTaskProvider = ({
 }: {
   children: React.ReactNode;
 }) => {
+
+  // Data to be retrieved from the server
+  const [employeeList, setEmployeeList] = useState<EmployeeType[]>([]);
+  const [contractList, setContractList] = useState<ContractListType[]>([]);
+  const [unassignedTask, setUnassignedTask] = useState<OpenTaskProps[]>([]);
+  const [activeTasks, setActiveTasks] = useState<ActiveTaskType[]>([]);
+
   const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
   const [isTaskClicked, setIsTaskClicked] = useState<boolean>(false);
   const [employee, setEmployee] = useState<EmployeeType[] | undefined>(
     undefined
   );
-  const [activeTasks, setActiveTasks] = useState<ActiveTaskType[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const [modalVisible, setModalVisible] = useState(false);
@@ -59,19 +67,15 @@ const ManagementTaskProvider = ({
     minutes: 0,
   });
 
-  const [employeeList, setEmployeeList] = useState<EmployeeType[]>([]);
-  const [contractList, setContractList] = useState<ContractListType[]>([]);
 
   const [dates, setDates] = useState<Date[]>([]);
-  const [startTime, setStartTime] = useState({ hours: 0, minutes: 0 });
-  const [endTime, setEndTime] = useState({ hours: 0, minutes: 0 });
+  const [start_time, setStartTime] = useState({ hours: 0, minutes: 0 });
+  const [end_time, setEndTime] = useState({ hours: 0, minutes: 0 });
   const [dateVisible, setDateVisible] = useState(false);
   const [startTimeVisible, seStartTimeVisible] = useState(false);
   const [endTimeVisible, setEndTimeVisible] = useState(false);
 
-  const [unassignedTask, setUnassignedTask] = useState<
-    OpenTaskProps[] | undefined
-  >(undefined);
+ 
   const [selectedContract, setSelectedContract] =
     useState<ContractListType | null>(null);
   const [employeeSelected, setEmployeeSelected] = useState<EmployeeType | null>(
@@ -79,11 +83,44 @@ const ManagementTaskProvider = ({
   );
 
   /**
+   * This effect is used to fetch the data's from the servers.
+   * The data retrieved are the active tasks, the contracts and the employees list.
+   * The effect is called when the component mounts and is async to allow for the data to be fetched.
+   * The effect sets the active tasks, the contracts and the employees list in the state.
+   */
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const activeTasks = await get_active_tasks();
+        const contracts = await get_contract_list();
+        const employees = await get_available_employees();
+        const unassignedTasks = await get_unassigned_task();
+
+        // Set the active tasks, contracts, employees, unassigned_task in the state.
+        // Check if the data is available before setting the state.
+        if (activeTasks && contracts && employees && unassignedTasks) {
+          setActiveTasks(activeTasks);
+          setContractList(contracts);
+          setEmployeeList(employees);
+          setUnassignedTask(unassignedTasks);
+        }
+      }catch(e){
+        console.error("Error fetching data", e);
+      }finally{
+        setIsLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
+
+
+  /**
    * The method is used to confirm the time selected by the user, and
    * sets the time selected in the state.
    * The method is called only when the time time visible state is set to true.
    */
-  const onConfirmStartTime = useCallback(
+  const on_confirm_start_time = useCallback(
     ({ hours, minutes }: { hours: number; minutes: number }) => {
       seStartTimeVisible(false);
       setStartTime({ hours, minutes });
@@ -95,7 +132,7 @@ const ManagementTaskProvider = ({
   /**
    * Method is used to handle how the task end time is seleced by the user.
    */
-  const onConfirmEndTime = useCallback(
+  const on_confirm_end_time = useCallback(
     ({ hours, minutes }: { hours: number; minutes: number }) => {
       setEndTimeVisible(false);
       setEndTime({ hours, minutes });
@@ -108,29 +145,29 @@ const ManagementTaskProvider = ({
    * Method to confirm the date selected.
    * @param params is used to get the dates selected as an array
    */
-  const onConfirmDate = useCallback((params: any) => {
+  const on_confirm_date = useCallback((params: any) => {
     setDates(params.dates);
     setDateVisible(false);
     console.log("[on-change-multi]", params);
   }, []);
 
-  const onDateDismiss = useCallback(() => {
+  const on_date_dismiss = useCallback(() => {
     setDateVisible(false);
   }, [setDateVisible]);
 
-  const onStartTimeDismiss = useCallback(() => {
+  const on_start_time_dismiss = useCallback(() => {
     seStartTimeVisible(false);
   }, [seStartTimeVisible]);
 
-  const onEndTimeDismiss = useCallback(() => {
+  const on_end_time_dismiss = useCallback(() => {
     setEndTimeVisible(false);
   }, [setEndTimeVisible]);
 
-  const handleDateDisplay = () => {
+  const handle_date_display = () => {
     setDateVisible(!dateVisible);
   };
 
-  const handleTimeDisplay = () => {
+  const handle_time_display = () => {
     seStartTimeVisible(!startTimeVisible);
   };
 
@@ -139,14 +176,15 @@ const ManagementTaskProvider = ({
    * The server returns a list of only available contracts that has not been assigned to any employee.
    * @returns {Promise<ContractListType>}
    */
-  const getContractList = async (): Promise<ContractListType[] | undefined> => {
+  const get_contract_list = async (): Promise<
+    ContractListType[] | undefined
+  > => {
     const token = await loadToken();
     try {
       const response = await fetch(`${BASE_URL}/api/get/all/contracts/`, {
         method: "GET",
         headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
         },
       });
       /**
@@ -179,15 +217,14 @@ const ManagementTaskProvider = ({
    * Users are filtered by the request users company associations.
    * @returns {Promise<EmployeeType[]>}
    */
-  const getAvailableEmployees = async (): Promise<EmployeeType[]> => {
+  const get_available_employees = async (): Promise<EmployeeType[]> => {
     const token = await loadToken();
     console.log("entered token for create task ", token);
     try {
       const response = await fetch(`${BASE_URL}/api/get/available/employees/`, {
         method: "GET",
         headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application / json",
+          Authorization: `Bearer ${token}`
         },
       });
 
@@ -217,7 +254,7 @@ const ManagementTaskProvider = ({
    * @returns an array of active tasks
    * @throws an error if the token is not found or if the response is not ok.
    */
-  const getActiveTasks = async (): Promise<ActiveTaskType[]> => {
+  const get_active_tasks = async (): Promise<ActiveTaskType[]> => {
     const token = await loadToken();
     try {
       const response = await fetch(`${BASE_URL}/api/get/active/tasks/`, {
@@ -252,7 +289,7 @@ const ManagementTaskProvider = ({
    * The method is called when the component mounts and simply returns the open
    * tasks for further processing.
    */
-  const getUnassignedTask = async () => {
+  const get_unassigned_task = async () => {
     const token = await loadToken();
     try {
       if (!token) {
@@ -286,10 +323,77 @@ const ManagementTaskProvider = ({
     }
   };
 
+
+  /**
+   * The method is used to create a task when called.
+   * the method sends the task details to the server to be created and returns a promise of the task created.
+   * @implements the CreateTaskType type to define the structure of the task to be created.
+   * @param task is the object that contains the task details to be created.
+   * @returns a promise of the task created.
+   */
+  const create_shift = async (task: CreateTaskType) => {
+    const token = await loadToken();
+    try {
+      const response = await fetch(`${BASE_URL}/api/create/shift/`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(task),
+      });
+
+      // Check if the response is ok
+      if (!response.ok) {
+        throw new Error(`${response.status} ${response.statusText}`);
+      }
+
+      // Get the data retrieved from the server from the json response.
+      const data = await response.json();
+      if (!data) {
+      }
+    }catch(e){
+      console.log(e);
+    } 
+  }
+
+  /**
+   * This method is used to create a task when the user does not provide an employee.
+   * The method will target the 
+   */
+  const create_task = async (task: CreateTaskType) => {
+    const token = await loadToken();
+    try {
+      const response = await fetch(`${BASE_URL}/api/create/task/`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(task),
+      });
+
+      if (!response.ok) {
+        throw new Error(`${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      if (!data) {
+        console.log("No data returned");
+      }
+
+    } catch (e) {
+      console.log(e);
+    }
+  }
+
+
+
+
   /**
    * Method is used to send transit to the message screen given the employee id
    */
-  const gotoMessageScreen = (employee: EmployeeType) => {
+  const goto_message_screen = (employee: EmployeeType) => {
     if (!employee) {
       return;
     }
@@ -310,7 +414,7 @@ const ManagementTaskProvider = ({
    * @param employee is the object that contains the employee details
    *
    */
-  const handleIsTaskClicked = (employee: EmployeeType[]) => {
+  const handle_is_task_clicked = (employee: EmployeeType[]) => {
     setIsTaskClicked(!isTaskClicked);
     setEmployee(employee);
     setIsModalVisible(true);
@@ -322,30 +426,37 @@ const ManagementTaskProvider = ({
 
   const hideModal = () => setIsModalVisible(false);
 
-  const value = {
-    gotoMessageScreen,
-    handleIsTaskClicked,
+  const value: ActiveTaskContextType = {
+    employeeList,
+    contractList,
+    unassignedTask,
+    activeTasks,
+    goto_message_screen,
+    handle_is_task_clicked,
     isModalVisible,
     isTaskClicked,
     employee,
     hideModal,
-    renderPopupButton,
-    activeTasks,
+    render_popup_button: renderPopupButton,
     isLoading,
-    getContractList,
-    getAvailableEmployees,
-    onConfirmDate,
-    onConfirmStartTime,
-    onDateDismiss,
-    onStartTimeDismiss,
-    onEndTimeDismiss,
-    handleDateDisplay,
-    handleTimeDisplay,
+    get_contract_list,
+    get_available_employees,
+    onConfirmDate: on_confirm_date,
+    onConfirmStartTime: on_confirm_start_time,
+    onConfirmEndTime: on_confirm_end_time,
+    onDateDismiss: on_date_dismiss,
+    onStartTimeDismiss: on_start_time_dismiss,
+    onEndTimeDismiss: on_end_time_dismiss,
+    handle_date_display,
+    handle_time_display,
     dateVisible,
-    startTimeVisible,
+    start_time_visible: startTimeVisible,
     endTimeVisible,
-    getActiveTasks,
-    onConfirmEndTime,
+    create_shift,
+    create_task,
+    start_time,
+    end_time,
+    dates,
   };
 
   return (
