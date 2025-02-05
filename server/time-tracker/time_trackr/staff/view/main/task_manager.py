@@ -8,7 +8,7 @@ from django.shortcuts import get_object_or_404
 
 from management.models import Shift, Task
 
-from management.view.main.validation import staff_required
+from management.view.main.decorators import staff_required
     
      
 @api_view(['POST'])

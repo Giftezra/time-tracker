@@ -60,6 +60,8 @@ const otherEmployeeData = [
 
 const LeaderBoardComponent = () => {
   const background = useThemeColor({}, "white");
+  const otherText = useThemeColor({}, "otherText");
+  const innerBackground = useThemeColor({}, "innerBackground");
 
   return (
     <GestureHandlerRootView
@@ -96,20 +98,33 @@ const LeaderBoardComponent = () => {
           </View>
 
           <View style={styles.otherEmployeeButtonContainer}>
-            <TouchableOpacity style={styles.otherEmployeebtn}>
-              <Text style={styles.otherEmployeebtnText}>weekly</Text>
+            <TouchableOpacity
+              style={[
+                styles.otherEmployeebtn,
+                { backgroundColor: innerBackground },
+              ]}
+            >
+              <Text style={[styles.otherEmployeebtnText, { color: otherText }]}>
+                weekly
+              </Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.otherEmployeebtn}>
-              <Text style={styles.otherEmployeebtnText}>monthly</Text>
+            <TouchableOpacity
+              style={[
+                styles.otherEmployeebtn,
+                { backgroundColor: innerBackground },
+              ]}
+            >
+              <Text style={[styles.otherEmployeebtnText, { color: otherText }]}>
+                monthly
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
 
-        <FlatList
-          data={otherEmployeeData}
-          keyExtractor={(item) => item.id.toString()}
-          renderItem={({ item }) => (
+        <ScrollView showsVerticalScrollIndicator={false}>
+          {otherEmployeeData.map((item) => (
             <OtherEmployeeOnLeaderboard
+              key={item.id}
               id={item.id}
               name={item.name}
               email={item.email}
@@ -117,11 +132,11 @@ const LeaderBoardComponent = () => {
               role={item.role}
               taskCompleted={item.taskCompleted}
               onPress={() => {
-                console.log(`profile ${id}`); // naviagte to the user profile when clicked
+                console.log(`profile ${item.id}`); // naviagte to the user profile when clicked
               }}
             />
-          )}
-        />
+          ))}
+        </ScrollView>
       </View>
     </GestureHandlerRootView>
   );
@@ -173,10 +188,11 @@ const styles = StyleSheet.create({
     shadowRadius: 5,
     elevation: 5,
     shadowOpacity: 0.5,
+    borderWidth: 0.3,
   },
 
   otherEmployeebtnText: {
-    fontSize: 12,
+    fontSize: 14,
     fontFamily: "BarlowRegular",
     fontWeight: "400",
     textTransform: "lowercase",

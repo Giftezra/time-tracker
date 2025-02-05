@@ -1,13 +1,13 @@
 from django.contrib import admin
-from .models import User,Client,Company,Contracts,TaskComment,Task,Shift, Message, Conversation, ConversationParticipant, Identity
+from .models import User,Client,Company,Contracts,TaskComment,Task,Shift, Message, ChatRoom, Identity, Subscription, SubscriptionInvoice, BillingAddress
 
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
 # Register your models here.
 
 class UserAdmin(BaseUserAdmin):
-    list_display = ('email', 'first_name', 'last_name', 'is_staff', 'is_admin', 'is_owner', 'is_active')
-    list_filter = ('is_staff', 'is_owner', 'is_active')
+    list_display = ('email', 'first_name', 'last_name', 'is_employee', 'is_admin', 'is_owner', 'is_active')
+    list_filter = ('is_employee', 'is_admin', 'is_owner', 'is_active')
     search_fields = ('email', 'first_name', 'last_name')
     ordering = ('email',)
 
@@ -15,7 +15,7 @@ class UserAdmin(BaseUserAdmin):
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
         ('Personal Info', {'fields': ('first_name', 'last_name', 'phone', 'dob', 'address', 'city', 'postcode', 'country')}),
-        ('Permissions', {'fields': ('is_active', 'is_staff', 'is_admin', 'is_owner', 'is_superuser')}),
+        ('Permissions', {'fields': ('is_active', 'is_employee', 'is_admin', 'is_owner', 'is_superuser')}),
         ('Notifications', {'fields': ('allow_push_notification', 'allow_email_notification', 'allow_marketing_emails')}),
         ('Important Dates', {'fields': ('last_login', 'created_at')}),
     )
@@ -24,7 +24,7 @@ class UserAdmin(BaseUserAdmin):
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('email', 'password1', 'password2', 'first_name', 'last_name', 'is_staff', 'is_owner', 'is_active'),
+            'fields': ('email', 'password1', 'password2', 'first_name', 'last_name', 'is_employee', 'is_admin', 'is_owner', 'is_active'),
         }),
     )
 
@@ -39,7 +39,9 @@ admin.site.register(TaskComment)
 admin.site.register(Task)
 admin.site.register(Shift)
 admin.site.register(Message)
-admin.site.register(Conversation)
-admin.site.register(ConversationParticipant)
+admin.site.register(ChatRoom)
 admin.site.register(Identity)
+admin.site.register(Subscription)
+admin.site.register(SubscriptionInvoice)
+admin.site.register(BillingAddress)
 

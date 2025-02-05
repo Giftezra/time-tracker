@@ -1,0 +1,80 @@
+{% extends "emails/base_email.html" %} {% block title %}Welcome to {{
+company_name }}{% endblock %} {% block extra_styles %}
+<style>
+  .welcome-header {
+    color: #2c3e50;
+    margin-bottom: 20px;
+  }
+  .credentials-box {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 5px;
+    margin: 15px 0;
+    border: 1px solid #dee2e6;
+  }
+  .store-buttons {
+    text-align: center;
+    margin: 20px 0;
+    padding: 10px;
+  }
+  .store-buttons .button {
+    margin: 10px;
+    min-width: 200px;
+  }
+  .instructions {
+    margin: 20px 0;
+  }
+  .instructions ol {
+    padding-left: 20px;
+  }
+</style>
+{% endblock %} {% block content %}
+<h2 class="welcome-header">Welcome to {{ company_name }}!</h2>
+
+<p>Hello {{ first_name }},</p>
+
+<p>
+  You've been invited to join {{ company_name }}. To get started, here are your
+  login credentials:
+</p>
+
+<div class="credentials-box">
+  <p>
+    <strong>Email:</strong> {{ email }}<br />
+    <strong>Password:</strong> {{ temporary_password }} <br />
+    <strong>You were registered as {{role}}</strong>
+  </p>
+</div>
+
+<div class="instructions">
+  <p><strong>Getting Started:</strong></p>
+  <ol>
+    <li>Download our app from your preferred store</li>
+    <li>Open the app and sign in using the credentials above</li>
+    <li>
+      For security reasons, please change your password after your first login
+    </li>
+    <li>
+      Please note that only users with admin access can use the web interface
+    </li>
+  </ol>
+</div>
+
+<div class="store-buttons">
+  <a href="{{ app_store_url }}" class="button">Download from App Store</a>
+  <br /><br />
+  <a href="{{ play_store_url }}" class="button">Download from Play Store</a>
+</div>
+
+<p>
+  If you have any questions or need assistance, our support team is here to
+  help!
+</p>
+
+<p>
+  Best regards,<br />
+  The {{ company_name }} Team
+</p>
+{% endblock %} {% block footer %} {{ block.super }}
+<p>This is an automated message, please do not reply to this email.</p>
+{% endblock %}

@@ -14,6 +14,7 @@ import {
   useEffect,
 } from "react";
 import { th } from "react-native-paper-dates";
+import { useAuth } from "../authentication";
 
 const CalendarContext = createContext<CalendarContextType | undefined>(
   undefined
@@ -22,6 +23,7 @@ const CalendarContext = createContext<CalendarContextType | undefined>(
 const CalendarContextProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
+  const { axiosInstance } = useAuth();
   const [schedule, setSchedule] = useState<string>("shifts");
   const [timeFrame, setTimeFrame] = useState<string>("week");
   const [search, setSearch] = useState("");
@@ -74,60 +76,35 @@ const CalendarContextProvider: React.FC<{ children: ReactNode }> = ({
     setTimeFrame(value);
   };
 
-  /** The method is used to get all the list of employees from the server side using the fetch.
-   * The token is retrieved and passed to authenticate the user.
+  /** The method is used to get all the list of employees from the server side using axios.
    */
   const getAllEmployees = async (): Promise<EmployeeDetailsType[]> => {
-    const token = await loadToken();
-    console.log("calendar employee token:", token);
-    const response = await fetch(`${BASE_URL}/api/get/all/employees/`, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-    });
-
-    // Check the response status ok then throw an error if not
-    if (!response.ok) {
-      console.log("response not ok", response.statusText);
+    try {
+      const response = await axiosInstance.get("/api/get/all/employees/");
+      const data = response.data;
+      if (!data) {
+        throw new Error("No employees found");
+      }
+      return data.employees;
+    } catch (error) {
+      console.error("Error fetching employees:", error);
+      throw error;
     }
-
-    // Get the response in json format
-    const data = await response.json();
-    if (!data) {
-      throw new Error("No employees found");
-    }
-    const employees: EmployeeDetailsType[] = data.employees;
-    return employees;
   };
 
-  /** MEthod fetches all shifts that is associated with the request user only if they are an admin or the owner */
+  /** Method fetches all shifts that is associated with the request user only if they are an admin or the owner */
   const getAllShifts = async (): Promise<CalendarShiftType[]> => {
-    // Get the token from the local storage
-    const token = await loadToken();
-    console.log("calendar shift token:", token);
-    // Send the request to the server to get all the shifts
-    const response = await fetch(`$BASE_URL/api/get/shifts`, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-    });
-    // Check the response status ok then throw an error if not
-    if (!response.ok) {
-      console.log("response not ok", response.statusText);
-      throw new Error(response.statusText);
-      ``;
+    try {
+      const response = await axiosInstance.get("/api/get/shifts");
+      const data = response.data;
+      if (!data) {
+        throw new Error("No shifts found");
+      }
+      return data.shifts;
+    } catch (error) {
+      console.error("Error fetching shifts:", error);
+      throw error;
     }
-    /* Get the data, then validate it before retrieving its content */
-    const data = await response.json();
-    if (!data) {
-      throw new Error("No shifts found");
-    }
-    const shifts: CalendarShiftType[] = data.shifts;
-    return shifts;
   };
 
   /** This method is used to search the shifts for employees with the same id as those returned in the shift list.
@@ -141,26 +118,17 @@ const CalendarContextProvider: React.FC<{ children: ReactNode }> = ({
     return shift || "No shift";
   };
 
-  /** #
-   * This method is designed to cancel the shift with the given id.
-   * @params shift id is the id of the shift to be cancelled.
-   * The  */
+  /** Method to cancel a shift */
   const cancelShift = async (shiftId: number) => {
-    const token = await loadToken();
-    const response = await fetch(`${BASE_URL}/api/cancel/shift/`, {
-      method: "UPDATE",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ shift_id: shiftId }),
-    });
-
-    if (!response.ok) {
-      console.log("response not ok", response.statusText);
-      throw new Error(response.statusText);
+    try {
+      const response = await axiosInstance.put("/api/cancel/shift/", {
+        shift_id: shiftId,
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Error cancelling shift:", error);
+      throw error;
     }
-    const data = await response.json();
   };
 
   const value = {

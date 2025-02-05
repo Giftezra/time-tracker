@@ -1,22 +1,36 @@
-import { UserResponseType } from "./onboarding"
+import { UserResponseType } from "./onboarding";
 
-export type OrderSummaryType = {
-  employee? :number,
-  cost_per_employee? :number,
-  duration : number,
+export interface OrderSummaryType {
+  employee?: number;
+  cost_per_employee?: number;
+  duration: number;
+};
+
+
+export interface ContractChartDataType {
+  value: number;
+  label: string;
+  frontColor?: string;
+  topLabelComponent?: React.FC<ContractChartTopLevelComponentType>;
+};
+
+
+export interface ContractChartTopLevelComponentType {
+  totalContracts?: number;
+};
+
+
+export interface ContractStatistic {
+  value: number;
+  label?: string;
+  spacing?: number;
+  labelWidth?: number;
+  frontColor: string;
 }
 
-export type ContractChartDataType = {
-  value: number,
-  label: string,
-  frontColor?: string,  
-  topLabelComponent?: React.FC<ContractChartTopLevelComponentType>
-}
-
-export type ContractChartTopLevelComponentType = {
-  totalContracts?: number,
-}
-
-export type DashboardContextType = {
-  user: UserResponseType | null,
+export interface DashboardContextType {
+  user: any;
+  contractStats: ContractStatistic[];
+  isLoading: boolean;
+  fetchContractStatistics: (year?: number) => Promise<ContractStatistic[]>;
 }

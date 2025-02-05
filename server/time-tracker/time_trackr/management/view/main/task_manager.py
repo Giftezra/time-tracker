@@ -5,7 +5,7 @@ from rest_framework import status
 
 from django.shortcuts import get_object_or_404
 
-from .validation import admin_required
+from .decorators import admin_required
 from ...models import User, Task, Shift, Contracts, Client, User
 
 from datetime import datetime, timedelta
@@ -135,50 +135,55 @@ def create_shift(request):
 @permission_classes([IsAuthenticated])
 @admin_required
 def get_all_contracts(request):
-    """ The method is used to retrieve all the clients that are associated with a the request user's company.
-    The method only returns the contracts that are not completed or expired."""
-
-    contract_list = [] # Create a list to store all the contracts
-
-
-    company = None # Create an empty company object to store the company details
+    contract_list = []
     try:
-      # Get the company object from the request user
-      owner_company = get_object_or_404(Company, owner=request.user)
-      staff_company = get_object_or_404(Staff, user=request.user)
+        # The issue is here - get_object_or_404 will raise 404 if not found
+        # We should use try/except for each separately
+        try:
+            owner_company = Company.objects.get(owner=request.user)
+            company = owner_company
+        except Company.DoesNotExist:
+            try:
+                staff = Staff.objects.get(user=request.user)
+                company = staff.company
+            except Staff.DoesNotExist:
+                return Response(
+                    {'error': 'User is not associated with any company'}, 
+                    status=status.HTTP_404_NOT_FOUND
+                )
 
-      # Check if the user is an owner or a staff member and assign the company object to the company variable
-      if owner_company:
-        company = owner_company
-      elif staff_company:
-        company = staff_company.company
-      else:
-        return Response({'error': 'User does not have a company'}, status=status.HTTP_400_BAD_REQUEST)
-    
-    # Get all the clients associated with the company
-    # Get the company associated with the client
-    # Filter the contracts that are not completed or expired
-    # Append the contract details to the contract list
-      clients = Client.objects.filter(company=company)
-      contracts = Contracts.objects.filter(client__in=clients, is_completed=False)
-      for contract in contracts:
-        contract_list.append({
-          'client_name': contract.client.name,
-          'contract_id': contract.id,
-          'contract_name': contract.name,
-          'contract_address': contract.address,
-          'contract_postcode': contract.postcode,
-          'contract_city': contract.city,
-        })
-        # Return the contract list if the contracts are found
-        # Return corresponding error message if no contracts are found
-      return Response({'contract_list': contract_list}, status=status.HTTP_200_OK)
-    except Client.DoesNotExist:
-      return Response({'error': 'No contracts found'}, status=status.HTTP_400_BAD_REQUEST)
-    except contract.DoesNotExist:
-      return Response({'error': 'No contracts found'}, status=status.HTTP_400_BAD_REQUEST)
+        if not company:
+            return Response(
+                {'error': 'No company found for user'}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        clients = Client.objects.filter(company=company)
+        contracts = Contracts.objects.filter(client__in=clients, is_completed=False)
+
+        if not contracts.exists():
+            return Response(
+                {'contract_list': []},  # Return empty list instead of error
+                status=status.HTTP_200_OK
+            )
+
+        for contract in contracts:
+            contract_list.append({
+                'client_name': contract.client.name,
+                'contract_id': contract.id,
+                'contract_name': contract.name,
+                'contract_address': contract.address,
+                'contract_postcode': contract.postcode,
+                'contract_city': contract.city,
+            })
+        return Response({'contract_list': contract_list}, status=status.HTTP_200_OK)
+        
     except Exception as e:
-      return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        print(f"Error in get_all_contracts: {str(e)}")  # Add server-side logging
+        return Response(
+            {'error': str(e)}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
 
 
 @api_view(['GET'])

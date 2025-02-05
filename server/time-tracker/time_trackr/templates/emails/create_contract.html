@@ -1,0 +1,88 @@
+{% extends "emails/base_email.html" %} {% block content %}
+<tr>
+  <td style="padding: 20px; font-family: Arial, sans-serif">
+    <h2 style="color: #333; margin-bottom: 20px">New Contract Created</h2>
+
+    <p style="color: #666; font-size: 16px; line-height: 1.5">
+      A new contract has been created with the following details:
+    </p>
+
+    <table style="width: 100%; margin: 20px 0; border-collapse: collapse">
+      <tr>
+        <td
+          style="
+            padding: 10px;
+            background-color: #f8f8f8;
+            border: 1px solid #ddd;
+            width: 150px;
+          "
+        >
+          <strong>Client Name:</strong>
+        </td>
+        <td style="padding: 10px; border: 1px solid #ddd">{{ client_name }}</td>
+      </tr>
+            <tr>
+        <td
+          style="
+            padding: 10px;
+            background-color: #f8f8f8;
+            border: 1px solid #ddd;
+            width: 150px;
+          "
+        >
+          <strong>Contract Name:</strong>
+        </td>
+        <td style="padding: 10px; border: 1px solid #ddd">{{ contract_name }}</td>
+      </tr>
+      <tr>
+        <td
+          style="
+            padding: 10px;
+            background-color: #f8f8f8;
+            border: 1px solid #ddd;
+          "
+        >
+          <strong>Contract Duration:</strong>
+        </td>
+        <td style="padding: 10px; border: 1px solid #ddd">
+          {{ contract_duration }}
+        </td>
+      </tr>
+      <tr>
+        <td
+          style="
+            padding: 10px;
+            background-color: #f8f8f8;
+            border: 1px solid #ddd;
+          "
+        >
+          <strong>Start Date:</strong>
+        </td>
+        <td style="padding: 10px; border: 1px solid #ddd">{{ start_date }}</td>
+      </tr>
+      <tr>
+        <td
+          style="
+            padding: 10px;
+            background-color: #f8f8f8;
+            border: 1px solid #ddd;
+          "
+        >
+          <strong>End Date:</strong>
+        </td>
+        <td style="padding: 10px; border: 1px solid #ddd">{{ end_date }}</td>
+      </tr>
+    </table>
+
+    <p style="color: #666; font-size: 16px; line-height: 1.5">
+      You can view the full contract details by logging into your account by clicking the link below:
+      <a href="{{ login_url }}">Login</a>
+    </p>
+
+    <p style="color: #666; font-size: 14px; margin-top: 20px">
+      If you have any questions or concerns, please don't hesitate to contact
+      our support team.
+    </p>
+  </td>
+</tr>
+{% endblock %}

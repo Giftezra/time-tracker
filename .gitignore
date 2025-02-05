@@ -7,3 +7,6 @@ node_modules/
 # Ignore logs
 *.log
 .vscode
+
+# Ignore Redis database files
+*.rdb

@@ -17,11 +17,9 @@ const EmployeeContext = createContext<EmployeeContextType | undefined>(
   undefined
 );
 
-export default function EmployeeProvider({
-  children,
-}: {
+const EmployeeProvider: React.FC<{
   children: ReactNode;
-}) {
+}> = ({ children }) => {
   const [employees, setEmployees] = useState<Employee>();
   const [employeelist, setEmployeeList] = useState<EmployeeDetailsType[]>();
   const [loading, setLoading] = useState<boolean>(false);
@@ -187,7 +185,7 @@ export default function EmployeeProvider({
       {children}
     </EmployeeContext.Provider>
   );
-}
+};
 
 export const useEmployeeContext = () => {
   const context = useContext(EmployeeContext);
@@ -198,3 +196,5 @@ export const useEmployeeContext = () => {
   }
   return context;
 };
+
+export default EmployeeProvider;

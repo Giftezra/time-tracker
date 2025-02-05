@@ -6,13 +6,11 @@ import { GestureHandlerRootView, ScrollView } from "react-native-gesture-handler
 import { useAuth } from "@/app/context/management/authentication";
 import WebDashboard from "./webDashboard";
 import MobileDashboard from "./mobileDashboard";
-import { DashboardProvider } from "@/app/context/management/dashboard/dashboardContext";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 const MainManagementDashboard = () => {
   return (
     <SafeAreaProvider>
-      <DashboardProvider>
         <GestureHandlerRootView
           style={styles.mainContainer}
         >
@@ -26,7 +24,6 @@ const MainManagementDashboard = () => {
             </View>
           )}
         </GestureHandlerRootView>
-      </DashboardProvider>
     </SafeAreaProvider>
   );
 };

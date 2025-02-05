@@ -6,7 +6,7 @@ import {
   Text,
   View,
 } from "react-native";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { BarChart } from "react-native-gifted-charts";
 
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -14,6 +14,7 @@ import { Colors } from "react-native/Libraries/NewAppScreen";
 import { transform } from "@babel/core";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useAuth } from "@/app/context/management/authentication";
+import { useDashboardContext } from "@/app/context/management/dashboard/dashboardContext";
 
 const renderTitle = () => {
   return (
@@ -65,113 +66,26 @@ const renderTitle = () => {
 };
 
 const ContractChartComponent = ({ width }: { width: number }) => {
-  // Get the window width from the auth context
   const { windowWidth, screenWidth } = useAuth();
   const highlight = useThemeColor({}, "highlight");
+  const { contractStats, fetchContractStatistics, isLoading } =
+    useDashboardContext();
 
   const [showOverlay, setShowOverlay] = useState(false);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+
+  useEffect(() => {
+    fetchContractStatistics(selectedYear);
+  }, [selectedYear]);
 
   const handleOverlay = () => setShowOverlay(!showOverlay);
 
-  const barData = [
-    {
-      value: 40,
-      label: "Jan",
-      spacing: 2,
-      labelWidth: 20,
-      frontColor: "#177AD5",
-    },
-    { value: 20, frontColor: "#ED6665" },
-    {
-      value: 50,
-      label: "Feb",
-      spacing: 2,
-      labelWidth: 20,
-      frontColor: "#177AD5",
-    },
-    { value: 40, frontColor: "#ED6665" },
-    {
-      value: 75,
-      label: "Mar",
-      spacing: 2,
-      labelWidth: 30,
-      frontColor: "#177AD5",
-    },
-    { value: 25, frontColor: "#ED6665" },
-    {
-      value: 30,
-      label: "Apr",
-      spacing: 2,
-      labelWidth: 30,
-      frontColor: "#177AD5",
-    },
-    { value: 20, frontColor: "#ED6665" },
-    {
-      value: 60,
-      label: "May",
-      spacing: 2,
-      labelWidth: 20,
-      frontColor: "#177AD5",
-    },
-    { value: 40, frontColor: "#ED6665" },
-    {
-      value: 65,
-      label: "Jun",
-      spacing: 2,
-      labelWidth: 20,
-      frontColor: "#177AD5",
-    },
-    { value: 30, frontColor: "#ED6665" },
-    {
-      value: 40,
-      label: "Jul",
-      spacing: 2,
-      labelWidth: 20,
-      frontColor: "#177AD5",
-    },
-    { value: 20, frontColor: "#ED6665" },
-    {
-      value: 50,
-      label: "Aug",
-      spacing: 2,
-      labelWidth: 20,
-      frontColor: "#177AD5",
-    },
-    { value: 40, frontColor: "#ED6665" },
-    {
-      value: 75,
-      label: "Sept",
-      spacing: 2,
-      labelWidth: 30,
-      frontColor: "#177AD5",
-    },
-    { value: 25, frontColor: "#ED6665" },
-    {
-      value: 30,
-      label: "Oct",
-      spacing: 2,
-      labelWidth: 30,
-      frontColor: "#177AD5",
-    },
-    { value: 20, frontColor: "#ED6665" },
-    {
-      value: 60,
-      label: "Nov",
-      spacing: 2,
-      labelWidth: 20,
-      frontColor: "#177AD5",
-    },
-    { value: 40, frontColor: "#ED6665" },
-    {
-      value: 65,
-      label: "Dec",
-      spacing: 2,
-      labelWidth: 20,
-      frontColor: "#177AD5",
-    },
-    { value: 30, frontColor: "#ED6665" },
-  ];
+  const handleYearChange = (year: number) => {
+    setSelectedYear(year);
+    setShowOverlay(false);
+  };
 
+  // Calculate bar width based on screen size
   const calcBarWidth = () => {
     return windowWidth < screenWidth * 0.5
       ? Math.max(5, width * 0.01, 10)
@@ -181,14 +95,19 @@ const ContractChartComponent = ({ width }: { width: number }) => {
 
   return (
     <View style={styles.maincontainer}>
-      {/* Floating container for data selection */}
       {showOverlay && (
         <View style={styles.overlay}>
-          <Pressable style={styles.pressable}>
-            <Text style={styles.pressableText}>month</Text>
+          <Pressable
+            style={styles.pressable}
+            onPress={() => handleYearChange(selectedYear - 1)}
+          >
+            <Text style={styles.pressableText}>{selectedYear - 1}</Text>
           </Pressable>
-          <Pressable style={styles.pressable}>
-            <Text style={styles.pressableText}>year</Text>
+          <Pressable
+            style={styles.pressable}
+            onPress={() => handleYearChange(selectedYear)}
+          >
+            <Text style={styles.pressableText}>{selectedYear}</Text>
           </Pressable>
         </View>
       )}
@@ -216,7 +135,7 @@ const ContractChartComponent = ({ width }: { width: number }) => {
 
       <View style={styles.chartContainer}>
         <BarChart
-          data={barData}
+          data={contractStats}
           barWidth={Math.max(7, width * 0.02)}
           spacing={Math.max(5, width * 0.02)}
           labelWidth={Math.max(20, width * 0.02)}
@@ -299,7 +218,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
 
-  xAxisLabelTextStyle : {
+  xAxisLabelTextStyle: {
     fontSize: Platform.OS === "web" ? 8 : 10,
     columnGap: 5,
     color: "black",

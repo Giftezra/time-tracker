@@ -1,4 +1,4 @@
-from .models import User, Client, Company, Contracts, Identity, TaskComment, Task, Shift, Conversation, ConversationParticipant, Message
+from .models import User, Client, Company, Contracts, Identity, TaskComment, Task, Shift, Message, ChatRoom
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework.exceptions import ValidationError
@@ -8,8 +8,22 @@ class UserSerializer(serializers.ModelSerializer):
   """ The user serializer is a model serializer that serializes the user model"""
   class Meta:
     model = User
-    fields = '__all__'
-  
+    fields = ['id', 'email', 'first_name', 'last_name', 'is_employee', 'password']
+    extra_kwargs = {'password': {'write_only': True}}
+
+  def validate(self, data):
+    # Instead of replacing the data, just return the original data
+    return data
+
+  def create(self, validated_data):
+    # Handle password hashing when creating a new user
+    password = validated_data.pop('password', None)
+    user = super().create(validated_data)
+    if password:
+      user.set_password(password)
+      user.save()
+    return user
+
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
   def validate(self, attrs):
@@ -49,7 +63,6 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
           'company_website': company.website if company else '',
           'company_email': company.email if company else '',
           'is_owner': user.is_owner,
-          'is_staff': user.is_staff,
           'is_admin': user.is_admin,
           'is_superuser': user.is_superuser,
           'date_hired': date_hired,
@@ -102,9 +115,9 @@ class ShiftSerializer(serializers.ModelSerializer):
         fields = '__all__'
         
         
-class ConversationSerializer(serializers.ModelSerializer):
+class ChatRoomSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Conversation
+        model = ChatRoom
         fields = '__all__'
         
 
@@ -112,9 +125,4 @@ class MessageSerializer(serializers.ModelSerializer):
   class Meta:
     model = Message
     fields = '__all__'
-    
-
-class ConversationParticipantSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ConversationParticipant
-        fields = '__all__'
+  

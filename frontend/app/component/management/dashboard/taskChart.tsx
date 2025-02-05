@@ -108,8 +108,6 @@ const TaskChartComponent = ({
       <PieChart
         data={pieData}
         donut
-        shadow
-        shadowColor="red"
         shadowWidth={5}
         focusOnPress
         showGradient={true}

@@ -8,7 +8,7 @@ from rest_framework.permissions import IsAuthenticated
 
 from ...models import Availability
 from ...serializer import AvailabilitySerializer
-from management.view.main.validation import staff_required
+from management.view.main.decorators import staff_required
 
 from django.shortcuts import get_object_or_404
 

@@ -1,0 +1,70 @@
+{% extends "emails/base_email.html" %} {% block content %}
+<div class="email-container">
+  <h2>New Client Created</h2>
+
+  <div class="notification-content">
+    <p>A new client has been added to the system.</p>
+
+    <div class="client-details">
+      <h3>Client Details:</h3>
+      <table>
+        <tr>
+          <td><strong>Client Name:</strong></td>
+          <td>{{ client_name }}</td>
+        </tr>
+        <tr>
+          <td><strong>Contact Number:</strong></td>
+          <td>{{ client_contact_number }}</td>
+        </tr>
+        <tr>
+          <td><strong>Email:</strong></td>
+          <td>{{ client_email }}</td>
+        </tr>
+      </table>
+
+      <div class="services-section">
+        <h3>Services:</h3>
+        <ul>
+          <li>{{ services }}</li>
+        </ul>
+      </div>
+      <p style="padding-top: 10px">You can view the full client details by logging into your account by clicking the link below:</p>
+      <a  href="{{ login_url }}">Login</a>
+    </div>
+  </div>
+</div>
+
+<style>
+  .email-container {
+    padding: 20px;
+    font-family: Arial, sans-serif;
+  }
+
+  .notification-content {
+    margin: 20px 0;
+  }
+
+  .client-details {
+    background-color: #f5f5f5;
+    padding: 15px;
+    border-radius: 5px;
+  }
+
+  table {
+    margin: 10px 0;
+  }
+
+  td {
+    padding: 5px 15px 5px 0;
+  }
+
+  .services-section {
+    margin-top: 15px;
+  }
+
+  ul {
+    margin: 0;
+    padding-left: 20px;
+  }
+</style>
+{% endblock %}

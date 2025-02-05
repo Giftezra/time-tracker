@@ -1,22 +1,52 @@
-import { DashboardContextType } from "@/app/types/management/dashboard";
+import {
+  ContractStatistic,
+  DashboardContextType,
+} from "@/app/types/management/dashboard";
 import { UserResponseType } from "@/app/types/management/onboarding";
-import { loadUserData } from "@/app/utils/loadData";
-import { user } from "@/app/utils/loadData";
+import { loadUserData, userData } from "@/app/utils/loadData";
 import { useContext, createContext, useState, useEffect } from "react";
+import { useAuth } from "../authentication";
 
 const DashboardContext = createContext<DashboardContextType | undefined>(
   undefined
 );
 
-export const DashboardProvider = ({
+
+const DashboardProvider = ({
   children,
 }: {
   children: React.ReactNode;
 }) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [contractStats, setContractStats] = useState<ContractStatistic[]>([]);
+
+  // Get the axios instance
+  const { axiosInstance } = useAuth();
+
+  const fetchContractStatistics = async (year?: number) => {
+    setIsLoading(true);
+    try {
+      const response = await axiosInstance.get(
+        "api/get/contract/statistics/",
+        {
+          params: { year },
+        }
+      );
+      setContractStats(response.data.statistics);
+      return response.data.statistics;
+    } catch (error) {
+      console.error("Error fetching contract statistics:", error);
+      return [];
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const value = {
-    user,
+    user: userData(),
+    contractStats,
+    isLoading,
+    fetchContractStatistics,
   };
 
   return (
@@ -35,3 +65,5 @@ export const useDashboardContext = () => {
   }
   return context;
 };
+
+export default DashboardProvider;

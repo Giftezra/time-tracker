@@ -1,20 +1,24 @@
-export type EmployeeOnboardingType = {
+import { AxiosInstance } from "axios";
+
+export interface EmployeeOnboardingType {
   firstName: string;
   lastName: string;
   email: string;
   phone: string;
   dob: string;
   department: string;
+
   role: string;
   password: string;
-}
+};
 
-export type OwnerOnboardingType = {
+export interface OwnerOnboardingType {
   first_name: string;
   last_name: string;
   email: string;
   phone: string;
   dob: string;
+
   password: string;
   postcode?: string;
   address?: string;
@@ -27,19 +31,19 @@ export type OwnerOnboardingType = {
   company_helpline?: string | undefined;
   company_website?: string | undefined;
   comapny_email?: string | undefined;
-
-}
+};
 
 /**
  * This type describe the return data from the server.
  */
-export type UserResponseType = {
+export interface UserResponseType {
   id: number;
   email: string;
   phone?: string | undefined;
   dob?: string | null;
   first_name?: string;
   last_name?: string;
+
   address?: string | null;
   postcode?: string | null;
   date_hired?: string | null;
@@ -54,42 +58,45 @@ export type UserResponseType = {
   comapny_email?: string | undefined;
   password: string;
   is_owner?: boolean;
-  is_staff?: boolean;
+  is_employee?: boolean;
   is_admin?: boolean;
   is_superuser?: boolean;
   is_active?: boolean;
   allow_push_notification?: boolean;
   allow_email_notification?: boolean;
   allow_marketing_emails?: boolean;
+
   groups?: any[];
   user_permissions?: any[];
-}
+};
 
 /**
  * This type describes the return for staffs from the server.
  * Extends the UserResponseType.
  */
-export type StaffResponseType = UserResponseType & {
+export interface StaffResponseType extends UserResponseType {
   department: string | null;
   role: string | null;
   date_hired: string;
-}
+};
+
 
 /**
  * This type describes the constraints for the onboarding context and provider.
  */
-export type AuthContextType = {
+export interface AuthContextType {
   passwordError: boolean;
   token: string | null;
+  refreshToken: string | null;
   isAuthenticated: boolean;
   role: string | null;
   user: UserResponseType | null;
-  login: (email:string, password:string) => void;
+  login: (email: string, password: string) => void;
   handleUserInput: (key: string, value: string) => void;
   registerOwner: (Data: OwnerOnboardingType) => void;
   ownerData: OwnerOnboardingType | null;
   fontsLoaded: boolean;
-  loginDetails: {email: string, password: string};  
+  loginDetails: { email: string; password: string };
   handleLoginInput: (key: string, value: string) => void;
   signOut: () => void;
   registrationMessage: string;
@@ -98,4 +105,5 @@ export type AuthContextType = {
   setDateClicked: (value: boolean) => void;
   screenWidth: number;
   windowWidth: number;
+  axiosInstance: AxiosInstance;
 }

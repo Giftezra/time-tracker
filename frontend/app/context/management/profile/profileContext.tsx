@@ -14,11 +14,7 @@ const ProfileContext = createContext<ProfileContextType | undefined>(undefined);
  * The provider is meant to provide the context to the profile component only for consumption.
  *
  */
-export default function ProfileProvider({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+const ProfileProvider = ({ children }: { children: React.ReactNode }) => {
   const [notificationToggle, setNotificationToggle] = useState<string[]>([]);
   const [userDetails, setUserDetails] = useState<ProfileUpdateType | null>(
     null
@@ -115,7 +111,7 @@ export default function ProfileProvider({
   return (
     <ProfileContext.Provider value={value}>{children}</ProfileContext.Provider>
   );
-}
+};
 
 export function useProfileContext() {
   const context = useContext(ProfileContext);
@@ -124,3 +120,5 @@ export function useProfileContext() {
   }
   return context;
 }
+
+export default ProfileProvider;

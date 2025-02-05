@@ -1,0 +1,90 @@
+{% extends "emails/base_email.html" %} {% block title %}Welcome to {{
+company_name }}{% endblock %} {% block extra_styles %}
+<style>
+  .welcome-header {
+    color: #2c3e50;
+    margin-bottom: 20px;
+    font-size: 24px;
+    padding: 10px;
+  }
+
+  .welcome-text {
+    color: #34495e;
+    line-height: 1.6;
+    margin-bottom: 25px;
+  }
+
+  .app-downloads {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    margin: 25px 0;
+  }
+
+  .download-button {
+    display: inline-block;
+    background-color: #3498db;
+    color: white;
+    padding: 12px 25px;
+    text-decoration: none;
+    border-radius: 5px;
+    margin: 10px;
+    transition: background-color 0.3s;
+  }
+
+  .download-button:hover {
+    background-color: #2980b9;
+  }
+
+  .getting-started {
+    margin-top: 25px;
+    padding: 15px;
+    border-left: 4px solid #3498db;
+  }
+</style>
+{% endblock %} {% block content %}
+<h2 class="welcome-header">Welcome to Time Trackr</h2>
+
+<div class="welcome-text">
+  <p>
+    Thank you for choosing our time tracking solution for your business. We're
+    excited to help you manage your workforce more efficiently!
+  </p>
+
+  <p>With our platform, you can:</p>
+  <ul>
+    <li>Track employee work hours in real-time</li>
+    <li>Manage schedules and shifts</li>
+    <li>Generate detailed reports</li>
+    <li>Handle time-off requests</li>
+    <li>And much more!</li>
+  </ul>
+</div>
+
+<div class="app-downloads">
+  <h3>Download Our Mobile Apps</h3>
+  <p>Get started by downloading our mobile apps:</p>
+
+  <a href="{{ ios_app_link }}" class="download-button"> Download for iOS </a>
+
+  <a href="{{ android_app_link }}" class="download-button">
+    Download for Android
+  </a>
+</div>
+
+<div class="getting-started">
+  <h3>Getting Started</h3>
+  <p>To begin setting up your company's time tracking system:</p>
+  <ol>
+    <li>Complete your company profile</li>
+    <li>Add your employees to the system</li>
+    <li>Set up work schedules and departments</li>
+    <li>Share the mobile app with your team</li>
+  </ol>
+
+  <p>
+    If you need any assistance, our support team is here to help at {{
+    support_email }}.
+  </p>
+</div>
+{% endblock %}

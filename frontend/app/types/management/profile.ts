@@ -1,4 +1,4 @@
-export type ProfileContextType = {
+export interface ProfileContextType {
   notificationToggle: string[];
   handleToggle: (toggle: string) => void;
   handlePhone: (phone: string) => void;
@@ -8,13 +8,14 @@ export type ProfileContextType = {
   updateProfile: (data:ProfileUpdateType) => void;
 }
 
-export type ProfileUpdateType = {
+export interface ProfileUpdateType {
   firstname?: string;
   lastname?: string;
   email?: string;
   phone?: string;
   dob?: string;
   company_name?: string;
+
   company_address?: string;
   company_postcode?: string;
   company_website?: string;

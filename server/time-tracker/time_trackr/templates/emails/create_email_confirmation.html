@@ -1,0 +1,60 @@
+{% extends "emails/base_email.html" %} {% block content %}
+<tr>
+  <td style="padding: 20px; font-family: Arial, sans-serif">
+    <h2 style="color: #333; margin-bottom: 20px">
+      Company Creation Confirmation
+    </h2>
+
+    <p style="color: #666; font-size: 16px; line-height: 1.5">
+      Congratulations! Your company has been successfully created in our system.
+    </p>
+
+    <div
+      style="
+        background-color: #f8f9fa;
+        border-radius: 5px;
+        padding: 20px;
+        margin: 20px 0;
+      "
+    >
+      <h3 style="color: #333; margin-bottom: 15px">Company Details:</h3>
+
+      <p style="margin: 10px 0">
+        <strong>Company Name:</strong> {{ name }}
+      </p>
+
+      <p style="margin: 10px 0">
+        <strong>Registration Number:</strong> {{ registration_number }}
+      </p>
+
+      <p style="margin: 10px 0">
+        <strong>Service Helpline:</strong> {{ service_helpline }}
+      </p>
+
+      <p style="margin: 10px 0"><strong>Email:</strong> {{ email }}</p>
+    </div>
+
+    <p style="color: #666; font-size: 16px; line-height: 1.5">
+      You can now start managing your company through our platform. If you have
+      any questions or need assistance, please don't hesitate to contact our
+      support team.
+    </p>
+
+    <div style="margin-top: 30px">
+      <a
+        href="{{ login_url }}"
+        style="
+          background-color: #007bff;
+          color: white;
+          padding: 12px 25px;
+          text-decoration: none;
+          border-radius: 5px;
+          display: inline-block;
+        "
+      >
+        Access Your Dashboard
+      </a>
+    </div>
+  </td>
+</tr>
+{% endblock %}

@@ -19,6 +19,7 @@ import {
   useCallback,
 } from "react";
 import { FeTurbulence } from "react-native-svg";
+import { useAuth } from "../authentication";
 
 /**
  * Create a context for the management task context.
@@ -41,6 +42,7 @@ const ManagementTaskProvider = ({
 }: {
   children: React.ReactNode;
 }) => {
+  const { axiosInstance } = useAuth();
 
   // Data to be retrieved from the server
   const [employeeList, setEmployeeList] = useState<EmployeeType[]>([]);
@@ -67,7 +69,6 @@ const ManagementTaskProvider = ({
     minutes: 0,
   });
 
-
   const [dates, setDates] = useState<Date[]>([]);
   const [start_time, setStartTime] = useState({ hours: 0, minutes: 0 });
   const [end_time, setEndTime] = useState({ hours: 0, minutes: 0 });
@@ -75,7 +76,6 @@ const ManagementTaskProvider = ({
   const [startTimeVisible, seStartTimeVisible] = useState(false);
   const [endTimeVisible, setEndTimeVisible] = useState(false);
 
- 
   const [selectedContract, setSelectedContract] =
     useState<ContractListType | null>(null);
   const [employeeSelected, setEmployeeSelected] = useState<EmployeeType | null>(
@@ -93,7 +93,7 @@ const ManagementTaskProvider = ({
       setIsLoading(true);
       try {
         const activeTasks = await get_active_tasks();
-        const contracts = await get_contract_list();
+        const contracts = await getContractList();
         const employees = await get_available_employees();
         const unassignedTasks = await get_unassigned_task();
 
@@ -105,15 +105,14 @@ const ManagementTaskProvider = ({
           setEmployeeList(employees);
           setUnassignedTask(unassignedTasks);
         }
-      }catch(e){
+      } catch (e) {
         console.error("Error fetching data", e);
-      }finally{
+      } finally {
         setIsLoading(false);
       }
-    }
+    };
     fetchData();
   }, []);
-
 
   /**
    * The method is used to confirm the time selected by the user, and
@@ -176,37 +175,22 @@ const ManagementTaskProvider = ({
    * The server returns a list of only available contracts that has not been assigned to any employee.
    * @returns {Promise<ContractListType>}
    */
-  const get_contract_list = async (): Promise<
-    ContractListType[] | undefined
-  > => {
-    const token = await loadToken();
+  const getContractList = async (): Promise<ContractListType[] | undefined> => {
     try {
-      const response = await fetch(`${BASE_URL}/api/get/all/contracts/`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`
-        },
+      const response = await axiosInstance.get("/api/get/all/contracts/");
+      console.log("[getContractList] Raw response:", response);
+      const contracts: ContractListType[] = response.data.contract_list;
+      console.log("[getContractList] Success:", {
+        status: response.status,
+        contracts,
       });
-      /**
-       * If the response status is 200, get the returnned data from the server.
-       * return the data if it exists. or return an error message.
-       */
-
-      if (!response.ok) {
-        throw new Error(`${response.status} ${response.statusText}`);
-      }
-      // Get the data retrieved from the server from the json response.
-      const data = await response.json();
-      // If no data is returned, return an empty array.
-      if (!data) {
-        return [];
-      }
-      // Return the contracts from the server
-      const contracts: ContractListType[] = data.contract_list;
-      console.log("contract_list", contracts);
       return contracts;
-    } catch (error) {
-      console.error("Error fetching contracts:", error);
+    } catch (error: any) {
+      console.error("[getContractList] Error:", {
+        status: error.response?.status,
+        message: error.message,
+        details: error.response?.data,
+      });
       throw error;
     }
   };
@@ -218,177 +202,112 @@ const ManagementTaskProvider = ({
    * @returns {Promise<EmployeeType[]>}
    */
   const get_available_employees = async (): Promise<EmployeeType[]> => {
-    const token = await loadToken();
-    console.log("entered token for create task ", token);
     try {
-      const response = await fetch(`${BASE_URL}/api/get/available/employees/`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`
-        },
+      const response = await axiosInstance.get("/api/get/available/employees/");
+      const employees: EmployeeType[] = response.data.employees;
+      console.log("[get_available_employees] Success:", {
+        status: response.status,
+        employees,
       });
-
-      if (!response.ok) {
-        throw new Error(`${response.status} ${response.statusText}`);
-      }
-      // Get the data retrieved from the server from the json response.
-      const data = await response.json();
-      // Check data validity
-      if (!data) {
-        return [];
-      }
-
-      const employees: EmployeeType[] = data.employees;
-      console.log("employees", employees);
       return employees;
-    } catch (error) {
-      console.error("Error fetching employees:", error);
+    } catch (error: any) {
+      console.error("[get_available_employees] Error:", {
+        status: error.response?.status,
+        message: error.message,
+        details: error.response?.data,
+      });
       throw error;
     }
   };
 
   /**
    * Method is designed to return all active and ongoing tasks from the server.
-   * It uses the users token stored in the local storage to authenticate the user.
-   * It then returns a promise of the active tasks type
    * @returns an array of active tasks
-   * @throws an error if the token is not found or if the response is not ok.
    */
   const get_active_tasks = async (): Promise<ActiveTaskType[]> => {
-    const token = await loadToken();
     try {
-      const response = await fetch(`${BASE_URL}/api/get/active/tasks/`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      const response = await axiosInstance.get("/api/get/active/tasks/");
+      const tasks: ActiveTaskType[] = response.data.active_tasks;
+      console.log("[get_active_tasks] Success:", {
+        status: response.status,
+        tasks,
       });
-
-      if (!response.ok) {
-        throw new Error(`${response.status} ${response.statusText}`);
-      }
-
-      // Get the data retrieved from the server from the json response.
-      const data = await response.json();
-      if (!data) {
-        // Check data validity or return an empty array
-        return [];
-      }
-
-      const tasks: ActiveTaskType[] = data.active_tasks;
       return tasks;
-    } catch (error) {
-      console.error("Error fetching active tasks:", error);
+    } catch (error: any) {
+      console.error("[get_active_tasks] Error:", {
+        status: error.response?.status,
+        message: error.message,
+        details: error.response?.data,
+      });
       throw error;
     }
   };
 
   /**
    * Method is used to retrieve all the unassigned tasks from the server.
-   * Only users with admina and owner roles can access this method and route.
-   * The method is called when the component mounts and simply returns the open
-   * tasks for further processing.
+   * Only users with admin and owner roles can access this method and route.
    */
   const get_unassigned_task = async () => {
-    const token = await loadToken();
     try {
-      if (!token) {
-        throw new Error("Token is not available");
-      }
-
-      const response = await fetch(`${BASE_URL}/api/get/unassigned/tasks/`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      const response = await axiosInstance.get("/api/get/unassigned/tasks/");
+      const unassignedTasks: OpenTaskProps[] = response.data.unassigned_tasks;
+      console.log("[get_unassigned_task] Success:", {
+        status: response.status,
+        unassignedTasks,
       });
-
-      if (!response.ok) {
-        const status = response.status;
-        if (status === 401) {
-          throw new Error("Unauthorized");
-        }
-      }
-
-      // Retrieve the data
-      const data = await response.json();
-
-      if (!data) {
-        return [];
-      }
-
-      const unassignedTasks: OpenTaskProps[] = data.unassigned_tasks;
-    } catch (e) {
-      console.log(e);
+      return unassignedTasks;
+    } catch (error: any) {
+      console.error("[get_unassigned_task] Error:", {
+        status: error.response?.status,
+        message: error.message,
+        details: error.response?.data,
+      });
+      throw error;
     }
   };
 
-
   /**
    * The method is used to create a task when called.
-   * the method sends the task details to the server to be created and returns a promise of the task created.
-   * @implements the CreateTaskType type to define the structure of the task to be created.
    * @param task is the object that contains the task details to be created.
-   * @returns a promise of the task created.
    */
   const create_shift = async (task: CreateTaskType) => {
-    const token = await loadToken();
     try {
-      const response = await fetch(`${BASE_URL}/api/create/shift/`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(task),
+      const response = await axiosInstance.post("/api/create/shift/", task);
+      console.log("[create_shift] Success:", {
+        status: response.status,
+        data: response.data,
       });
-
-      // Check if the response is ok
-      if (!response.ok) {
-        throw new Error(`${response.status} ${response.statusText}`);
-      }
-
-      // Get the data retrieved from the server from the json response.
-      const data = await response.json();
-      if (!data) {
-      }
-    }catch(e){
-      console.log(e);
-    } 
-  }
+      return response.data;
+    } catch (error: any) {
+      console.error("[create_shift] Error:", {
+        status: error.response?.status,
+        message: error.message,
+        details: error.response?.data,
+      });
+      throw error;
+    }
+  };
 
   /**
    * This method is used to create a task when the user does not provide an employee.
-   * The method will target the 
    */
   const create_task = async (task: CreateTaskType) => {
-    const token = await loadToken();
     try {
-      const response = await fetch(`${BASE_URL}/api/create/task/`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(task),
+      const response = await axiosInstance.post("/api/create/task/", task);
+      console.log("[create_task] Success:", {
+        status: response.status,
+        data: response.data,
       });
-
-      if (!response.ok) {
-        throw new Error(`${response.status} ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      if (!data) {
-        console.log("No data returned");
-      }
-
-    } catch (e) {
-      console.log(e);
+      return response.data;
+    } catch (error: any) {
+      console.error("[create_task] Error:", {
+        status: error.response?.status,
+        message: error.message,
+        details: error.response?.data,
+      });
+      throw error;
     }
-  }
-
-
-
+  };
 
   /**
    * Method is used to send transit to the message screen given the employee id
@@ -439,7 +358,7 @@ const ManagementTaskProvider = ({
     hideModal,
     render_popup_button: renderPopupButton,
     isLoading,
-    get_contract_list,
+    get_contract_list: getContractList,
     get_available_employees,
     onConfirmDate: on_confirm_date,
     onConfirmStartTime: on_confirm_start_time,

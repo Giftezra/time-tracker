@@ -1,10 +1,11 @@
-export type EmployeeAnalyticProps = {
+export interface EmployeeAnalyticProps {
   id: string;
   role: string;
   name: string;
   email: string;
   phone: string;
   dob: string;
+
   image: any | undefined;
   date_hired: string;
   department: string;
@@ -15,7 +16,7 @@ export type EmployeeAnalyticProps = {
   total_number_of_project_completed: number;
 };
 
-export type EmployeeDetailsType = {
+export interface EmployeeDetailsType {
   id: string;
   role: string;
   name: string;
@@ -25,7 +26,8 @@ export type EmployeeDetailsType = {
   is_active: boolean;
 };
 
-export type Employee = {
+
+export interface Employee {
   first_name?: string;
   last_name?: string;
   email?: string;
@@ -39,13 +41,15 @@ export type Employee = {
   employmentType?: string;
 };
 
-export type EmployeeType = {
+export interface EmployeeType {
   employee_name: string;
   employee_id: string;
 };
 
-export type EmployeeContextType = {
+
+export interface EmployeeContextType {
   employees: Employee | undefined;
+
   handleAddEmployeeInput: (key: string, value: string) => void;
   submitEmployee: () => Promise<boolean | undefined>;
   error: Employee | undefined;

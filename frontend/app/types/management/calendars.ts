@@ -2,7 +2,7 @@ import { Status } from "@/constants/Status";
 import { Dayjs } from "dayjs";
 import { EmployeeDetailsType } from "./employee";
 
-export type CalendarContextType = {
+export interface CalendarContextType {
   schedule: string;
   timeFrame: string;
   search: string;
@@ -16,13 +16,14 @@ export type CalendarContextType = {
   weekRange: string;
 };
 
-export type CalendarShiftType = {
+export interface CalendarShiftType {
   shiftId?: number;
   employeeId?: number;
   starttime?: string;
   endtime?: string;
   status?: string;
   client?: string;
+
   task_serial?: string;
   startdate?: string;
   loading?: boolean;

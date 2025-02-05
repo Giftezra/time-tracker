@@ -1,15 +1,15 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import React, {useEffect, useState} from "react";
-import {useDashboardContext} from "@/app/context/management/dashboard/dashboardContext";
+import React, { useEffect, useState } from "react";
+import { useDashboardContext } from "@/app/context/management/dashboard/dashboardContext";
 import { router } from "expo-router";
-import {userData} from "@/app/utils/loadData";
+import { userData } from "@/app/utils/loadData";
 
 const DashboardWelcomeHeader = () => {
   const user = userData();
-  
+
   const [role, setRole] = useState<string>("");
 
-  useEffect(() => { 
+  useEffect(() => {
     if (user) {
       setRole(user.is_owner ? "Owner" : "Staff");
     }
@@ -35,7 +35,7 @@ const DashboardWelcomeHeader = () => {
         {role === "Owner" && (
           <Pressable
             style={styles.button}
-            onPress={() => router.navigate("/management/profile/main")}
+            onPress={() => router.navigate("/management/checkout/main")}
           >
             <Text style={styles.buttonText}>go to payment page</Text>
           </Pressable>
@@ -50,12 +50,11 @@ const DashboardWelcomeHeader = () => {
             : "check your daily schedule"}
         </Text>
 
-        {/* NAvigate to the calendar screen*/}
         <Pressable
-          style={[styles.button]}
+          style={styles.calendarButton}
           onPress={() => router.navigate("/management/calendar/main")}
         >
-          <Text style={[styles.buttonText]}>today's calender</Text>
+          <Text style={styles.buttonText}>today's calender</Text>
         </Pressable>
       </View>
     </View>
@@ -96,6 +95,7 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     borderRadius: 10,
     marginTop: 10,
+    width: "100%",
   },
 
   todaystaskText: {
@@ -122,5 +122,19 @@ const styles = StyleSheet.create({
     fontFamily: "BarlowRegular",
     fontWeight: "500",
     textTransform: "capitalize",
+  },
+
+  calendarButton: {
+    padding: 10,
+    borderRadius: 5,
+    borderWidth: 0.3,
+    alignItems: "center",
+    marginTop: 10,
+    elevation: 5,
+    shadowRadius: 5,
+    shadowOpacity: 0.7,
+    shadowColor: "grey",
+    width: "100%",
+    backgroundColor: "white",
   },
 });

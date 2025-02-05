@@ -3,18 +3,27 @@ from rest_framework.permissions import IsAuthenticated
 from ...models import User,Company,Shift
 from ...serializer import UserSerializer
 
-from .validation import admin_required
+from .decorators import admin_required
 
 from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 from rest_framework import status
+from staff.models import Staff
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 @admin_required
 def get_shifts(request):
     try:
-        company = request.user.company
+        # Check if the user is an admin or the owner and get the company associated with the user
+        if request.user.is_owner:
+            company = get_object_or_404(Company, owner=request.user)
+        elif request.user.is_admin:
+            employee = get_object_or_404(Staff, user=request.user)
+            company = employee.company
+        else:
+            return Response({'error': 'You are not authorized to access this resource'}, status=status.HTTP_403_FORBIDDEN)
+            
         # Get all contracts and tasksassociated with the company using the filter method to filter the associated company shifts.
         shifts = Shift.objects.filter(task__contract__company=company)
         

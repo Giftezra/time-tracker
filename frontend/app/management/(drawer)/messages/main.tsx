@@ -22,6 +22,7 @@ import {
 } from "react-native-gesture-handler";
 import SideComponent from "@/app/component/helper/sideComponent";
 import { useAuth } from "@/app/context/management/authentication";
+import { useMessageContext } from "@/app/context/management/messages/messageContext";
 
 type ConversationProps = {
   conversation_id: string;
@@ -30,6 +31,7 @@ type ConversationProps = {
 
 const MainAdminMessages = () => {
   const { windowWidth } = useAuth();
+  const { deleteMessage } = useMessageContext();
 
   const [conversationId, setConversationId] = useState<ConversationProps>({
     conversation_id: "",
@@ -56,6 +58,17 @@ const MainAdminMessages = () => {
    */
   const handleConversationId = (id: string, reciepient: string) => {
     setConversationId({ conversation_id: id, reciepient: reciepient });
+  };
+
+  /**
+   * Handle message deletion when swiped
+   */
+  const handleMessageDelete = async (messageId: string) => {
+    try {
+      await deleteMessage(messageId);
+    } catch (error) {
+      console.error("Error deleting message:", error);
+    }
   };
 
   return (
@@ -88,6 +101,7 @@ const MainAdminMessages = () => {
                       conversation_id={conversationId.conversation_id}
                       reciepient={conversationId.reciepient}
                       closeModal={handleCloseModal}
+                      onMessageDelete={handleMessageDelete}
                     />
                   </View>
                 )}
@@ -118,6 +132,7 @@ const MainAdminMessages = () => {
                   conversation_id={conversationId?.conversation_id}
                   reciepient={conversationId?.reciepient}
                   closeModal={handleCloseModal}
+                  onMessageDelete={handleMessageDelete}
                 />
               </View>
             </Modal>
@@ -141,7 +156,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     padding: 1,
-    
   },
 
   conversationComponentContainer: {

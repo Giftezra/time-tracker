@@ -5,8 +5,10 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 export const userData = () => {
   const [user, setUser] = useState<UserResponseType | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+
   useEffect(() => {
     const fetchUserData = async () => {
+      setLoading(true);
       try {
         const user = await loadUserData();
         if (user) {
@@ -53,8 +55,6 @@ export const loadToken = async (): Promise<string | null> => {
 
 export const storeData = async (data: any) => {
   try {
-    await AsyncStorage.setItem("token", data.access);
-    await AsyncStorage.setItem("refreshToken", data.refresh);
     /**
      * Store the user data returned from the server in the async storage using the key 'user' and type UserResponseType.
      */
@@ -63,5 +63,15 @@ export const storeData = async (data: any) => {
     await AsyncStorage.setItem("user", user_value);
   } catch (error) {
     console.error("Error saving data: ", error);
+  }
+};
+
+export const getData = async () => {
+  try {
+    const jsonValue = await AsyncStorage.getItem("@auth_data");
+    return jsonValue != null ? JSON.parse(jsonValue) : null;
+  } catch (e) {
+    console.error("Error reading auth data:", e);
+    return null;
   }
 };

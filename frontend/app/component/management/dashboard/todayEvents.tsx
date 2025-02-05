@@ -44,7 +44,8 @@ const TodayEventsComponent = ({ event }: { event: string[] }) => {
         <Text
           style={[{ fontSize: 12, fontFamily: "BarlowLight" }, { color: text }]}
         >
-          {firstEvent}{" "}
+          <Text>{firstEvent}</Text>
+          <Text> </Text>
           <Text>{`and ${eventTotal} event${eventTotal > 1 ? "s" : ""}`}</Text>
         </Text>
       </View>

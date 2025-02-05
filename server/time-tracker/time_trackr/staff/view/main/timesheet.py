@@ -6,7 +6,7 @@ from rest_framework import status
 from datetime import datetime, timedelta
 from management.serializer import ShiftSerializer
 from management.models import Shift
-from management.view.main.validation import staff_required
+from management.view.main.decorators import staff_required
 
 
 

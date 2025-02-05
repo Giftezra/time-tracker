@@ -2,6 +2,7 @@ from pathlib import Path
 from datetime import timedelta
 from django.conf import settings
 from corsheaders.defaults import default_headers
+import os
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -23,6 +24,7 @@ ALLOWED_HOSTS = ['*']
 # Application definition
 
 INSTALLED_APPS = [
+    'daphne',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -36,7 +38,19 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'corsheaders',
     'django_celery_results',
+    'channels',
 ]
+
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),
+]
+
+# Media files
+MEDIA_URL = 'media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
@@ -63,7 +77,10 @@ ROOT_URLCONF = 'time_trackr.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [
+            BASE_DIR / 'templates',
+            BASE_DIR / 'management/templates',
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -181,13 +198,38 @@ CELERY_RESULT_BACKEND = 'django-db'
 CELERY_CACHE_BACKEND = 'django-cache'
 
 
+SUPPORT_EMAIL = 'support@time-trackr.com'
+IOS_APP_LINK = 'https://apps.apple.com/app/id6444188699'
+ANDROID_APP_LINK = 'https://play.google.com/store/apps/details?id=com.time_trackr.app'
+
+
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
-
-STATIC_URL = 'static/'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'management.User'
+
+# Add ASGI application configuration
+ASGI_APPLICATION = 'time_trackr.asgi.application'
+
+# Add Channel Layers configuration for Redis
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [('127.0.0.1', 6379)],
+        },
+    },
+}
+
+# Add these settings for admin customization
+ADMIN_SITE_HEADER = "Time Trackr Administration"
+ADMIN_SITE_TITLE = "Time Trackr Admin Portal"
+ADMIN_INDEX_TITLE = "Welcome to Time Trackr Admin"
+
+# Stripe settings
+STRIPE_PUBLISHABLE_KEY='pk_test_51NK8SeKs3nf7cE2WBk18TrdJPOLqvJzYyxmlHFFmGNUmk78TsVVimg3YnGSVLkMhYoQWr1yBR21cbdoKfrb8zmmP00QauAcvF1'
+STRIPE_SECRET_KEY='sk_test_51NK8SeKs3nf7cE2WRwSOo4LpE6wazvJczTeW9OLMo2c3zaMTHI1VETCkjkgHONF1U94NjdQllGBAT3nl12NvIcjU00SNCgpfVS'

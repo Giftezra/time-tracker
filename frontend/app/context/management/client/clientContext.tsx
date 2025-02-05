@@ -18,10 +18,13 @@ import {
   useEffect,
 } from "react";
 import { Alert, Linking, Platform } from "react-native";
+import { useAuth } from "../authentication";
 
 const ClientContext = createContext<ClientContextType | undefined>(undefined);
 
-const ClientProvider = ({ children }: { children: ReactNode }) => {
+const ClientProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const clientContractDetailsData: ClientDetailsType[] = [
     {
       clients: {
@@ -159,11 +162,15 @@ const ClientProvider = ({ children }: { children: ReactNode }) => {
     ContractDetailsType | undefined
   >(undefined);
 
+  // Import the axios instance from the authentication context
+  const { axiosInstance } = useAuth();
+
   /**
    * This hook is used to update the countdown timer for the task start time.
    * The countdown timer is updated only when the jobdetail is available.
    * if no job details are available, it sets the countdown to null and set the time elapsed to "No job details available"
    */
+
   useEffect(() => {
     const updateCountdown = () => {
       if (clientJobDetailsData.length === 0 || !clientJobDetailsData[0]) {
@@ -207,7 +214,7 @@ const ClientProvider = ({ children }: { children: ReactNode }) => {
       } catch (error) {
         console.error("Error fetching details:", error);
         alert("Error fetching details");
-      }finally{
+      } finally {
         setIsLoading(false);
       }
     };
@@ -234,28 +241,12 @@ const ClientProvider = ({ children }: { children: ReactNode }) => {
    * Collects the inputed data and sends it to the server.
    */
   const createContract = async () => {
-    const token = await loadToken();
-    if (!token) {
-      return;
-    }
-
-    // Use the try catch to ensure no data is lost in the process that would throw an unprecedented error.
     try {
-      const response = await fetch(`${BASE_URL}/api/create/contract/`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(newContract),
-      });
-      if (!response.ok) {
-        throw new Error(
-          `Error creating contract: ${response.statusText} with status ${response.status}`
-        );
-      }
-
-      const responseData: ClientDetailsResponseType = await response.json();
+      const response = await axiosInstance.post(
+        "/api/create/contract/",
+        newContract
+      );
+      const responseData: ClientDetailsResponseType = response.data;
       console.log("Contract created", responseData);
       return responseData;
     } catch (error) {
@@ -273,35 +264,13 @@ const ClientProvider = ({ children }: { children: ReactNode }) => {
     token: string
   ): Promise<ClientDetailsType[]> => {
     console.log("fetching client details", token);
-    // Create a fetch request to the server to get the client list
     if (!token) {
       return [];
     }
 
     try {
-      const response = await fetch(`${BASE_URL}/api/get/client/contracts/`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      // Check the response ok.
-      // Throw error if response is not ok
-      if (!response.ok) {
-        throw new Error(
-          `error fetching client details: ${response.statusText}`
-        );
-      }
-
-      // Get the data from the response
-      // Check the data is valid not null.
-      const responseData = await response.json();
-      if (!responseData) {
-        return [];
-      }
-      // Return the data
-      const data: ClientDetailsType[] = responseData.client_details;
+      const response = await axiosInstance.get("/api/get/client/contracts/");
+      const data: ClientDetailsType[] = response.data.client_details;
       return data;
     } catch (error) {
       console.error("Error fetching client details", error);
@@ -314,37 +283,12 @@ const ClientProvider = ({ children }: { children: ReactNode }) => {
    * @param token is the token to be used for the authentication of the user.
    * @returns a promise of the job details type which is the list of job details returned from the server.
    */
-  const fetchContractAndJobDetails = async (
-    token: string
-  ): Promise<JobDetailsType[]> => {
-    console.log("fetching job details", token);
-    if (!token) {
-      return [];
-    }
-    /**
-     * Get the response from the server and check if the response is ok before
-     * returning the data.
-     */
+  const fetchContractAndJobDetails = async (): Promise<JobDetailsType[]> => {
     try {
-      const response = await fetch(
-        `${BASE_URL}/api/get/contract/shifts/details/`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
+      const response = await axiosInstance.get(
+        "/api/get/contract/shifts/details/"
       );
-      if (!response.ok) {
-        throw new Error(`Error fetching job details: ${response.statusText}`);
-      }
-
-      const responseData = await response.json();
-      if (!responseData) {
-        return [];
-      }
-      const data: JobDetailsType[] = responseData.client_contract_details;
+      const data: JobDetailsType[] = response.data.client_contract_details;
       return data;
     } catch (error) {
       console.error("Error fetching job details", error);
@@ -357,29 +301,22 @@ const ClientProvider = ({ children }: { children: ReactNode }) => {
    * The method will return an empty array if no valid data is returned from the server.
    */
   const fetchAllClients = async (): Promise<ClientDetail[]> => {
-    // Check if the token is valid
-    const token = await loadToken();
-    // Fetch the client list from the server
-    const response = await fetch(`${BASE_URL}/api/get/all/clients/`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    // Check if the response is ok
-    if (!response.ok) {
-      throw new Error(`Error fetching clients: ${response.statusText}`);
-    }
-    // Get the data from the response
-    const responseData = await response.json();
-    if (!responseData) {
+    try {
+      const response = await axiosInstance.get("/api/get/all/clients/");
+      // Check if the response is valid
+      if (!response.data) {
+        // Check the response status
+        if (response.status === 401) {
+          // Sign out the user
+        }
+        return [];
+      }
+      const data: ClientDetail[] = response.data.clients;
+      return data;
+    } catch (error) {
+      console.error("Error fetching clients", error);
       return [];
     }
-
-    // Return the data
-    const data: ClientDetail[] = responseData.clients;
-    return data;
   };
 
   /** Method is used to handle the calling of a staff member assigned to task directly.

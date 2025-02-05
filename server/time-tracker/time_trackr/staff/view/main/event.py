@@ -9,7 +9,7 @@ from django.shortcuts import get_object_or_404
 from management.models import Shift
 from management.serializer import ShiftSerializer
 
-from management.view.main.validation import staff_required
+from management.view.main.decorators import staff_required
 
 
 

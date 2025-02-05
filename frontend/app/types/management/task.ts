@@ -9,7 +9,7 @@ export type ResponseType = {
   message:string;
 }
 
-export type ActiveTaskType = {
+export interface ActiveTaskType {
   shift_id: string;
   task_serial: string;
   client_name: string;
@@ -17,18 +17,21 @@ export type ActiveTaskType = {
   start_time: string;
 };
 
-export type OpenTaskContextType = {
+
+export interface OpenTaskContextType {
   getUnassignedTask: () => Promise<OpenTaskProps[] | undefined>;
   filteredTask: OpenTaskProps[] | undefined;
   unassignedTask: OpenTaskProps[] | undefined;
 };
 
-export type OpenTaskProps = {
+
+export interface OpenTaskProps {
   task_id: string;
   contract_name: string;
   task_serial: string;
   contract_address: string;
   contract_postcode: string;
+
   task_description: string;
   task_status: string;
   task_start_date: string;
@@ -38,12 +41,13 @@ export type OpenTaskProps = {
   task_created_at: string;
 };
 
-export type TaskDetailsProps = {
+export interface TaskDetailsProps {
   id: string;
   name: string;
   address: string;
   postcode: string;
   start_time: string;
+
   end_time: string;
   start_date: string;
   information: string;
@@ -51,39 +55,43 @@ export type TaskDetailsProps = {
   serial: number;
 };
 
-export type EmployeeDetailsComponentType = {
+export interface EmployeeDetailsComponentType {
   id: string;
   name: string;
   email: string;
   phone: string;
 };
 
-export type CreateTaskType = {
+
+export interface CreateTaskType {
   task_serial?: string;
   description?: string;
   contract_id?: string;
   employee_id?: string;
   start_time: { hours: number; minutes: number };
+
   end_time: { hours: number; minutes: number };
   dates: Date[];
   amount?: number;
 };
 
-export type ContractListType = {
+export interface ContractListType {
   contract_id?: string;
   contract_name?: string;
   contract_address?: string;
   contract_postcode?: string;
   contract_city?: string;
+
   client_name?: string;
 };
 
-export type ActiveTaskContextType = {
+export interface ActiveTaskContextType {
   contractList: ContractListType[] | undefined;
   unassignedTask: OpenTaskProps[] | undefined;
   activeTasks: ActiveTaskType[] | undefined;
   employeeList: EmployeeType[] | undefined;
   goto_message_screen: (employee: EmployeeType) => void;
+
   handle_is_task_clicked: (employee: EmployeeType[]) => void;
   isModalVisible: boolean;
   isTaskClicked: boolean;

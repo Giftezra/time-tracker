@@ -13,9 +13,9 @@ const LeaderBoardCardComponent = ({
   role: string;
   totalTasks: number;
 }) => {
-    const text = useThemeColor({}, "text");
-    const othertext = useThemeColor({}, "otherText");
-    const innerBackground = useThemeColor({}, "innerBackground");
+  const text = useThemeColor({}, "text");
+  const othertext = useThemeColor({}, "otherText");
+  const innerBackground = useThemeColor({}, "innerBackground");
 
   return (
     <View style={[styles.maincontainer, { backgroundColor: innerBackground }]}>
@@ -42,7 +42,7 @@ const LeaderBoardCardComponent = ({
           <Text style={[styles.buttonText, { color: othertext }]}>profile</Text>
         </Pressable>
 
-        <View>|</View>
+        <Text style={{ color: othertext }}>|</Text>
 
         <Pressable style={styles.buttons}>
           <Text style={[styles.buttonText, { color: othertext }]}>message</Text>

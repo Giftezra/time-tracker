@@ -1,7 +1,8 @@
 import { EmployeeDetailsComponentType } from "./task";
 
-export type ContractDetailsType = {
+export interface ContractDetailsType {
   contract_id?: string;
+
   name?: string;
   address?: string;
   postcode?: string;
@@ -14,37 +15,42 @@ export type ContractDetailsType = {
   contract_type?: string;
 };
 
-export type ClientDetail = {
+export interface ClientDetail {
   client_id: string;
   name: string;
   address: string;
   postcode: string;
   email: string;
+
   phone: string;
   city: string;
   country: string;
 };
 
-export type ClientDetailsType = {
+export interface ClientDetailsType {
   clients: ClientDetail;
   contracts: ContractDetailsType[];
 };
 
-export type ResponseType = {
+
+export interface ResponseType {
   message: string;
 }
 
-export type ClientDetailsResponseType = {
+
+export interface ClientDetailsResponseType {
   response: Promise<ResponseType>;
 }
 
-export type ClientContextType = {
+
+export interface ClientContextType {
   jobDetailsData: JobDetailsType[];
   clientDetailsData: ClientDetailsType[];
   handlePhone: (phone: string) => void;
   handleMessage: (id: string, name: string) => void;
   calculateTaskStartTime: (jobDetails: JobDetailsType) => number;
   countDown: string | null;
+
   timeElapsed: string;
   newContract: ContractDetailsType | undefined;
   handleAddContractInput: (key: string, value:string) => void;
@@ -52,13 +58,14 @@ export type ClientContextType = {
   clients: ClientDetail[];
   isLoading: boolean;
 };
-
-export type JobDetailsType = {
+  
+export interface JobDetailsType {
   client?: string;
   task_serial?: string;
   task_start_time?: string;
   task_end_time?: string;
   task_start_date?: string;
+
   pay?: number;
   contract_name?: string;
   contract_address?: string;

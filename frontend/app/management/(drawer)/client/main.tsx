@@ -35,17 +35,6 @@ const MainClient = () => {
     Dimensions.get("screen").width
   );
 
-  useEffect(() => {
-    const updateLayout = () => {
-      setWindowWidth(Dimensions.get("window").width);
-      setScreenWidth(Dimensions.get("screen").width);
-    };
-    let listener = Dimensions.addEventListener("change", updateLayout);
-    return () => {
-      listener.remove();
-    };
-  }, [windowWidth, screenWidth]);
-
   const [toggleView, setToggleView] = useState<string>("assigned tasks");
   /**
    * Sets the toggle view to the value of the params
