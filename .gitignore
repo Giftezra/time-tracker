@@ -3,6 +3,7 @@ node_modules/
 
 # Ignore environment variables
 .env
+server/time-tracker/env/
 
 # Ignore logs
 *.log
