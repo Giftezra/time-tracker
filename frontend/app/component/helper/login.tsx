@@ -14,7 +14,7 @@ import {
 } from "react-native-gesture-handler";
 import { router } from "expo-router";
 import { AntDesign, MaterialIcons } from "@expo/vector-icons";
-import { useAuth } from "@/app/context/management/authentication";
+import { useAuth } from "@/app/context/authentication";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import TextInputComponent from "./textInput";
 

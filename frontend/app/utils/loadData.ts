@@ -28,7 +28,6 @@ export const userData = () => {
   return user;
 };
 
-
 export const loadUserData = async (): Promise<UserResponseType | null> => {
   try {
     const user = await AsyncStorage.getItem("user");
@@ -42,36 +41,18 @@ export const loadUserData = async (): Promise<UserResponseType | null> => {
   }
 };
 
-export const loadToken = async (): Promise<string | null> => {
-  try {
-    const token = await AsyncStorage.getItem("token");
-    console.log("Token retrieved ok", token);
-    return token;
-  } catch (error) {
-    console.error("Error loading token", error);
-    return null;
-  }
-};
-
 export const storeData = async (data: any) => {
   try {
+    await AsyncStorage.setItem("token", data.access);
+    await AsyncStorage.setItem("refresh", data.refresh);
     /**
      * Store the user data returned from the server in the async storage using the key 'user' and type UserResponseType.
      */
+
     const user: UserResponseType = data.user;
     const user_value = JSON.stringify(user);
     await AsyncStorage.setItem("user", user_value);
   } catch (error) {
     console.error("Error saving data: ", error);
-  }
-};
-
-export const getData = async () => {
-  try {
-    const jsonValue = await AsyncStorage.getItem("@auth_data");
-    return jsonValue != null ? JSON.parse(jsonValue) : null;
-  } catch (e) {
-    console.error("Error reading auth data:", e);
-    return null;
   }
 };

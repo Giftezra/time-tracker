@@ -1,20 +1,19 @@
-export interface EmployeeAnalyticProps {
+export interface EmployeeAnalyticInterface {
   id: string;
   role: string;
   name: string;
   email: string;
   phone: string;
   dob: string;
-
-  image: any | undefined;
+  image?: any | undefined;
   date_hired: string;
   department: string;
-  number_of_hours: number;
+  total_hours_worked: number;
   number_of_unassigned_tasks: number;
   number_of_assigned_tasks: number;
   total_cancellations: number;
   total_number_of_project_completed: number;
-};
+}
 
 export interface EmployeeDetailsType {
   id: string;
@@ -24,8 +23,8 @@ export interface EmployeeDetailsType {
   phone: string;
   date_hired: string;
   is_active: boolean;
-};
-
+  dob?: string;
+}
 
 export interface Employee {
   first_name?: string;
@@ -39,13 +38,12 @@ export interface Employee {
   role?: string;
   password?: string;
   employmentType?: string;
-};
+}
 
 export interface EmployeeType {
   employee_name: string;
   employee_id: string;
-};
-
+}
 
 export interface EmployeeContextType {
   employees: Employee | undefined;
@@ -59,4 +57,4 @@ export interface EmployeeContextType {
   setSearch: (value: string) => void;
   filteredEmployeeList: EmployeeDetailsType[] | undefined;
   filterEmployeeList: () => void;
-};
+}

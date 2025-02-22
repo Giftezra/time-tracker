@@ -8,7 +8,7 @@ class UserSerializer(serializers.ModelSerializer):
   """ The user serializer is a model serializer that serializes the user model"""
   class Meta:
     model = User
-    fields = ['id', 'email', 'first_name', 'last_name', 'is_employee', 'password']
+    fields = ['id', 'email', 'first_name', 'last_name', 'password']
     extra_kwargs = {'password': {'write_only': True}}
 
   def validate(self, data):
@@ -34,6 +34,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
           raise e
 
       user = self.user
+      print("user", user);
 
       # Check if the user is a staff member and has a Staff profile
       company = None
@@ -64,6 +65,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
           'company_email': company.email if company else '',
           'is_owner': user.is_owner,
           'is_admin': user.is_admin,
+          'is_employee': user.is_employee,
           'is_superuser': user.is_superuser,
           'date_hired': date_hired,
           'is_active': user.is_active,

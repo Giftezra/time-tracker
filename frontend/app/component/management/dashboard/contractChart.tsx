@@ -13,7 +13,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Colors } from "react-native/Libraries/NewAppScreen";
 import { transform } from "@babel/core";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { useAuth } from "@/app/context/management/authentication";
+import { useAuth } from "@/app/context/authentication";
 import { useDashboardContext } from "@/app/context/management/dashboard/dashboardContext";
 
 const renderTitle = () => {
@@ -73,10 +73,6 @@ const ContractChartComponent = ({ width }: { width: number }) => {
 
   const [showOverlay, setShowOverlay] = useState(false);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-
-  useEffect(() => {
-    fetchContractStatistics(selectedYear);
-  }, [selectedYear]);
 
   const handleOverlay = () => setShowOverlay(!showOverlay);
 

@@ -11,21 +11,19 @@ import React, { useState } from "react";
 import { AntDesign, MaterialIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { useAuth } from "@/app/context/management/authentication";
+import { useAuth } from "@/app/context/authentication";
 import { userData } from "@/app/utils/loadData";
 import UserDetailsComponent from "../management/profile/user details";
 
 const SideComponent = () => {
-  const { screenWidth, windowWidth } = useAuth();
-  const [profilePopup, setProfilePopup] = useState<boolean>(false);
+  const user = userData();
+  const { screenWidth, windowWidth, signOut } = useAuth();
 
+  const [profilePopup, setProfilePopup] = useState<boolean>(false);
   const text = useThemeColor({}, "text");
   const icon = useThemeColor({}, "icon");
   const otherText = useThemeColor({}, "otherText");
   const background = useThemeColor({}, "innerBackground");
-
-  const { signOut } = useAuth();
-  const user = userData();
 
   /** Handles the user profile display route given the user role */
   const handleProfileRoute = () => {
@@ -40,7 +38,6 @@ const SideComponent = () => {
     <View style={[styles.mainContainer, { backgroundColor: background }]}>
       {/* Logo container */}
       <View style={styles.logoContainer}>
-        {/* Conditionally render the texts when the window width is over 50% */}
         {windowWidth >= screenWidth / 2 && (
           <Text style={[styles.buttonText, { color: text }]}>logo</Text>
         )}
@@ -55,7 +52,6 @@ const SideComponent = () => {
             onPress={() => router.push("/management/(drawer)/dashboard/main")}
           >
             <MaterialIcons name="dashboard" size={20} color={icon} />
-            {/* Conditionally render the texts when the window width is over 50% */}
             {windowWidth >= screenWidth / 2 && (
               <Text style={[styles.buttonText, { color: text }]}>
                 dashboard
@@ -118,7 +114,9 @@ const SideComponent = () => {
         <View style={styles.innerContainer}>
           <TouchableOpacity
             style={styles.buttons}
-            onPress={() => router.push("/management/notification/main")}
+            onPress={() =>
+              router.push("/management/(drawer)/notification/main")
+            }
           >
             <MaterialIcons name="notifications" size={20} color={icon} />
             {/* Conditionally render the texts when the window width is over 50% */}
@@ -162,7 +160,12 @@ const SideComponent = () => {
       </View>
 
       <TouchableOpacity style={styles.signoutContainer} onPress={signOut}>
-        <Text style={styles.signoutText}>{`${user?.first_name} click to`}</Text>
+        <Text style={styles.signoutText}>
+          {user?.first_name
+            ? `${user.first_name} click to`
+            : "Click to sign out"}
+        </Text>
+
         <View style={styles.buttons}>
           <MaterialIcons name="logout" size={20} color={icon} />
           {/* Conditionally render the texts when the window width is over 50% */}
@@ -171,6 +174,8 @@ const SideComponent = () => {
           )}
         </View>
       </TouchableOpacity>
+
+      {/* Display the popup modal when a staff member clicks the profile button */}
       {profilePopup && (
         <UserDetailsComponent onModalVisible={() => setProfilePopup(false)} />
       )}

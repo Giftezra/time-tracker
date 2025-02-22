@@ -11,7 +11,7 @@ import { ScrollView } from "react-native-gesture-handler";
 import { AntDesign, MaterialIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { useAuth } from "@/app/context/management/authentication";
+import { useAuth } from "@/app/context/authentication";
 import { userData } from "@/app/utils/loadData";
 import UserDetailsComponent from "../management/profile/user details";
 

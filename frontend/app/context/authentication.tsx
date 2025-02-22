@@ -9,6 +9,7 @@ import {
 import { ActivityIndicator, Alert, Dimensions, Platform } from "react-native";
 import { router } from "expo-router";
 import axios, { AxiosError } from "axios";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import {
   UserResponseType,
@@ -17,7 +18,7 @@ import {
 } from "@/app/types/management/onboarding";
 
 import { BASE_URL } from "@/app/utils/urls";
-import { storeData, getData } from "@/app/utils/loadData";
+import { storeData, loadUserData } from "@/app/utils/loadData";
 
 /**
  * AuthContext provides authentication state and methods throughout the application.
@@ -31,6 +32,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
  */
 const axiosInstance = axios.create({
   baseURL: BASE_URL,
+  withCredentials: true,
 });
 
 interface AuthProviderProps {
@@ -52,12 +54,23 @@ interface AuthProviderProps {
  * @param {ReactNode} props.children - Child components to be wrapped by the provider
  */
 const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+  /**
+   * Manage font loading state using the useLoadedFonts hook to load all fonts.
+   * Return an activity screenwhen fonts are not loaded.
+   *
+   * Use the useEffect hook to set the font loaded state to true when fonts are loaded.
+   * the useEffect hook only runs when the fonts change.
+   */
+  const fontsLoaded = useLoadedFonts();
   // Authentication state
   const [token, setToken] = useState<string | null>(null);
   const [refreshToken, setRefreshToken] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [role, setRole] = useState<string | null>(null);
   const [user, setUser] = useState<UserResponseType | null>(null);
+
+  // Registration state
+  const [ownerData, setOwnerData] = useState<OwnerOnboardingType | null>(null);
 
   // Form state
   const [passwordError, setPasswordError] = useState<boolean>(false);
@@ -91,63 +104,6 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, [screenWidth, windowWidth]);
 
   /**
-   * Manage font loading state using the useLoadedFonts hook to load all fonts.
-   * Return an activity screenwhen fonts are not loaded.
-   *
-   * Use the useEffect hook to set the font loaded state to true when fonts are loaded.
-   * the useEffect hook only runs when the fonts change.
-   */
-  const fontsLoaded = useLoadedFonts();
-
-  // Registration state
-  const [ownerData, setOwnerData] = useState<OwnerOnboardingType | null>(null);
-
-  /**
-   * Check for stored authentication data when the component mounts
-   * and restore the auth state if valid credentials exist
-   */
-  useEffect(() => {
-    const checkAuthStatus = async () => {
-      try {
-        const storedData = await getData();
-
-        if (storedData) {
-          const { access, refresh, user } = storedData;
-
-          if (access && refresh && user) {
-            setToken(access);
-            setRefreshToken(refresh);
-            setIsAuthenticated(true);
-            setUser(user);
-            setRole(
-              user.is_owner
-                ? "owner"
-                : user.is_employee
-                ? "staff"
-                : user.is_admin
-                ? "manager"
-                : ""
-            );
-
-            // Redirect to appropriate dashboard based on role
-            if (user.is_owner || user.is_admin) {
-              router.replace("/management/(drawer)/dashboard/main");
-            } else if (user.is_employee) {
-              router.replace("/staff/(drawer)/dashboard/main");
-            }
-          }
-        }
-      } catch (error) {
-        console.error("Error checking auth status:", error);
-        // If there's an error, ensure user is logged out
-        await signOut();
-      }
-    };
-
-    checkAuthStatus();
-  }, []);
-
-  /**
    * Sets up axios interceptors for automatic token management:
    * - Adds authorization header to requests
    * - Handles token refresh on 401 errors
@@ -164,20 +120,34 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Request interceptor
     const requestIntercept = axiosInstance.interceptors.request.use(
       (config) => {
+        console.log(
+          "Current axios headers:",
+          axiosInstance.defaults.headers.common
+        );
+
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
-        }
+          console.log(
+            "Authorization header set:",
+            config.headers.Authorization
+          );
+        } 
         return config;
       },
       (error) => {
+        console.error("Request interceptor error:", error);
         return Promise.reject(error);
       }
     );
 
     // Response interceptor
     const responseIntercept = axiosInstance.interceptors.response.use(
-      (response) => response,
+      (response) => {
+        console.log("Response received:", response.status);
+        return response;
+      },
       async (error: AxiosError) => {
+        console.log("Response error intercepted:", error.response?.status);
         const originalRequest = error.config as any;
 
         // Check if error is 401 and we haven't tried refreshing yet
@@ -193,9 +163,11 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             // Retry the original request with new token
             if (originalRequest.headers) {
               originalRequest.headers.Authorization = `Bearer ${newToken}`;
+              console.log("Retrying request with new token");
             }
             return axiosInstance(originalRequest);
           } catch (refreshError) {
+            console.error("Token refresh failed:", refreshError);
             await signOut();
             return Promise.reject(refreshError);
           }
@@ -205,6 +177,7 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     );
 
     // Setup periodic token refresh (every 5 minutes)
+    // Set the token returned to the state
     const setupTokenRefresh = () => {
       if (refreshToken) {
         refreshTimeout = setInterval(async () => {
@@ -215,7 +188,7 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             const newToken = response.data.access;
             setToken(newToken);
           } catch (error) {
-            console.error("Token refresh failed:", error);
+            console.error("Periodic token refresh failed:", error);
             await signOut();
           }
         }, 5 * 60 * 1000);
@@ -233,6 +206,50 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, [token, refreshToken]);
 
   /**
+   * Check for existing tokens and user data when the app starts
+   * This effect should run once when the component mounts
+   */
+  useEffect(() => {
+    const initializeAuth = async () => {
+      try {
+        const storedToken = await AsyncStorage.getItem("token");
+        const storedRefreshToken = await AsyncStorage.getItem("refresh");
+        const storedUser = await loadUserData();
+
+        if (storedToken && storedUser && storedRefreshToken) {
+          console.log(" Token retrieved ok", storedToken);
+          setToken(token);
+          setRefreshToken(storedRefreshToken);
+          setUser(storedUser);
+          setIsAuthenticated(true);
+          setRole(
+            storedUser.is_owner
+              ? "owner"
+              : storedUser.is_employee
+              ? "staff"
+              : storedUser.is_admin
+              ? "manager"
+              : ""
+          );
+
+          // Redirect based on user role
+          if (storedUser.is_owner || storedUser.is_admin) {
+            router.replace("/management/(drawer)/dashboard/main");
+          } else if (storedUser.is_employee) {
+            router.replace("/staff/(drawer)/dashboard/main");
+          }
+        }
+      } catch (error) {
+        console.error("Error initializing auth:", error);
+        // If there's an error, clear all stored data
+        await signOut();
+      }
+    };
+
+    initializeAuth();
+  }, []);
+
+  /**
    * Authenticates a user with their email and password.
    * On successful authentication:
    * - Stores access and refresh tokens
@@ -243,7 +260,7 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
    * @param {string} password - User's password
    */
   const login = async (email: string, password: string): Promise<void> => {
-    console.log(` base url ${BASE_URL}`);
+    console.log(`Attempting login at ${BASE_URL}`);
     email = email.toLowerCase();
     const loginData = { email, password };
     try {
@@ -254,12 +271,16 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         throw new Error("No data returned");
       }
 
-      // Add these lines to store both tokens
-      setToken(data.access);
-      setRefreshToken(data.refresh);
+      console.log("Login successful, access token received:", data.access);
 
-      const user: UserResponseType = data.user;
+      // Store tokens in AsyncStorage first
       await storeData(data);
+
+      // Configure axios instance immediately with the new token
+      axiosInstance.defaults.headers.common[
+        "Authorization"
+      ] = `Bearer ${data.access}`;
+      const user: UserResponseType = data.user;
       setIsAuthenticated(true);
       setRole(
         user.is_owner
@@ -271,6 +292,12 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           : ""
       );
 
+      // Log the current state of the axios instance before navigation
+      console.log(
+        "Current axios headers before navigation:",
+        axiosInstance.defaults.headers.common
+      );
+
       /* Check the role and replace the screen based on the users role */
       if (user.is_owner || user.is_admin) {
         router.replace("/management/(drawer)/dashboard/main");
@@ -280,6 +307,7 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         Alert.alert("Error", "User not found");
       }
     } catch (error) {
+      console.error("Login error:", error);
       if (axios.isAxiosError(error)) {
         const status = error.response?.status;
         switch (status) {
@@ -371,12 +399,16 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
    * - Redirects to login page
    */
   const signOut = async () => {
+    // Remove the authorization header
+    delete axiosInstance.defaults.headers.common["Authorization"];
+
     setToken(null);
     setRefreshToken(null);
     setIsAuthenticated(false);
     setRole(null);
     setUser(null);
-    await storeData(null);
+    // Clear all stored auth data
+    await AsyncStorage.multiRemove(["token", "refresh", "user"]);
     router.replace("/management/onboarding/login");
   };
 

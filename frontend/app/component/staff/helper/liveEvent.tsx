@@ -7,14 +7,13 @@ import {
   View,
 } from "react-native";
 import React from "react";
-import { LiveEventProps } from "@/app/types/staff/eventType";
+import { LiveEventInterface } from "@/app/types/staff/eventType";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { AntDesign, MaterialIcons } from "@expo/vector-icons";
 import { useSideComponentContext } from "@/app/context/staff/sideComponentProvider";
 
 const LiveEventComponent = () => {
-
-  const {events} = useSideComponentContext();
+  const { events } = useSideComponentContext();
 
   /**
    * Set the colors for the component based on the user mobile theme.

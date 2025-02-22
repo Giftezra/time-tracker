@@ -16,20 +16,20 @@ import {
 import React from "react";
 import { router } from "expo-router";
 
-const OnboardingPage = () => {
+const OnboardingPageComponent = () => {
   return (
     <View style={styles.mainContainer}>
       <View style={styles.container}>
         <TouchableOpacity
           style={styles.buttons}
-          onPress={() => router.push('/management/onboarding/login')}
+          onPress={() => router.push("/management/onboarding/login")}
         >
           <Text style={styles.buttoText}>sign in</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.buttons}
-          onPress={() => router.push('/management/onboarding/registration')}
+          onPress={() => router.push("/management/onboarding/registration")}
         >
           <Text style={styles.buttoText}>sign up</Text>
         </TouchableOpacity>
@@ -38,7 +38,7 @@ const OnboardingPage = () => {
   );
 };
 
-export default OnboardingPage;
+export default OnboardingPageComponent;
 
 const styles = StyleSheet.create({
   mainContainer: {

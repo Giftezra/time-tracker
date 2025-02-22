@@ -20,7 +20,7 @@ import TodayEventsComponent from "@/app/component/management/dashboard/todayEven
 import LeaderBoardComponent from "@/app/component/management/dashboard/leaderBoard";
 import { id } from "react-native-paper-dates";
 import SideComponent from "@/app/component/helper/sideComponent";
-import { useAuth } from "@/app/context/management/authentication";
+import { useAuth } from "@/app/context/authentication";
 
 const employeeData = [
   {
@@ -56,7 +56,7 @@ const employeeData = [
 const event = ["johns birthday", "mary resumption"];
 
 const WebDashboard = () => {
-  const {screenWidth, windowWidth} = useAuth();
+  const { screenWidth, windowWidth } = useAuth();
   const [taskChartWidth, setTaskChartWidth] = useState(0);
   const [contractChartWidth, setContractChartWidth] = useState(0);
   const screen = Dimensions.get("screen");
@@ -83,12 +83,14 @@ const WebDashboard = () => {
         <View style={[styles.rowcontainer]}>
           {/* Left and side of the dashboard */}
           <View style={{ width: "70%" }}>
-            <View style={[styles.innerleftcontainers]} onLayout={(event) => { 
-              const { width } = event.nativeEvent.layout;
-              setContractChartWidth(width);
-            }}>
-
-             <ContractChartComponent width={contractChartWidth} />
+            <View
+              style={[styles.innerleftcontainers]}
+              onLayout={(event) => {
+                const { width } = event.nativeEvent.layout;
+                setContractChartWidth(width);
+              }}
+            >
+              <ContractChartComponent width={contractChartWidth} />
             </View>
 
             <View style={[styles.overviewContainer]}>

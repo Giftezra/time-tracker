@@ -1,125 +1,106 @@
 import {
   Platform,
+  Pressable,
+  ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from "react-native";
-import React, { useState } from "react";
+import React from "react";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import SideComponent from "@/app/component/helper/sideComponent";
+import { useAuth } from "@/app/context/authentication";
 import OwnerAddressComponent from "@/app/component/management/checkout/ownerAddress";
 import BillingAddressComponent from "@/app/component/management/checkout/billingAddress";
-import { SafeAreaProvider } from "react-native-safe-area-context";
-import { ScrollView } from "react-native-gesture-handler";
 import PaymentComponent from "@/app/component/management/checkout/payment";
-import { useCheckout } from "@/app/context/management/checkout/checkoutContext";
-import SideComponent from "@/app/component/helper/sideComponent";
-import { useAuth } from "@/app/context/management/authentication";
-import { StripeProvider } from "@stripe/stripe-react-native";
+import { useThemeColor } from "@/hooks/useThemeColor";
 
-const MainCheckoutPage = () => {
-  console.log("MainCheckoutPage rendered");
+const MainCheckoutComponent = () => {
+  const activeBtn = useThemeColor({}, "activebtn");
+
+  /* Export the width from the auth context */
   const { windowWidth } = useAuth();
-  const { isChecked, publishableKey } = useCheckout();
-
-  const sidebarWidth = windowWidth * 0.2;
-  const mainContentWidth = windowWidth * 0.8;
 
   return (
-    <StripeProvider publishableKey={publishableKey} urlScheme="time-tracker">
-      <SafeAreaProvider style={styles.safeArea}>
-        <View style={[styles.maincontainer, { width: windowWidth }]}>
-          {/* Only display the sidebar on web */}
-
-          {Platform.OS === "web" && (
-            <View style={[styles.sidebar, { width: sidebarWidth }]}>
+    <SafeAreaProvider>
+      <View style={{ flex: 1 }}>
+        {Platform.OS === "web" ? (
+          <GestureHandlerRootView
+            style={[styles.webMainContainer, { width: windowWidth }]}
+          >
+            {/* Side component container needs a width */}
+            <View style={{ width: "20%" }}>
               <SideComponent />
             </View>
-          )}
 
-          <View style={[styles.mainContent, { width: mainContentWidth }]}>
+            {/* Main content container */}
             <ScrollView
-              style={styles.scrollView}
+              style={{ flex: 1, padding: 20 }}
               showsVerticalScrollIndicator={false}
-              contentContainerStyle={styles.scrollViewContent}
             >
-              <Text style={styles.addressText}>address</Text>
-
               <View style={styles.componentContainer}>
                 <OwnerAddressComponent />
               </View>
 
-              {!isChecked && (
-                <View style={styles.componentContainer}>
-                  <BillingAddressComponent />
-                </View>
-              )}
+              <View style={styles.componentContainer}>
+                <BillingAddressComponent />
+              </View>
 
               <View style={styles.componentContainer}>
                 <PaymentComponent />
               </View>
 
-              <View style={styles.buttonContainer}>
-                <TouchableOpacity style={styles.button}>
-                  <Text style={styles.buttonText}>Pay Now</Text>
-                </TouchableOpacity>
-              </View>
+              {/* Submit button */}
+              <Pressable
+                style={[styles.submitButton, { backgroundColor: activeBtn }]}
+              >
+                <Text style={[styles.submitButtonText]}>Submit</Text>
+              </Pressable>
             </ScrollView>
-          </View>
-        </View>
-      </SafeAreaProvider>
-    </StripeProvider>
+          </GestureHandlerRootView>
+        ) : (
+          <View></View>
+        )}
+      </View>
+    </SafeAreaProvider>
   );
 };
 
-export default MainCheckoutPage;
+export default MainCheckoutComponent;
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-  },
-  maincontainer: {
+  webMainContainer: {
     flex: 1,
     flexDirection: "row",
   },
-  sidebar: {
-    flex: 1,
-  },
-  mainContent: {
-    flex: 4,
-    backgroundColor: "#fff",
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollViewContent: {
-    padding: 20,
-    paddingBottom: 40,
-  },
   componentContainer: {
     marginBottom: 20,
-  },
-  addressText: {
-    fontSize: 24,
-    fontWeight: "700",
-    fontFamily: "BarlowRegular",
-    textTransform: "capitalize",
-    marginBottom: 20,
-  },
-  buttonContainer: {
-    marginTop: 20,
-    paddingHorizontal: 10,
-  },
-  button: {
-    backgroundColor: "#000",
-    padding: 15,
+    backgroundColor: "white",
     borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
+    padding: 15,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
-  buttonText: {
-    color: "#fff",
-    fontSize: 16,
+
+  submitButton: {
+    padding: 10,
+    borderRadius: 5,
+    borderWidth: 1,
+    alignItems: "center",
+  },
+
+  submitButtonText: {
+    color: "black",
     fontWeight: "700",
-    fontFamily: "BarlowRegular",
+    fontSize: 15,
+    fontFamily: "RobotoRegular",
+    textTransform: "capitalize",
   },
 });

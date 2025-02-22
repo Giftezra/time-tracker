@@ -4,11 +4,9 @@ import {
   ActiveTaskContextType,
   ActiveTaskType,
   ContractListType,
-  CreateTaskType,
+  CreateTaskInterface,
   OpenTaskProps,
 } from "@/app/types/management/task";
-import { loadToken } from "@/app/utils/loadData";
-import { BASE_URL } from "@/app/utils/urls";
 import axios from "axios";
 import { router } from "expo-router";
 import {
@@ -19,7 +17,7 @@ import {
   useCallback,
 } from "react";
 import { FeTurbulence } from "react-native-svg";
-import { useAuth } from "../authentication";
+import { useAuth } from "../../authentication";
 
 /**
  * Create a context for the management task context.
@@ -44,6 +42,11 @@ const ManagementTaskProvider = ({
 }) => {
   const { axiosInstance } = useAuth();
 
+  // MAnage the state for the data collected which will be used to create a new task
+  const [taskData, setTaskData] = useState<CreateTaskInterface | undefined>(
+    undefined
+  );
+
   // Data to be retrieved from the server
   const [employeeList, setEmployeeList] = useState<EmployeeType[]>([]);
   const [contractList, setContractList] = useState<ContractListType[]>([]);
@@ -52,9 +55,9 @@ const ManagementTaskProvider = ({
 
   const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
   const [isTaskClicked, setIsTaskClicked] = useState<boolean>(false);
-  const [employee, setEmployee] = useState<EmployeeType[] | undefined>(
-    undefined
-  );
+  const [activeTaskClicked, setActiveTaskClicked] = useState<
+    ActiveTaskType | undefined
+  >();
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const [modalVisible, setModalVisible] = useState(false);
@@ -83,46 +86,15 @@ const ManagementTaskProvider = ({
   );
 
   /**
-   * This effect is used to fetch the data's from the servers.
-   * The data retrieved are the active tasks, the contracts and the employees list.
-   * The effect is called when the component mounts and is async to allow for the data to be fetched.
-   * The effect sets the active tasks, the contracts and the employees list in the state.
-   */
-  useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
-      try {
-        const activeTasks = await get_active_tasks();
-        const contracts = await getContractList();
-        const employees = await get_available_employees();
-        const unassignedTasks = await get_unassigned_task();
-
-        // Set the active tasks, contracts, employees, unassigned_task in the state.
-        // Check if the data is available before setting the state.
-        if (activeTasks && contracts && employees && unassignedTasks) {
-          setActiveTasks(activeTasks);
-          setContractList(contracts);
-          setEmployeeList(employees);
-          setUnassignedTask(unassignedTasks);
-        }
-      } catch (e) {
-        console.error("Error fetching data", e);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
-
-  /**
    * The method is used to confirm the time selected by the user, and
    * sets the time selected in the state.
    * The method is called only when the time time visible state is set to true.
    */
-  const on_confirm_start_time = useCallback(
+  const onConfirmStartTime = useCallback(
     ({ hours, minutes }: { hours: number; minutes: number }) => {
       seStartTimeVisible(false);
       setStartTime({ hours, minutes });
+      collectNewTaskData("start_time", { hours, minutes });
       console.log({ hours, minutes });
     },
     [seStartTimeVisible]
@@ -131,10 +103,11 @@ const ManagementTaskProvider = ({
   /**
    * Method is used to handle how the task end time is seleced by the user.
    */
-  const on_confirm_end_time = useCallback(
+  const onConfirmEndTime = useCallback(
     ({ hours, minutes }: { hours: number; minutes: number }) => {
       setEndTimeVisible(false);
       setEndTime({ hours, minutes });
+      collectNewTaskData("end_time", { hours, minutes });
       console.log({ hours, minutes });
     },
     [setEndTimeVisible]
@@ -171,17 +144,62 @@ const ManagementTaskProvider = ({
   };
 
   /**
+   * This hook is used to fetch the users dat from the server when the page loads.
+   * the data is fetches are
+   * 1. The list of contracts
+   * 2. The list of employees
+   * 3. The list of unassigned tasks
+   * 4. The list of active tasks
+   */
+  useEffect(() => {
+    setIsLoading(true);
+    const fetchData = async () => {
+      try {
+        const contracts = await getContractList();
+        const employees = await get_available_employees();
+        const unassignedTasks = await getUnassignedTask();
+        const activeTask = await getActiveTasks();
+
+        // Set the contracts and employees in the state
+        setContractList(contracts);
+        setEmployeeList(employees);
+        setUnassignedTask(unassignedTasks);
+        setActiveTasks(activeTask);
+      } catch (error) {
+        console.error("Error fetching data", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  /**
+   * This method is used to implement the @interface CreateTaskInterface
+   * the interface contains the data type of the task to be created.
+   * it uses a key value pair to set the task details.
+   */
+  const collectNewTaskData = (key: keyof CreateTaskInterface, value: any) => {
+    setTaskData(
+      (prev) =>
+        ({
+          ...prev,
+          [key]: value,
+        } as CreateTaskInterface)
+    );
+  };
+
+  /**
    * Method signature is designed to get all the contracts from the user given the users token.
    * The server returns a list of only available contracts that has not been assigned to any employee.
    * @returns {Promise<ContractListType>}
    */
-  const getContractList = async (): Promise<ContractListType[] | undefined> => {
+  const getContractList = async (): Promise<ContractListType[]> => {
     try {
       const response = await axiosInstance.get("/api/get/all/contracts/");
-      console.log("[getContractList] Raw response:", response);
       const contracts: ContractListType[] = response.data.contract_list;
       console.log("[getContractList] Success:", {
-        status: response.status,
+        status: response.statusText,
         contracts,
       });
       return contracts;
@@ -224,14 +242,10 @@ const ManagementTaskProvider = ({
    * Method is designed to return all active and ongoing tasks from the server.
    * @returns an array of active tasks
    */
-  const get_active_tasks = async (): Promise<ActiveTaskType[]> => {
+  const getActiveTasks = async (): Promise<ActiveTaskType[]> => {
     try {
       const response = await axiosInstance.get("/api/get/active/tasks/");
-      const tasks: ActiveTaskType[] = response.data.active_tasks;
-      console.log("[get_active_tasks] Success:", {
-        status: response.status,
-        tasks,
-      });
+      const tasks: ActiveTaskType[] = response.data.active_shifts;
       return tasks;
     } catch (error: any) {
       console.error("[get_active_tasks] Error:", {
@@ -247,9 +261,12 @@ const ManagementTaskProvider = ({
    * Method is used to retrieve all the unassigned tasks from the server.
    * Only users with admin and owner roles can access this method and route.
    */
-  const get_unassigned_task = async () => {
+  const getUnassignedTask = async () => {
     try {
+      // Create the response using the axiosinstance which already has the token and the base url
       const response = await axiosInstance.get("/api/get/unassigned/tasks/");
+      // Get the response data from the response object
+      // return the unassigned tasks
       const unassignedTasks: OpenTaskProps[] = response.data.unassigned_tasks;
       console.log("[get_unassigned_task] Success:", {
         status: response.status,
@@ -270,9 +287,11 @@ const ManagementTaskProvider = ({
    * The method is used to create a task when called.
    * @param task is the object that contains the task details to be created.
    */
-  const create_shift = async (task: CreateTaskType) => {
+  const create_shift = async (task: CreateTaskInterface) => {
     try {
-      const response = await axiosInstance.post("/api/create/shift/", task);
+      const response = await axiosInstance.post("/api/create/shift/", {
+        data: task,
+      });
       console.log("[create_shift] Success:", {
         status: response.status,
         data: response.data,
@@ -291,9 +310,11 @@ const ManagementTaskProvider = ({
   /**
    * This method is used to create a task when the user does not provide an employee.
    */
-  const create_task = async (task: CreateTaskType) => {
+  const create_task = async (task: CreateTaskInterface) => {
     try {
-      const response = await axiosInstance.post("/api/create/task/", task);
+      const response = await axiosInstance.post("/api/create/task/", {
+        data: task,
+      });
       console.log("[create_task] Success:", {
         status: response.status,
         data: response.data,
@@ -310,21 +331,55 @@ const ManagementTaskProvider = ({
   };
 
   /**
+   * This method is used to terminate a task when the user clicks the terminate button.
+   * @param task ActiveTaskType is the object that contains the task details to be terminated.
+   * The details to be sent to the server would be the shift id and the employee id.
+   */
+  const terminateTask = async (task: ActiveTaskType | undefined) => {
+    try {
+      if (!task) {
+        throw new Error("Task is undefined");
+      }
+      const response = await axiosInstance.post("/api/terminate/task/", {
+        shift_id: task.shift_id,
+        employee_id: task.employee_id,
+      });
+      console.log("[terminate_task] Success:", {
+        status: response.status,
+        data: response.data,
+      });
+      return response.data;
+    } catch (error: any) {
+      console.error("[terminate_task] Error:", {
+        status: error.response?.status,
+        message: error.message,
+        details: error.response?.data,
+      });
+      return error;
+    }
+  };
+
+  /**
    * Method is used to send transit to the message screen given the employee id
    */
-  const goto_message_screen = (employee: EmployeeType) => {
-    if (!employee) {
+  const gotoMessageScreen = (task: ActiveTaskType) => {
+    if (!task) {
       return;
     }
     router.push({
       pathname: "/management/(drawer)/messages/main",
       params: {
-        employee_id: employee.employee_id,
-        employee_name: employee.employee_name,
+        employee_id: task.employee_id,
+        employee_name: task.employee_name,
       },
     });
     setIsModalVisible(false);
   };
+
+  /**
+   * This method is used to handle the tasks creation event.
+   * it does this by implementing the
+   */
 
   /**
    * Method is used to handle the task clicked event.
@@ -333,9 +388,9 @@ const ManagementTaskProvider = ({
    * @param employee is the object that contains the employee details
    *
    */
-  const handle_is_task_clicked = (employee: EmployeeType[]) => {
+  const handleIsTaskClicked = (task: ActiveTaskType) => {
     setIsTaskClicked(!isTaskClicked);
-    setEmployee(employee);
+    setActiveTaskClicked(task);
     setIsModalVisible(true);
   };
 
@@ -350,19 +405,19 @@ const ManagementTaskProvider = ({
     contractList,
     unassignedTask,
     activeTasks,
-    goto_message_screen,
-    handle_is_task_clicked,
+    gotoMessageScreen,
+    handleIsTaskClicked,
     isModalVisible,
     isTaskClicked,
-    employee,
+    activeTaskClicked,
     hideModal,
     render_popup_button: renderPopupButton,
     isLoading,
-    get_contract_list: getContractList,
+    getContractList,
     get_available_employees,
     onConfirmDate: on_confirm_date,
-    onConfirmStartTime: on_confirm_start_time,
-    onConfirmEndTime: on_confirm_end_time,
+    onConfirmStartTime,
+    onConfirmEndTime,
     onDateDismiss: on_date_dismiss,
     onStartTimeDismiss: on_start_time_dismiss,
     onEndTimeDismiss: on_end_time_dismiss,
@@ -371,11 +426,14 @@ const ManagementTaskProvider = ({
     dateVisible,
     start_time_visible: startTimeVisible,
     endTimeVisible,
-    create_shift,
+    createShift: create_shift,
     create_task,
     start_time,
     end_time,
     dates,
+    collectNewTaskData,
+    taskData,
+    terminateTask,
   };
 
   return (

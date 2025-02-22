@@ -19,7 +19,10 @@ import { ca, DatePickerModal, TimePickerModal } from "react-native-paper-dates";
 
 import { EmployeeType } from "@/app/types/management/employee";
 import { user_image } from "@/app/utils/images";
-import { ContractListType, CreateTaskType } from "@/app/types/management/task";
+import {
+  ContractListType,
+  CreateTaskInterface,
+} from "@/app/types/management/task";
 import { get } from "react-native/Libraries/TurboModule/TurboModuleRegistry";
 import ButtonComponent from "../../helper/buttons";
 import TextInputComponent from "../../helper/textInput";
@@ -28,6 +31,8 @@ import { useManagementTask } from "@/app/context/management/task manager/managem
 
 const CreateTaskComponent = () => {
   const {
+    contractList,
+    employeeList,
     onConfirmDate,
     onConfirmStartTime,
     onConfirmEndTime,
@@ -41,10 +46,12 @@ const CreateTaskComponent = () => {
     endTimeVisible,
     isLoading,
     create_task,
-    create_shift,
+    createShift: create_shift,
     dates,
     start_time,
     end_time,
+    collectNewTaskData,
+    taskData,
   } = useManagementTask();
 
   const primary = useThemeColor({}, "primaryColor");
@@ -54,11 +61,6 @@ const CreateTaskComponent = () => {
   const hightlight = useThemeColor({}, "highlight");
   const textinput = useThemeColor({}, "textinput");
   const otherText = useThemeColor({}, "otherText");
-
-  const [contracts, setContracts] = useState<ContractListType[] | undefined>(
-    []
-  );
-  const [employees, setEmployees] = useState<EmployeeType[] | undefined>([]);
 
   const [siteSelected, setSiteSelected] = useState<ContractListType | null>(
     null
@@ -94,71 +96,6 @@ const CreateTaskComponent = () => {
    * This method is used to gather all of the selected component, and would handle the creation of the task
    * To do this, it will call the create_task method from the management task context and pass the required parameters
    */
-  const handleCreateTask = async () => {
-    alert("Creating task");
-    // MAke sure all of the fields are selected before creating the task or return an error
-    // if (!siteSelected) {
-    //   console.error("site not selected");
-    //   return;
-    // }
-    // if (amount === undefined) {
-    //   console.error("amount not selected");
-    //   setAmountError("amount is required");
-    //   return;
-    // }
-    // if (description === undefined) {
-    //   console.error("description not selected");
-    //   setDescriptionError("description is required");
-    //   return;
-    // }
-    // if (taskSerial === undefined) {
-    //   console.error("Task serial not provided");
-    //   setTaskSerialError("task serial is required");
-    //   return;
-    // }
-    // if (!employeeSelected) {
-    //   console.error("employee not selected");
-    //   return;
-    // }
-    // if (!dates) {
-    //   console.error("Date not provided");
-    //   return;
-    // }
-    // if (!start_time) {
-    //   console.error("Start time not provided");
-    //   return;
-    // }
-    // if (!end_time) {
-    //   console.error("Task end time not provided");
-    //   return;
-    // }
-    /* Check if the employee is selected and call the approiprate method */
-    const task: CreateTaskType = {
-      task_serial: taskSerial,
-      description,
-      contract_id: siteSelected?.contract_id,
-      employee_id: employeeSelected?.employee_id,
-      start_time,
-      end_time,
-      dates,
-      amount: amount ? parseInt(amount) : 0,
-    };
-    // Check if the employee id is empty and call the create task method
-    try {
-      setIsTaskCreated(true);
-      if (employeeSelected === null) {
-        await create_task(task);
-        console.log("task created");
-      } else {
-        await create_shift(task);
-        console.log("task assigned");
-      }
-    } catch (e) {
-      console.error("Failed to create task resulting in error ", e);
-    }finally{
-      setIsTaskCreated(false);
-    }
-  };
 
   return (
     <View style={styles.maincontainer}>
@@ -186,7 +123,7 @@ const CreateTaskComponent = () => {
             ]}
           >
             <TouchableOpacity
-              onPress={() => handleToggleSites("contracts")}
+              onPressIn={() => handleToggleSites("contracts")}
               style={[styles.button]}
             >
               {isLoading ? (
@@ -204,9 +141,17 @@ const CreateTaskComponent = () => {
                 nestedScrollEnabled={true}
                 showsHorizontalScrollIndicator={false}
               >
-                {contracts?.map((site, index) => (
+                {contractList?.map((site, index) => (
                   <TouchableOpacity
                     onPress={() => setSiteSelected(site)}
+                    // Check if the site is undefined before collecting and assigning the data
+                    // Else assign an empty string
+                    onPressOut={() =>
+                      collectNewTaskData(
+                        "contract_id",
+                        site.contract_id !== undefined ? site.contract_id : ""
+                      )
+                    }
                     key={index}
                     style={[
                       styles.pressable,
@@ -265,9 +210,20 @@ const CreateTaskComponent = () => {
                 nestedScrollEnabled={true}
                 showsHorizontalScrollIndicator={false}
               >
-                {employees?.map((employee, index) => (
+                {employeeList?.map((employee, index) => (
                   <TouchableOpacity
                     onPress={() => setEmployeeSelected(employee)}
+                    // Collect the employee id after the user selects the employee.
+                    // Check if the employee id is undefined before collecting and assigning the data
+                    // Else assign an empty string
+                    onPressOut={() =>
+                      collectNewTaskData(
+                        "employee_id",
+                        employee.employee_id !== undefined
+                          ? employee.employee_id
+                          : ""
+                      )
+                    }
                     key={index}
                     style={[
                       styles.pressable,
@@ -303,12 +259,12 @@ const CreateTaskComponent = () => {
           </View>
 
           {/* Conditionally render the apps information display when the user is yet to select  a staff member and an employee*/}
-          {siteSelected && employeeSelected === null && (
+          {siteSelected && !employeeSelected && (
             <View style={{ marginHorizontal: 10 }}>
-              <Text style={[styles.infoText, { color: hightlight }]}>
+              <Text style={[styles.infoText, { color: otherText }]}>
                 Make sure to select shift before selecting date.
               </Text>
-              <Text style={[styles.infoText, { color: hightlight }]}>
+              <Text style={[styles.infoText, { color: otherText }]}>
                 A task will be created if no team member is selected
               </Text>
             </View>
@@ -322,17 +278,14 @@ const CreateTaskComponent = () => {
           </Text>
           <View style={styles.selectedContainer}>
             <View style={styles.selectedTextContainer}>
-              <Text style={[styles.selectedText, { color: hightlight }]}>
+              <Text style={[styles.selectedText, { color: otherText }]}>
                 {siteSelected?.client_name}
               </Text>
-              <Text style={[styles.selectedText, { color: hightlight }]}>
+              <Text style={[styles.selectedText, { color: otherText }]}>
                 {siteSelected?.contract_name}
               </Text>
-              <Text style={[styles.selectedText, { color: hightlight }]}>
+              <Text style={[styles.selectedText, { color: otherText }]}>
                 {siteSelected?.contract_address}
-              </Text>
-              <Text style={[styles.selectedText, { color: hightlight }]}>
-                {siteSelected?.contract_id}
               </Text>
             </View>
             <View style={styles.selectedTextContainer}>
@@ -384,33 +337,41 @@ const CreateTaskComponent = () => {
           />
 
           <View style={{ width: "100%", marginVertical: 10 }}>
-            <View>
-              <Text>{amount_error}</Text>
-              <TextInputComponent
-                text="amount"
-                value={amount}
-                setValue={setAmount}
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={styles.input}
                 placeholder="amount"
+                value={amount}
+                onChangeText={(text) => {
+                  setAmount(text);
+                  collectNewTaskData("amount", text);
+                }}
               />
             </View>
 
-            <View>
-              <TextInputComponent
-                text="description"
-                value={description}
-                setValue={setDescription}
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={styles.input}
                 placeholder="description"
-                isMultiline={true}
-                lines={2}
+                value={description}
+                onChangeText={(text) => {
+                  setDescription(text);
+                  collectNewTaskData("description", text);
+                }}
+                multiline={true}
+                numberOfLines={3}
               />
             </View>
 
-            <View>
-              <TextInputComponent
-                text="task serial"
-                value={taskSerial}
-                setValue={setTaskSerial}
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={styles.input}
                 placeholder="task serial"
+                value={taskSerial}
+                onChangeText={(text) => {
+                  setTaskSerial(text);
+                  collectNewTaskData("task_serial", text);
+                }}
               />
             </View>
           </View>
@@ -422,7 +383,6 @@ const CreateTaskComponent = () => {
                 ? "create new task"
                 : "assign shift"
             }
-            onPress={handleCreateTask}
           />
         </View>
       </ScrollView>
@@ -495,12 +455,18 @@ const styles = StyleSheet.create({
   },
 
   input: {
-    borderWidth: 0.2,
-    padding: Platform.OS === "web" ? 5 : 10,
-    borderRadius: 5,
+    padding: 10,
     flex: 1,
     fontFamily: "BarlowRegular",
     fontSize: Platform.OS === "web" ? 13 : 16,
+    fontWeight: "500",
+    textTransform: "capitalize",
+  },
+
+  inputContainer:{
+    marginVertical: 4,
+    borderRadius: 5,
+    borderWidth: 1,
   },
 
   contractTeXtContainer: {

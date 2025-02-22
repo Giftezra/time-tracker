@@ -24,7 +24,7 @@ import CreateTaskComponent from "@/app/component/management/task_manager/createT
 import OpenTaskComponents from "@/app/component/management/task_manager/opentasks";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { useAuth } from "@/app/context/management/authentication";
+import { useAuth } from "@/app/context/authentication";
 import SideComponent from "@/app/component/helper/sideComponent";
 
 /** Variable for the sub header representing views to display */
@@ -52,134 +52,126 @@ const MainEmployeeTaskManager = () => {
   const innerBackground = useThemeColor({}, "innerBackground");
 
   return (
-          <SafeAreaProvider style={{ flex: 1 }}>
-            <KeyboardAvoidingView
+    <SafeAreaProvider style={{ flex: 1 }}>
+      <KeyboardAvoidingView
+        style={[
+          { flex: 1, width: windowWidth },
+          { backgroundColor: background },
+        ]}
+      >
+        {/* Display the views based on the plaform */}
+        {Platform.OS === "web" ? (
+          <View style={{ flex: 1, width: windowWidth, flexDirection: "row" }}>
+            <View style={{ width: windowWidth * 0.2 }}>
+              <SideComponent />
+            </View>
+            <View
               style={[
-                { flex: 1, width: windowWidth },
-                { backgroundColor: background },
+                styles.rowContainer,
+                {
+                  backgroundColor: innerBackground,
+                  width: windowWidth * 0.8,
+                },
               ]}
             >
-              {/* Display the views based on the plaform */}
-              {Platform.OS === "web" ? (
+              <View style={styles.columnContainer}>
                 <View
-                  style={{ flex: 1, width: windowWidth, flexDirection: "row" }}
+                  style={[styles.column, { backgroundColor: secondaryColor }]}
                 >
-                  <View style={{ width: windowWidth * 0.2 }}>
-                    <SideComponent />
-                  </View>
-                  <View
+                  <OpenTaskComponents />
+                </View>
+                <View
+                  style={[styles.column, { backgroundColor: secondaryColor }]}
+                >
+                  <ActiveTaskComponent />
+                </View>
+              </View>
+
+              <View
+                style={[
+                  styles.createTaskcontainer,
+                  { backgroundColor: secondaryColor },
+                ]}
+              >
+                <CreateTaskComponent />
+              </View>
+            </View>
+          </View>
+        ) : (
+          /**
+           * The mobile view of the task manager. The view is divided into two sections:
+           * The views are arranged in a column layout.
+           */
+          <View
+            style={[
+              styles.mobileContainer,
+              { backgroundColor: innerBackground },
+            ]}
+          >
+            <View>
+              <View style={{ backgroundColor: secondaryColor }}>
+                <Text style={styles.mobileHeaderText}>Task manager</Text>
+              </View>
+              {/* Create buttons to monitor the states and conditinally display the respective view  */}
+              <View
+                style={[
+                  styles.mobileHeader,
+                  { backgroundColor: secondaryColor },
+                ]}
+              >
+                {/* Conditionally render the sub header */}
+                {subHeader.map((header, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    onPress={() => handleToggleView(header)}
                     style={[
-                      styles.rowContainer,
-                      {
-                        backgroundColor: innerBackground,
-                        width: windowWidth * 0.8,
-                      },
+                      styles.mobileViewButtons,
+                      toggleView === header &&
+                        (styles.mobileSelectedView,
+                        { borderBottomWidth: 2, borderBottomColor: highlight }),
                     ]}
                   >
-                    <View style={styles.columnContainer}>
-                      <View
-                        style={[
-                          styles.column,
-                          { backgroundColor: secondaryColor },
-                        ]}
-                      >
-                        <OpenTaskComponents />
-                      </View>
-                      <View
-                        style={[
-                          styles.column,
-                          { backgroundColor: secondaryColor },
-                        ]}
-                      >
-                        <ActiveTaskComponent />
-                      </View>
-                    </View>
+                    <Text style={styles.mobileButtonText}>{header}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
 
-                    <View
-                      style={[
-                        styles.createTaskcontainer,
-                        { backgroundColor: secondaryColor },
-                      ]}
-                    >
-                      <CreateTaskComponent />
-                    </View>
-                  </View>
-                </View>
-              ) : (
-                /**
-                 * The mobile view of the task manager. The view is divided into two sections:
-                 * The views are arranged in a column layout.
-                 */
-                <View
-                  style={[
-                    styles.mobileContainer,
-                    { backgroundColor: innerBackground },
-                  ]}
-                >
-                  <View>
-                    <View style={{ backgroundColor: secondaryColor }}>
-                      <Text style={styles.mobileHeaderText}>Task manager</Text>
-                    </View>
-                    {/* Create buttons to monitor the states and conditinally display the respective view  */}
-                    <View
-                      style={[
-                        styles.mobileHeader,
-                        { backgroundColor: secondaryColor },
-                      ]}
-                    >
-                      {/* Conditionally render the sub header */}
-                      {subHeader.map((header, index) => (
-                        <TouchableOpacity
-                          key={index}
-                          onPress={() => handleToggleView(header)}
-                          style={[
-                            styles.mobileViewButtons,
-                            toggleView === header &&
-                              (styles.mobileSelectedView,
-                              { backgroundColor: highlight }),
-                          ]}
-                        >
-                          <Text style={styles.mobileButtonText}>{header}</Text>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                  </View>
-
-                  {/* Conditionally render the selected view */}
-                  {toggleView === "open tasks" && (
-                    <View
-                      style={[
-                        styles.mobileToggleView,
-                        { backgroundColor: secondaryColor },
-                      ]}
-                    >
-                      <OpenTaskComponents />
-                    </View>
-                  )}
-                  {toggleView === "active tasks" && (
-                    <View
-                      style={[
-                        styles.mobileToggleView,
-                        { backgroundColor: secondaryColor },
-                      ]}
-                    >
-                      <ActiveTaskComponent />
-                    </View>
-                  )}
-                  {toggleView === "create task" && (
-                    <View
-                      style={[
-                        styles.mobileToggleView,
-                        { backgroundColor: secondaryColor },
-                      ]}
-                    >
-                      <CreateTaskComponent />
-                    </View>
-                  )}
-                </View>
-              )}
-            </KeyboardAvoidingView>
-          </SafeAreaProvider>
+            {/* Conditionally render the selected view */}
+            {toggleView === "open tasks" && (
+              <View
+                style={[
+                  styles.mobileToggleView,
+                  { backgroundColor: secondaryColor },
+                ]}
+              >
+                <OpenTaskComponents />
+              </View>
+            )}
+            {toggleView === "active tasks" && (
+              <View
+                style={[
+                  styles.mobileToggleView,
+                  { backgroundColor: secondaryColor },
+                ]}
+              >
+                <ActiveTaskComponent />
+              </View>
+            )}
+            {toggleView === "create task" && (
+              <View
+                style={[
+                  styles.mobileToggleView,
+                  { backgroundColor: secondaryColor },
+                ]}
+              >
+                <CreateTaskComponent />
+              </View>
+            )}
+          </View>
+        )}
+      </KeyboardAvoidingView>
+    </SafeAreaProvider>
   );
 };
 
@@ -253,7 +245,6 @@ const styles = StyleSheet.create({
     padding: 10,
     alignItems: "center",
     marginHorizontal: 5,
-    backgroundColor: "#063970",
     marginVertical: 10,
     borderRadius: 5,
   },

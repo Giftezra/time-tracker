@@ -84,16 +84,6 @@ const AddContractComponent = () => {
             handleAddContractInput("contract_name", text);
           }}
         />
-        <TextInputComponent
-          placeholder="description"
-          text="description"
-          isMultiline
-          lines={3}
-          value={newContract?.description}
-          setValue={(text) => {
-            handleAddContractInput("description", text);
-          }}
-        />
 
         <View style={styles.postcodeContainer}>
           <View style={{ flexGrow: 1 }}>

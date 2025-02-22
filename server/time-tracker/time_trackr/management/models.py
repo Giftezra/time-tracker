@@ -135,6 +135,10 @@ class User(AbstractBaseUser, PermissionsMixin):
   def has_module_perms(self, app_label):
     return True
   
+  # MEthod is used to get the user's full name
+  def get_full_name(self):
+    return f'{self.first_name} {self.last_name}'
+  
   groups = models.ManyToManyField(
       Group,
       related_name="custom_user_groups",
@@ -283,7 +287,6 @@ class Shift(models.Model):
     def __str__(self):
         return f'{self.task} - {self.staff}'
       
-
 class TaskComment(models.Model):
     """ The model defines the task comment database and the fields that are required for the task comment model."""
     comment = models.TextField()

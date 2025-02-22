@@ -6,16 +6,16 @@ export interface OwnerAddress {
 }
 
 export interface CheckoutContextType {
-  error: string | null;
-  isLoading: boolean;
-  handleCheckboxPress: () => void;
-  isChecked: boolean;
-  handleBillingAddress: (key: string, value: string) => void;
-  billingAddress: BillingAddress | undefined;
-  selectedCard: string | null;
-  setSelectedCard: (cardId: string) => void;
-  savedCards: CardType[];
-  publishableKey: string;
+  // error: string | null;
+  // isLoading: boolean;
+  // handleCheckboxPress: () => void;
+  // isChecked: boolean;
+  // handleBillingAddress: (key: string, value: string) => void;
+  // billingAddress: BillingAddress | undefined;
+  // selectedCard: string | null;
+  // setSelectedCard: (cardId: string) => void;
+  // savedCards: CardType[];
+  // publishableKey: string;
 }
 
 

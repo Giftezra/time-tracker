@@ -13,6 +13,7 @@ import {
 ("react-native-paper-dates");
 
 import { EmployeeType } from "@/app/types/management/employee";
+import { OpenTaskProps } from "@/app/types/management/task";
 
 const allEmployees: EmployeeType[] = [
   {
@@ -33,14 +34,9 @@ const allEmployees: EmployeeType[] = [
   },
 ];
 
-type TaskProp = {
-  task_description: string;
-  contract_name: string;
-  task_serial: string;
-};
 
 type AssignTaskModalProps = {
-  task: TaskProp;
+  task: OpenTaskProps;
   dates: Date[];
   setDates: (dates: Date[]) => void;
   time: { hours: number; minutes: number };

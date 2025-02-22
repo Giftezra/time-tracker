@@ -24,84 +24,28 @@ import {
 import { AntDesign } from "@expo/vector-icons";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { user_image } from "@/app/utils/images";
+import { useMessageContext } from "@/app/context/management/messages/messageContext";
 
-
-
-/**
- * Type props for the message containers
- */
-type MessageContainerProps = {
-  conversation_id: string;
-  last_message: string;
-  time: string;
-  reciepient: string;
-  sender_id: string;
-};
-
-/**
- * Contains the fetched message details from the server
- *
- */
-const conversationDetails: MessageContainerProps[] = [
-  {
-    conversation_id: "1234",
-    last_message: "Hello, how are you doing today?",
-    time: "12:00",
-    reciepient: "Admin",
-    sender_id: "1234",
-  },
-  {
-    conversation_id: "123",
-    last_message: "I am doing great, how about you?",
-    time: "12:01",
-    reciepient: "User",
-    sender_id: "1234",
-  },
-  {
-    conversation_id: "12354",
-    last_message: "I am doing great, how about you?",
-    time: "12:01",
-    reciepient: "User",
-    sender_id: "1234",
-  },
-];
-
-/**
- * Fires the fetch request to delete the given messge from the conversation database given the message id
- * @returns {JSX.Element} Deletes the conversation when swiped
- */
-const deleteConversation = () => {
-  return (
-    <Pressable
-      onPress={() => console.log("message deleted")}
-      style={{ justifyContent: "center", padding: 5 }}
-    >
-      <AntDesign name="delete" size={15} color="red" />
-    </Pressable>
-  );
-};
-
-/**
- *
- * @param param0
- * @returns
- */
-const ConversationComponent = ({
+const ChatRoomComponent = ({
   onConversationSelect,
   onHandleModalVisibility,
 }: {
-  onConversationSelect: (id: string, reciepient: string) => void;
-  onHandleModalVisibility: (id:string | null) => void;
+  onConversationSelect: (
+    chatRoomId: string,
+    reciepient: string,
+    time: string
+  ) => void;
+  onHandleModalVisibility: (id: string | null) => void;
 }) => {
-  const [search, setSearch] = useState("");
+  const { chatroomDetails, deleteConversation } = useMessageContext();
 
+  const [search, setSearch] = useState("");
 
   const secondaryColor = useThemeColor({}, "secondaryColor");
   const text = useThemeColor({}, "text");
   const textinput = useThemeColor({}, "textinput");
   const inactivebtn = useThemeColor({}, "inactivebtn");
   const innerbackground = useThemeColor({}, "innerBackground");
-
 
   return (
     /**
@@ -131,34 +75,25 @@ const ConversationComponent = ({
           All components are wrapped in a scroll view to enable scrolling.
           The swipeable component is used to delete a conversation when swiped left to present the delete icon
        */}
-      <ScrollView style={styles.messageContainer}>
-        {conversationDetails.map((conversation, index) => (
-          <Swipeable
-            key={index}
-            containerStyle={styles.swipeable}
-            renderRightActions={deleteConversation}
-          >
-            {/* Pass the method to get the conversation id */}
+      <ScrollView
+        style={styles.messageContainer}
+        showsVerticalScrollIndicator={false}
+      >
+        {chatroomDetails.map((chat, index) => (
+          <Swipeable key={index} containerStyle={styles.swipeable}>
             <Pressable
               style={[styles.messageRow, { backgroundColor: innerbackground }]}
               onPress={() =>
-                onConversationSelect(
-                  conversation.conversation_id,
-                  conversation.reciepient
-                )
+                onConversationSelect(chat.id, chat.name, chat.time)
               }
-              onPressIn={() =>
-                onHandleModalVisibility(conversation?.conversation_id)
-              }
+              onPressIn={() => onHandleModalVisibility(chat.id)}
             >
               <Image source={user_image} style={styles.image} />
               <View style={styles.messageDetailsContainer}>
-                <Text style={styles.reciepientText}>
-                  {conversation.reciepient}
-                </Text>
-                <Text style={styles.text}>{conversation.last_message}</Text>
+                <Text style={styles.reciepientText}>{chat.name}</Text>
+                <Text style={styles.text}>{chat.lastMessage}</Text>
               </View>
-              <Text style={styles.timeText}>{conversation.time}</Text>
+              <Text style={styles.timeText}>{chat.time}</Text>
             </Pressable>
           </Swipeable>
         ))}
@@ -167,44 +102,45 @@ const ConversationComponent = ({
   );
 };
 
-export default ConversationComponent;
+export default ChatRoomComponent;
 
 const styles = StyleSheet.create({
   maincontainer: {
     flex: 1,
     width: "100%",
-    backgroundColor: "#154c79",
+    backgroundColor: "#f5f5f5",
+    borderRadius: 8,
+    overflow: "hidden",
   },
 
   searchContainer: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-around",
     alignItems: "center",
-    width: "100%",
-    borderWidth:0.4,
-    borderRadius: 5,
+    padding: 5,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(0,0,0,0.1)",
+    backgroundColor: "#ffffff",
   },
 
   searchInput: {
     flex: 1,
-    padding: Platform.OS === "web" ? 5 : 10,
+    padding: Platform.OS === "web" ? 8 : 12,
     fontSize: 14,
-    fontWeight: "600",
     fontFamily: "BarlowRegular",
+    backgroundColor: "#f8f9fa",
+    borderRadius: 20,
+    marginRight: 8,
   },
 
   iconButtons: {
-    padding: Platform.OS === "web" ? 5 : 10,
-    marginHorizontal: 5,
-    marginVertical: 5,
-    borderRadius: 30,
-    backgroundColor: "#063970",
+    padding: 8,
+    marginHorizontal: 4,
+    borderRadius: 20,
+    backgroundColor: "#007AFF",
   },
 
   messageContainer: {
     width: "100%",
-    flexDirection: "column",
     flex: 1,
   },
 
@@ -212,50 +148,43 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     width: "100%",
     padding: 10,
-    justifyContent: "space-between",
     alignItems: "center",
-    marginVertical: 1,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(0,0,0,0.05)",
   },
 
   image: {
-    width: 35,
-    height: 35,
-    borderRadius: 20,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
   },
 
   messageDetailsContainer: {
     flex: 1,
-    flexDirection: "column",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginHorizontal: 10,
+    marginLeft: 12,
   },
 
   text: {
-    fontSize: 12,
+    fontSize: 13,
     fontFamily: "BarlowRegular",
-    fontWeight: "600",
-    textTransform: "lowercase",
-    color: "white",
+    color: "#666666",
+    marginTop: 4,
   },
 
   reciepientText: {
-    fontSize: 13,
+    fontSize: 15,
     fontFamily: "RobotoRegular",
     fontWeight: "600",
-    textTransform: "uppercase",
+    color: "#1a1a1a",
   },
 
   timeText: {
     fontSize: 12,
-    fontFamily: "BarlowRegular",
-    fontWeight: "600",
-    textTransform: "lowercase",
-    color: "red",
+    color: "#999999",
+    marginLeft: 8,
   },
 
   swipeable: {
     width: "100%",
-    flex: 1,
   },
 });

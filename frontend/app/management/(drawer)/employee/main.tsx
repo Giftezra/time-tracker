@@ -22,7 +22,7 @@ import EmployeeContainerComponent from "@/app/component/management/employees/emp
 import { EmployeeDetailsType } from "@/app/types/management/employee";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useEmployeeContext } from "@/app/context/management/employee/employeeContext";
-import { useAuth } from "@/app/context/management/authentication";
+import { useAuth } from "@/app/context/authentication";
 import SideComponent from "@/app/component/helper/sideComponent";
 
 const MainEmployeePanel = () => {
@@ -57,20 +57,25 @@ const MainEmployeePanel = () => {
 
   const list = checkUndefined();
 
-  // Get the specific list to display given if the user has pressed the search button.
-  const listToDisplay = isPressed ? filteredEmployeeList : employeelist;
-
   return (
     <SafeAreaView style={[{ flex: 1 }, { backgroundColor: secondarycolor }]}>
       <KeyboardAvoidingView style={{ flex: 1 }}>
         <GestureHandlerRootView
           style={[styles.maincontainer, { width: windowWidth }]}
         >
-          <View style={{ width: windowWidth * 0.2 }}>
-            <SideComponent />
-          </View>
+          {/* Conditionally render the side component for the web interface */}
+          {Platform.OS === "web" && (
+            <View style={{ width: windowWidth * 0.2 }}>
+              <SideComponent />
+            </View>
+          )}
 
-          <View style={{ width: windowWidth * 0.8 }}>
+          <View
+            style={{
+              width:
+                Platform.OS === "web" ? windowWidth * 0.8 : windowWidth * 1,
+            }}
+          >
             {/* Contains a search input bar that can be used by the admin to search for a particular staff */}
 
             <View style={styles.searchContainer}>
@@ -130,10 +135,10 @@ const MainEmployeePanel = () => {
 
               <View style={styles.employeeContatiner}>
                 {/* Map the number of employes in a row pattern and implements pagination when the view contains more than 25 employees per page */}
-                {listToDisplay?.map((employee, index) => (
-                  <View key={index} style={styles.employee}>
+                {employeelist?.map((employee, index) => (
+                  <Pressable key={index} style={styles.employee}>
                     <EmployeeContainerComponent {...employee} />
-                  </View>
+                  </Pressable>
                 ))}
               </View>
             </ScrollView>

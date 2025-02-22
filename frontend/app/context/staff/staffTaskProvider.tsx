@@ -1,6 +1,5 @@
 import { useContext, createContext, useState, ReactNode, useMemo } from "react";
-import { TaskDetailsType, TaskProps, TaskProviderProps } from "@/app/types/staff/task";
-import { loadToken } from "@/app/utils/loadData";
+import { TaskDetailsType, TaskProps, TaskProviderInterface } from "@/app/types/staff/task";
 import { BASE_URL } from "@/app/utils/urls";
 import { Alert } from "react-native";
 import {TaskDetailsProps} from "@/app/types/management/task";
@@ -8,7 +7,7 @@ import {TaskDetailsProps} from "@/app/types/management/task";
 /**
  * Creata  new context for the task.
  */
-const TaskContext = createContext<TaskProviderProps | undefined>(undefined);
+const TaskContext = createContext<TaskProviderInterface | undefined>(undefined);
 
 /**
  * Create the provider to serve the context.
@@ -160,7 +159,7 @@ const calculateTimeDifference = () => {
    * The method only returns a confirmaion message from the server.
    */
   const applyForTask = async (id: string) => {
-    const token = loadToken();
+    const token = ''
     const response = await fetch(`${BASE_URL}/api/apply/task`, {
       method: "POST",
       headers: {
@@ -224,7 +223,7 @@ const calculateTimeDifference = () => {
    * @returns void
    */
   const handleStartTask = async (id: string) => {
-    const token = loadToken();
+    const token = '';
     const response = await fetch(`BASE_URL/api/task/start`, {
       method: "POST",
       headers: {
@@ -254,7 +253,7 @@ const calculateTimeDifference = () => {
    * @param id is the shift id assigned to the user
    */
   const handleEndTask = async (id: string) => {
-    const token = loadToken();
+    const token = ''
     const response = await fetch(`BASE_URL/api/task/cancel`, {
       method: "POST",
       headers: {
@@ -279,7 +278,7 @@ const calculateTimeDifference = () => {
    * If the data returns true, the break time will be triggered notifying the user that the break time has started and the shift time will be paused given the kind of task assigned to the user.
    */
   const handleBreakTime = async (id: string) => {
-    const token = loadToken();
+    const token = '';
     const response = await fetch(`BASE_URL/api/task/break`, {
       method: "POST",
       headers: {

@@ -9,10 +9,10 @@
 
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import React from "react";
-import { EventDisplayProps } from "@/app/types/staff/eventType";
+import { EventDisplayInterface } from "@/app/types/staff/eventType";
 import { useThemeColor } from "@/hooks/useThemeColor";
 
-const EventDisplay = ({ props }: { props: EventDisplayProps }) => {
+const EventDisplay = ({ props }: { props: EventDisplayInterface }) => {
   /**
    * Use the hook to get the current theme , setting the colors based on the theme.
    */
@@ -22,17 +22,21 @@ const EventDisplay = ({ props }: { props: EventDisplayProps }) => {
   const innerBackground = useThemeColor({}, "innerBackground");
 
   return (
-    <View style={[styles.mainContainer, { backgroundColor: innerBackground}]}>
+    <View style={[styles.mainContainer, { backgroundColor: innerBackground }]}>
       <Text style={[styles.siteName, { color: text }]}>{props.site_name}</Text>
       {/* Start details */}
       <View style={styles.timeContainer}>
         <View style={styles.innertimeContainer}>
           <Text style={[styles.text, { color: highlight }]}>start time</Text>
-          <Text style={[styles.text, { color: otherText }]}>{props.start_time}</Text>
+          <Text style={[styles.text, { color: otherText }]}>
+            {props.start_time}
+          </Text>
         </View>
         <View style={styles.innertimeContainer}>
           <Text style={[styles.text, { color: highlight }]}>end time</Text>
-          <Text style={[styles.text, { color: otherText }]}>{props.end_time}</Text>
+          <Text style={[styles.text, { color: otherText }]}>
+            {props.end_time}
+          </Text>
         </View>
       </View>
       <View style={styles.container}>

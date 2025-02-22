@@ -25,10 +25,10 @@ def get_shifts(request):
             return Response({'error': 'You are not authorized to access this resource'}, status=status.HTTP_403_FORBIDDEN)
             
         # Get all contracts and tasksassociated with the company using the filter method to filter the associated company shifts.
-        shifts = Shift.objects.filter(task__contract__company=company)
+        shifts = Shift.objects.filter(task__contract__client__company=company)
         
         if not shifts:
-            return Response({'error': 'No shifts found'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'error': 'No shifts found'}, status=status.HTTP_200_OK)
         
         shift_list = []
         

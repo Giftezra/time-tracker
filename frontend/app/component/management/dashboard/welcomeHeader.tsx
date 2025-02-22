@@ -35,7 +35,7 @@ const DashboardWelcomeHeader = () => {
         {role === "Owner" && (
           <Pressable
             style={styles.button}
-            onPress={() => router.navigate("/management/checkout/main")}
+            onPress={() => router.navigate('/management/(drawer)/checkout/main')}
           >
             <Text style={styles.buttonText}>go to payment page</Text>
           </Pressable>

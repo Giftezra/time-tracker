@@ -8,9 +8,9 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import React, {useEffect} from "react";
+import React, { useEffect } from "react";
 import RegistrationTextInputComponent from "@/app/component/helper/registrationTextinput";
-import { useAuth } from "@/app/context/management/authentication";
+import { useAuth } from "@/app/context/authentication";
 import {
   GestureHandlerRootView,
   ScrollView,
@@ -18,7 +18,10 @@ import {
 import { router } from "expo-router";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import {bounceText, textbounce} from "@/app/utils/animations/onboardingAnimation";
+import {
+  bounceText,
+  textbounce,
+} from "@/app/utils/animations/onboardingAnimation";
 
 const RegisterCompanyComponent = () => {
   const { ownerData, handleUserInput } = useAuth();
@@ -26,7 +29,7 @@ const RegisterCompanyComponent = () => {
   const backgroundColor = useThemeColor({}, "textinput");
   const buttonColor = useThemeColor({}, "inactivebtn");
 
-  useEffect(() => { 
+  useEffect(() => {
     bounceText();
   }, []);
 
@@ -220,7 +223,14 @@ const RegisterCompanyComponent = () => {
               ]}
             >
               <Animated.Text
-                style={[{ transform: [{ translateY: textbounce }], ...styles.submitText, color: backgroundColor, shadowColor: buttonColor }]}
+                style={[
+                  {
+                    transform: [{ translateY: textbounce }],
+                    ...styles.submitText,
+                    color: backgroundColor,
+                    shadowColor: buttonColor,
+                  },
+                ]}
               >
                 submit
               </Animated.Text>

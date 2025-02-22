@@ -1,9 +1,10 @@
 import { StyleSheet, Text, View, TextInput } from "react-native";
 import React, { useState } from "react";
-import { useCheckout } from "@/app/context/management/checkout/checkoutContext";
+// import { useCheckout } from "@/app/context/management/checkout/checkoutContext";
 
 const BillingAddressComponent = () => {
-  const { handleBillingAddress, billingAddress } = useCheckout();
+  // const { handleBillingAddress, billingAddress } = useCheckout();
+
 
   return (
     <View style={styles.container}>
@@ -13,65 +14,71 @@ const BillingAddressComponent = () => {
         <Text style={styles.label}>Full Name</Text>
         <TextInput
           style={styles.input}
-          value={billingAddress?.fullName}
-          onChangeText={(value) => handleBillingAddress("fullName", value)}
+          // value={billingAddress?.fullName}
+          // onChangeText={(value) => handleBillingAddress("fullName", value)}
           placeholder="Enter your full name"
         />
       </View>
+
 
       <View style={styles.formGroup}>
         <Text style={styles.label}>Address</Text>
         <TextInput
           style={styles.input}
-          value={billingAddress?.address}
-          onChangeText={(value) => handleBillingAddress("address", value)}
+          // value={billingAddress?.address}
+          // onChangeText={(value) => handleBillingAddress("address", value)}
           placeholder="Apartment, suite, unit, etc."
         />
       </View>
+
 
       <View style={styles.row}>
         <View style={[styles.formGroup, styles.halfWidth]}>
           <Text style={styles.label}>City</Text>
           <TextInput
             style={styles.input}
-            value={billingAddress?.city}
-            onChangeText={(value) => handleBillingAddress("city", value)}
+            // value={billingAddress?.city}
+            // onChangeText={(value) => handleBillingAddress("city", value)}
             placeholder="City"
           />
         </View>
+
 
         <View style={[styles.formGroup, styles.halfWidth]}>
           <Text style={styles.label}>Postcode</Text>
           <TextInput
             style={styles.input}
-            value={billingAddress?.postcode}
-            onChangeText={(value) => handleBillingAddress("postcode", value)}
+            // value={billingAddress?.postcode}
+            // onChangeText={(value) => handleBillingAddress("postcode", value)}
             placeholder="Postcode"
+
+
           />
         </View>
       </View>
 
+
       <View style={styles.row}>
         <View style={[styles.formGroup, styles.halfWidth]}>
           <Text style={styles.label}>Country</Text>
-          <TextInput
+          {/* <TextInput
             style={styles.input}
             value={billingAddress?.country}
             onChangeText={(value) => handleBillingAddress("country", value)}
             placeholder="Country"
-          />
+          /> */}
         </View>
       </View>
 
       <View style={styles.formGroup}>
         <Text style={styles.label}>Phone Number</Text>
-        <TextInput
+        {/* <TextInput
           style={styles.input}
           value={billingAddress?.phone}
           onChangeText={(value) => handleBillingAddress("phone", value)}
           placeholder="Enter your phone number"
           keyboardType="phone-pad"
-        />
+        /> */}
       </View>
     </View>
   );

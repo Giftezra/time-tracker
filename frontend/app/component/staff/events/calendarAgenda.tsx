@@ -1,11 +1,16 @@
 import { StyleSheet, Text, View, TouchableOpacity } from "react-native";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Agenda } from "react-native-calendars";
 
-import { EventDisplayProps, EventProps } from "@/app/types/staff/eventType";
-import EventDisplay from "../events/eventDisplay";
+import {
+  EventDisplayInterface,
+  EventDetailsInterface,
+} from "@/app/types/staff/eventType";
+import EventDisplay from "./eventDisplay";
+import { useEventContext } from "@/app/context/staff/staffEventProvider";
+
 type AgendaItem = {
-  [key: string]: EventDisplayProps[];
+  [key: string]: EventDisplayInterface[];
 };
 
 // Sample data that follows the ShiftDisplayProps structure
@@ -64,7 +69,10 @@ const items: AgendaItem = {
  * @param onPress Function to be called when the item is pressed
  * @returns
  */
-const renderItem = (item: EventDisplayProps, onPress: (id: string) => void) => {
+const renderItem = (
+  item: EventDisplayInterface,
+  onPress: (id: string) => void
+) => {
   if (!item) return null;
   return (
     <TouchableOpacity
@@ -76,15 +84,53 @@ const renderItem = (item: EventDisplayProps, onPress: (id: string) => void) => {
   );
 };
 
-const CalendarAgendaComponent = ({ onPress }: { onPress: () => void }) => {
+/**
+ * The CalendarAgendaComponent displays the shifts assigned to the user in an Agenda component.
+ * The Agenda component is a calendar that displays the shifts assigned to the user.
+ * The component uses the renderItem function to render the shifts for each day.
+ * @param onPress The function to be called when an item is pressed.
+ * @returns The CalendarAgendaComponent
+ */
+
+const CalendarAgendaComponent = ({
+  onPress,
+}: {
+  onPress: (id: string) => void;
+}) => {
+  const { assignedShifts } = useEventContext();
+  const [items, setItems] = useState<AgendaItem>({});
+
+  /**  The hooks is used to format the date for the agendaItems.
+   * The date is formatted as yyyy-mm-dd
+   * The hook ensures that it only triggered when the assigned task has valid data.
+   */
+  useEffect(() => {
+    const formattedItems: AgendaItem = {};
+
+    // Loop the assigned shifts and format the date
+    assignedShifts.forEach((shift) => {
+      const dateKey = shift.start_date?.split("T")[0];
+      if (dateKey) {
+        if (formattedItems[dateKey]) {
+          formattedItems[dateKey].push(shift);
+        } else {
+          formattedItems[dateKey] = [];
+        }
+      }
+    });
+    setItems(formattedItems);
+  }, [assignedShifts]);
+
   return (
     <View style={styles.container}>
       <Agenda
         items={items}
-        renderItem={(item: EventDisplayProps) => renderItem(item, onPress)}
+        renderItem={(item: EventDisplayInterface) => renderItem(item, onPress)}
         renderEmptyDate={() => (
           <View style={styles.renderEmptyDateContainer}>
-            <Text style = {styles.renderEmptyDateText}>you do not have any active shifts for this day</Text>
+            <Text style={styles.renderEmptyDateText}>
+              you do not have any active shifts for this day
+            </Text>
           </View>
         )}
         hideKnob={false}

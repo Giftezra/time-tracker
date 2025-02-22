@@ -3,7 +3,6 @@ import {
   CalendarShiftType,
 } from "@/app/types/management/calendars";
 import { EmployeeDetailsType } from "@/app/types/management/employee";
-import { loadToken } from "@/app/utils/loadData";
 import { BASE_URL } from "@/app/utils/urls";
 import dayjs from "dayjs";
 import {
@@ -14,7 +13,7 @@ import {
   useEffect,
 } from "react";
 import { th } from "react-native-paper-dates";
-import { useAuth } from "../authentication";
+import { useAuth } from "../../authentication";
 
 const CalendarContext = createContext<CalendarContextType | undefined>(
   undefined

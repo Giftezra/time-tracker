@@ -15,12 +15,13 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { ScrollView, TextInput } from "react-native-gesture-handler";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { ActiveTaskType } from "@/app/types/management/task";
 import { useManagementTask } from "@/app/context/management/task manager/managementTaskProvider";
 import SearchInputContainer from "../../helper/searchInput";
+import { AntDesign, MaterialCommunityIcons } from "@expo/vector-icons";
 
 /* Constant value for the sub headers representing each mapped item */
 const subHeaders = [
@@ -33,19 +34,22 @@ const subHeaders = [
 
 const ActiveTaskComponent = () => {
   const {
-    goto_message_screen: gotoMessageScreen,
-    handle_is_task_clicked: handleIsTaskClicked,
+    gotoMessageScreen,
+    handleIsTaskClicked,
     isTaskClicked,
     isModalVisible,
-    employee,
+    activeTaskClicked,
     hideModal,
     render_popup_button: renderPopupButton,
     isLoading,
     activeTasks,
+    terminateTask
   } = useManagementTask();
 
   const [search, setSearch] = useState<string>("");
   const [isPopupVisible, setIsPopupVisible] = useState(false);
+  const [isTerminating, setIsTerminating] = useState(false);
+  const [terminationError, setTerminationError] = useState<string>("");
 
   const inactivebtn = useThemeColor({}, "inactivebtn");
   const text = useThemeColor({}, "text");
@@ -53,6 +57,22 @@ const ActiveTaskComponent = () => {
   const textinput = useThemeColor({}, "textinput");
   const background = useThemeColor({}, "background");
   const tint = useThemeColor({}, "tint");
+
+  /**
+   * Method is used to handle the task termination process, and also handles any errors
+   * that may occur during the process.
+   */
+  const handleTaskTermination = async () => {
+    setIsTerminating(true);
+    try {
+      await terminateTask(activeTaskClicked);
+    } catch (error) {
+      console.log(error);
+      setTerminationError("An error occurred while terminating the task");
+    } finally {
+      setIsTerminating(false);
+    }
+  }
 
   return (
     <View style={styles.maincontainer}>
@@ -84,24 +104,24 @@ const ActiveTaskComponent = () => {
               styles.subcontainer,
               { backgroundColor: inactivebtn, shadowColor: inactivebtn },
             ]}
-            onPressIn={() => handleIsTaskClicked(task.employee)}
+            onPress={() => handleIsTaskClicked(task)}
             onLongPress={() => setIsPopupVisible(true)}
           >
             <Text style={[styles.text, { color: text }]}>{task.shift_id}</Text>
 
-            <Text style={[styles.text, { color: text }]}>
+            <Text style={[styles.text, { color: text, textTransform: "uppercase" }]}>
               {task.task_serial}
             </Text>
 
             <Text style={[styles.text, { color: text }]}>
-              {task.employee.length}
+              {task.employee_name}
             </Text>
 
             <Text style={[styles.text, { color: text }]}>
               {task.client_name}
             </Text>
             <Text style={[styles.text, { color: text }]}>
-              {task.start_time}
+              {task.start_time.split("T")[1].split(".")[0]}
             </Text>
             {isPopupVisible &&
               renderPopupButton(task.shift_id, () => setIsPopupVisible(false))}
@@ -114,32 +134,57 @@ const ActiveTaskComponent = () => {
         <Modal
           visible={isModalVisible}
           animationType="slide"
-          transparent={true}
+          transparent={false}
         >
           <View style={styles.mainModalContainer}>
-            <Pressable onPress={hideModal}>
-              <Text>Close</Text>
+            <Pressable onPress={hideModal} style={styles.modalCloseButton}>
+              <Text style = {styles.modalCloseButtonText}>Close</Text>
             </Pressable>
             <View
-              style={[styles.modalContainer, { backgroundColor: background }]}
+              style={[styles.modalContainer, { backgroundColor: textinput }]}
             >
-              {/* Conditianally render the employees with a button that navigates to the message page given the employee id */}
-              {employee?.map((employee, index) => (
-                <View key={index} style={styles.modalDetails}>
-                  <Text style={[styles.modalText, { color: text }]}>
-                    do you wanna communicate with {employee.employee_name} ?
-                  </Text>
-                  <TouchableOpacity
-                    style={[
-                      styles.modalMessageButton,
-                      { backgroundColor: tint },
-                    ]}
-                    onPress={() => gotoMessageScreen(employee)}
-                  >
-                    <Text style={styles.modalBtnText}>send message</Text>
-                  </TouchableOpacity>
+              {/* Conditionally render the active task that was clicked, to display information to enable the user message the employee or call them. */}
+              {activeTaskClicked && (
+                <View style={styles.modalDetails}>
+                  {/* Display the shift detials and buttons to terminate the shift, send a message to the staff */}
+                  <View style={styles.modalInnerContainer}>
+                    <Text style={styles.modalText}>shift id</Text>
+                    <Text style={styles.modalText}>
+                      {activeTaskClicked.shift_id}
+                    </Text>
+                  </View>
+
+                  <View style={styles.modalInnerContainer}>
+                    <Text style={styles.modalText}>employee details</Text>
+                    <Text style={styles.modalText}>
+                      {activeTaskClicked.employee_name}
+                    </Text>
+                    <Text style={styles.modalText}>
+                      {activeTaskClicked.employee_id}
+                    </Text>
+                  </View>
+
+                  {/* Navigate to the message screen when clicked to send the staff member a message. */}
+                  <View>
+                    <TouchableOpacity style={styles.modalButton} onPress={() => gotoMessageScreen(activeTaskClicked)}>
+                      <Text style={styles.modalBtnText}>message</Text>
+                      <AntDesign name="message1" size={24} color={icon} />
+                    </TouchableOpacity>
+                  </View>
+                  
+                  {/* Terminate the task when clicked */}                  
+                  <View >
+                    <TouchableOpacity style = {styles.modalButton} onPress={handleTaskTermination}>
+                      <Text style={styles.modalBtnText}>terminate shift</Text>
+                      <MaterialCommunityIcons
+                        name="cancel"
+                        size={24}
+                        color={icon}
+                      />
+                    </TouchableOpacity>
+                  </View>
                 </View>
-              ))}
+              )}
             </View>
           </View>
         </Modal>
@@ -235,30 +280,30 @@ const styles = StyleSheet.create({
     borderRadius: 30,
   },
 
-  terminateTaskContainer: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    backgroundColor: "#e63a0a",
-    padding: 5,
-    borderRadius: 5,
-  },
-  terminateTaskButton: {
-    paddingStart: 10,
-    paddingEnd: 10,
-    alignItems: "center",
-  },
-
   mainModalContainer: {
     flex: 1,
     justifyContent: "center",
-    alignItems: "center",
+  },
+
+  modalCloseButton:{
+    alignSelf:'center',
+    padding:10,
+    marginVertical:10,
+    borderRadius:20,
+    borderWidth:1,
+  },
+
+  modalCloseButtonText:{
+    fontSize:15,
+    fontFamily: "RobotoRegular",
+    fontWeight: "800",
+    textTransform: "uppercase",
   },
 
   modalContainer: {
     maxWidth: Platform.OS === "web" ? "50%" : "100%",
     padding: 5,
-    borderRadius: 10,
+    borderRadius: 5,
     borderWidth: 0.5,
     elevation: 5,
     shadowRadius: 5,
@@ -270,8 +315,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: Platform.OS === "web" ? 5 : 10,
-    marginVertical: 5,
+    padding: 5,
+    marginVertical: 2
   },
 
   modalText: {
@@ -281,12 +326,10 @@ const styles = StyleSheet.create({
     textTransform: "capitalize",
   },
 
-  modalMessageButton: {
-    padding: Platform.OS === "web" ? 5 : 10,
-    borderRadius: 20,
-    elevation: 5,
-    shadowRadius: 5,
-    opacity: 0.6,
+  modalButton: {
+    alignItems: "center",
+    padding: 5,
+    rowGap: 5,
   },
 
   modalBtnText: {
@@ -295,4 +338,8 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     textTransform: "capitalize",
   },
+
+  modalInnerContainer: {
+    rowGap: 5,
+  }
 });

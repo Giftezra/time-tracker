@@ -166,9 +166,6 @@ const ClientDetailsComponent: React.FC<{
                     {contract.city}
                   </Text>
                   <Text style={[styles.siteText, { color: text }]}>
-                    {contract.description}
-                  </Text>
-                  <Text style={[styles.siteText, { color: text }]}>
                     {`start date: ${contract.start_date}`}
                   </Text>
                   <Text style={[styles.siteText, { color: text }]}>

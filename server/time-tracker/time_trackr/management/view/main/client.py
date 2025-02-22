@@ -140,14 +140,20 @@ def create_contract(request):
 @permission_classes([IsAuthenticated])
 @admin_required
 def getContractsAndJobDetails(request):
+    print("request", request);
     """Retrieve active contract and job details for a specific client including assigned staff."""
     try:
-        client_id = request.data.get('client_id')
-        if not client_id:
-            return Response({"error": "client_id is required"}, 
-                          status=status.HTTP_400_BAD_REQUEST)
-            
-        client = get_object_or_404(Client, id=client_id)
+        # Filter all client associated with the company
+        if request.user.is_owner:
+            company = get_object_or_404(Company, owner=request.user)
+        elif request.user.is_employee:
+            company = get_object_or_404(Staff, user=request.user).company
+        else:
+            return Response({"error": "User is not authorized to get clients"}, status=status.HTTP_403_FORBIDDEN)
+        print("company", company);
+        
+
+        client = get_object_or_404(Client, company=company)
         # Optimize the query using select_related and prefetch_related
         # Filter for only active contracts (is_completed=False)
         contracts = Contracts.objects.filter(
@@ -168,8 +174,8 @@ def getContractsAndJobDetails(request):
                 
                 staff_list = [{
                     'staff_id': staff.id,
-                    'staff_name': staff.name,
-                    'staff_email': staff.email,
+                    'staff_name': staff.user.get_full_name(),
+                    'staff_email': staff.user.email,
                     'staff_phone': staff.phone,
                 } for staff in staff_members]
                 
@@ -199,6 +205,7 @@ def getContractsAndJobDetails(request):
                 'message': 'No active contracts found for this client',
                 'client_contract_details': []
             }, status=status.HTTP_200_OK)
+        print("client_contract_details", client_contract_details);
             
         # Return the response with the contract details
         return Response({
@@ -220,6 +227,7 @@ def getContractsAndJobDetails(request):
 
 
 
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 @admin_required
@@ -231,59 +239,65 @@ def getClientAndContracts(request):
     Returns:
         Response: A JSON response containing client details and their associated contracts,
                 or an error message if the client does not exist.
-    """
-    
-    # Check if the user is the owner of the company and retrieve the company object
-    if request.user.is_owner:
-      company = get_object_or_404(Company, owner=request.user)
-    elif request.user.is_employee:
-      company = get_object_or_404(Staff, user=request.user).company
-    else:
-      return Response({"error": "User is not authorized to get clients"}, status=status.HTTP_403_FORBIDDEN)
+    """    
     try:
-      # Get all clients associated with the company
-      clients = Client.objects.filter(company=company)
-      client_list = [] # Create an empty list to store the client details
-
-      
-      for client in clients:
-        # Get all the contracts associated with the client
-        contracts = Contracts.objects.filter(client=client)
-        contract_list = [] # Create an empty list to store the contract details
-
-        for contract in contracts:
-          contract_list.append({
-            'contract_id': contract.id,
-            'name': contract.name,
-            'address': contract.address,
-            'postcode': contract.postcode,
-            'city': contract.city,
-            'start_date': contract.start_date,
-            'end_date': contract.end_date,
-          })
-        # Append the client and contract details to the client_list
-        # This would return all the clients and their associated contracts
-        client_list.append({
-          'client_id': client.id,
-          'name': client.name,
-          'address': client.address,
-          'postcode': client.postcode,
-          'email': client.email,
-          'phone': client.phone,
-          'city': client.city,
-          'country': client.country,
-          'contracts': contract_list
-        })
+        # Check if the user is the owner of the company and retrieve the company object
+        try:
+            if request.user.is_owner:
+                company = get_object_or_404(Company, owner=request.user)
+            elif request.user.is_employee:
+                company = get_object_or_404(Staff, user=request.user).company
+            else:
+                return Response({"error": "User is not authorized to get clients"}, status=status.HTTP_403_FORBIDDEN)
+        except Company.DoesNotExist:
+            return Response({"error": "Company does not exist"}, status=status.HTTP_400_BAD_REQUEST)
         
-      # Return the response with the client details and their associated contracts
-      return Response({'client_details': client_list}, status=status.HTTP_200_OK)
+        # Get all clients associated with the company
+        clients = Client.objects.filter(company=company)
+        client_list = [] # Create an empty list to store the client details
+
+        for client in clients:
+            # Get all the contracts associated with the client
+            contracts = Contracts.objects.filter(client=client)
+            contract_list = [] # Create an empty list to store the contract details
+
+            for contract in contracts:
+                contract_list.append({
+                    'contract_id': contract.pk,
+                    'name': contract.name,
+                    'address': contract.address,
+                    'postcode': contract.postcode,
+                    'city': contract.city,
+                    'start_date': contract.start_date,
+                    'end_date': contract.end_date,
+                })
+            # Append the client and contract details to the client_list
+            # This would return all the clients and their associated contracts
+            client_list.append({
+                'client_id': client.pk,
+                'name': client.name,
+                'address': client.address,
+                'postcode': client.postcode,
+                'email': client.email,
+                'phone': client.phone,
+                'city': client.city,
+                'country': client.country,
+                'contracts': contract_list
+            })
+            print("client_list", client_list)
+        
+        # Return the response with the client details and their associated contracts
+        return Response({'client_details': client_list}, status=status.HTTP_200_OK)
     
     # Return an error message if the client does not exist
     except Client.DoesNotExist:
-      return Response({"error": "Client does not exist"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"error": "Client does not exist"}, status=status.HTTP_400_BAD_REQUEST)
+    except Contracts.DoesNotExist:
+        return Response({"error": "Contracts does not exist"}, status=status.HTTP_400_BAD_REQUEST)
     except Exception as e:
-      return Response({"error": f"An error occurred: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"error": f"An error occurred: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
     
+
 
 
 @api_view(['PATCH'])

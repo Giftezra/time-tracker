@@ -5,10 +5,10 @@ import CustomModal from "@/app/component/helper/customModal";
 import MessageComponent from "@/app/component/staff/messages/messages";
 import ConversationComponent from "@/app/component/staff/messages/conversation-details";
 
-import { ConversationDetailsProps } from "@/app/types/staff/messages";
+import { ChatRoomType } from "@/app/types/staff/messages";
 import { useMessageContext } from "@/app/context/staff/staffMessageProvider";
 
-const conversationDetails: ConversationDetailsProps[] = [
+const conversationDetails: ChatRoomType[] = [
   {
     id: "1",
     lastMessage: "Hello",

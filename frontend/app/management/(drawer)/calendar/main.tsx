@@ -20,7 +20,7 @@ import MyTasksComponent from "@/app/component/management/calendar/myTask";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import SideComponent from "@/app/component/helper/sideComponent";
-import { useAuth } from "@/app/context/management/authentication";
+import { useAuth } from "@/app/context/authentication";
 
 const MainManagementCalendarComponent = () => {
   const {

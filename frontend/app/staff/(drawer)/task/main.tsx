@@ -32,6 +32,7 @@ const MainStaffTaskManager = () => {
     <SafeAreaProvider style={styles.maincontainer}>
       <View style={{ flex: 1 }}>
         <View style={styles.calendarContainer}>
+          {/* Display the calendar component which when clicked, fires the method to get the tasks available for the selected day. */}
           <CalenderComponent
             setSelectedDate={setSelectedDate}
             markedDates={markedDates}

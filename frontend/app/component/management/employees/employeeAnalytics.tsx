@@ -20,19 +20,19 @@ import {
 import React, { useState } from "react";
 import { useThemeColor } from "@/hooks/useThemeColor";
 
-import { EmployeeAnalyticProps } from "@/app/types/management/employee";
+import { EmployeeAnalyticInterface } from "@/app/types/management/employee";
 
 /**
  * The function calculates the total number of tasks assigned to the employee
  * @param props
  * @returns
  */
-const calculateTotalTasks = (props: EmployeeAnalyticProps) => {
+const calculateTotalTasks = (props: EmployeeAnalyticInterface) => {
   return props.number_of_assigned_tasks + props.number_of_unassigned_tasks;
 };
 
 const EmployeeAnalyticsComponent: React.FC<{
-  props: EmployeeAnalyticProps;
+  props: EmployeeAnalyticInterface;
   onModalClose: () => void;
 }> = ({ props, onModalClose }) => {
   const primaryColor = useThemeColor({}, "primaryColor");

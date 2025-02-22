@@ -14,29 +14,21 @@ import {
 import React, { useState } from "react";
 import { useLoadedFonts } from "@/hooks/useLoadedFonts";
 
-import ConversationComponent from "@/app/component/management/messsges/conversations";
+import ChatRoomComponent from "@/app/component/management/messsges/chatRoom";
 import MessageComponent from "@/app/component/management/messsges/messages";
 import {
   GestureHandlerRootView,
   TouchableOpacity,
 } from "react-native-gesture-handler";
 import SideComponent from "@/app/component/helper/sideComponent";
-import { useAuth } from "@/app/context/management/authentication";
+import { useAuth } from "@/app/context/authentication";
 import { useMessageContext } from "@/app/context/management/messages/messageContext";
-
-type ConversationProps = {
-  conversation_id: string;
-  reciepient: string;
-};
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
 const MainAdminMessages = () => {
   const { windowWidth } = useAuth();
-  const { deleteMessage } = useMessageContext();
+  const { handleChatDisplay, chatDisplay } = useMessageContext();
 
-  const [conversationId, setConversationId] = useState<ConversationProps>({
-    conversation_id: "",
-    reciepient: "",
-  });
   const [isModalVisible, setIsModalVisible] = useState(false);
 
   /**
@@ -53,26 +45,8 @@ const MainAdminMessages = () => {
     setIsModalVisible(false);
   };
 
-  /**
-   * Set the conversation id
-   */
-  const handleConversationId = (id: string, reciepient: string) => {
-    setConversationId({ conversation_id: id, reciepient: reciepient });
-  };
-
-  /**
-   * Handle message deletion when swiped
-   */
-  const handleMessageDelete = async (messageId: string) => {
-    try {
-      await deleteMessage(messageId);
-    } catch (error) {
-      console.error("Error deleting message:", error);
-    }
-  };
-
   return (
-    <SafeAreaView style={{ flex: 1 }}>
+    <SafeAreaProvider style={{ flex: 1 }}>
       <KeyboardAvoidingView style={{ flex: 1 }}>
         {Platform.OS === "web" ? (
           <GestureHandlerRootView
@@ -83,25 +57,24 @@ const MainAdminMessages = () => {
             </View>
             <View style={[styles.rowContainer, { width: windowWidth * 0.8 }]}>
               <View style={styles.conversationComponentContainer}>
-                <ConversationComponent
-                  onConversationSelect={handleConversationId}
+                <ChatRoomComponent
+                  onConversationSelect={handleChatDisplay}
                   onHandleModalVisibility={handleModalVisibility}
                 />
               </View>
               {/* Display inactivity page when the user is yet to click on any conversation.
         Display the message component when the user clicks on the conversation to chat with */}
               <View style={{ flex: 2 }}>
-                {conversationId === null ? (
+                {chatDisplay === null ? (
                   <View style={styles.emptyMessagecontainer}>
                     <Text>Click on any conversation to view the messages</Text>
                   </View>
                 ) : (
                   <View style={styles.messageComponentContainer}>
                     <MessageComponent
-                      conversation_id={conversationId.conversation_id}
-                      reciepient={conversationId.reciepient}
+                      conversation_id={chatDisplay.chatroomId}
+                      reciepient={chatDisplay.reciepient}
                       closeModal={handleCloseModal}
-                      onMessageDelete={handleMessageDelete}
                     />
                   </View>
                 )}
@@ -117,29 +90,23 @@ const MainAdminMessages = () => {
 
           <View style={{ flex: 1, width: "100%" }}>
             <View style={{ flex: 1, width: "100%" }}>
-              <ConversationComponent
-                onConversationSelect={handleConversationId}
+              <ChatRoomComponent
+                onConversationSelect={handleChatDisplay}
                 onHandleModalVisibility={handleModalVisibility}
               />
             </View>
 
-            <Modal
-              visible={isModalVisible}
-              style={styles.messageComponentContainer}
-            >
-              <View style={{ flex: 1, width: "100%" }}>
-                <MessageComponent
-                  conversation_id={conversationId?.conversation_id}
-                  reciepient={conversationId?.reciepient}
-                  closeModal={handleCloseModal}
-                  onMessageDelete={handleMessageDelete}
-                />
-              </View>
-            </Modal>
+            <View style={{ flex: 1, width: "100%" }}>
+              <MessageComponent
+                conversation_id={chatDisplay?.chatroomId}
+                reciepient={chatDisplay?.reciepient}
+                closeModal={handleCloseModal}
+              />
+            </View>
           </View>
         )}
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </SafeAreaProvider>
   );
 };
 
@@ -149,28 +116,45 @@ const styles = StyleSheet.create({
   mainContainer: {
     flex: 1,
     flexDirection: "row",
+    backgroundColor: "#f5f5f5",
   },
 
   rowContainer: {
     flex: 1,
     flexDirection: "row",
-    justifyContent: "space-between",
-    padding: 1,
+    padding: 16,
+    gap: 16,
   },
 
   conversationComponentContainer: {
     flex: 1,
-    minWidth: 200,
-    marginEnd: 5,
+    minWidth: 280,
+    backgroundColor: "#ffffff",
+    borderRadius: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
 
   messageComponentContainer: {
     flex: 2,
-    borderWidth: 0.5,
+    backgroundColor: "#ffffff",
+    borderRadius: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    overflow: "hidden",
   },
 
   emptyMessagecontainer: {
+    flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: "#ffffff",
+    borderRadius: 8,
   },
 });

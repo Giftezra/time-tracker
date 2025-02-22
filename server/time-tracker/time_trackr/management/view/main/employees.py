@@ -19,44 +19,62 @@ from ...models import Company
 from staff.models import Staff
 
 """ Method is designed to retrieve all employees that are available and has no shift assigned to them in the next 24 hours."""
+from datetime import datetime, timedelta
+from django.shortcuts import get_object_or_404
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework import status
+from management.models import Staff, Company, Shift
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 @admin_required
 def get_available_employees(request):
-    """ Method retrieves all employees that are available and has no shift assigned to them in the next 24 hours.
-    The employees are returned in a list of dictionaries with the employee name and id."""
+    """ 
+     This method signature is designed to retrieve the list of employees that are available and has no shift assigned to them in the next 24 hours.
+     The method uses the @admin_required decorator to check if the user is an admin or owner before allowing them access to the method.
+
+    """
     try:
-        # Check if the request user is an owner or staff
-        if request.user.is_owner:
-            company = get_object_or_404(Company, owner=request.user)
-        elif request.user.is_admin:
-            employee = get_object_or_404(Staff, user=request.user)
-            company = employee.company
-        else:
-            return Response({'error': 'User does not have a company'}, status=status.HTTP_400_BAD_REQUEST)
+        # Get the user company based on the user role else return the user is not authorized to access the resource
+        try:
+            if hasattr(request.user, 'is_owner') and request.user.is_owner:
+                company = get_object_or_404(Company, owner=request.user)
+            elif hasattr(request.user, 'is_admin') and request.user.is_admin:
+                staff_member = get_object_or_404(Staff, user=request.user)
+                company = staff_member.company
+            else:
+                return Response({'error': 'User does not have a company'}, status=status.HTTP_400_BAD_REQUEST)
+        except Company.DoesNotExist as e:
+            return Response({'error': 'Company not found'}, status=status.HTTP_404_NOT_FOUND)
         
-        employee_list = [] # Create an empty list to hold the employee details
-        # Create a time to simulate the next 24 hours
+        # Get the current date and the date 24 hours from now
         now = datetime.now()
         later = now + timedelta(days=1)
-        
-        # Get all available staff members that are not on a shift in the next 24 hours
-        staff = Staff.objects.filter(company=company)
-        
-        # Get all available user and check if they have a shift in the next 24 hours
-        # Serialize the user and return the response
-        
-        available_user = staff.filter(availability__start_date__lte=now, availability__start_date__gte=later)
-        available_staff = available_user.exclude(shift__start__gte=now, shift__start__lte=later)
-        
-        # Return the available employees as a list of dictionaries
-        employee_list = [{
-            'employee_name': available_staff.name,
-            'employee_id' : available_staff.id
-        }]
+
+        # Get staff members who have availability but are not scheduled for a shift
+        available_user = Staff.objects.filter(
+            company=company,
+            staff_availability__start_date__lte=now.date(),
+            staff_availability__end_date__gte=later.date()
+        ).exclude(
+            shift_staff__start_time__gte=now,
+            shift_staff__start_time__lte=later
+        ).distinct()
+
+        employee_list =[]
+        for staff in available_user:
+            employee_list.append({
+                'employee_name': staff.user.get_full_name(),
+                'employee_id': staff.id
+            })
+
         return Response({'employees': employee_list}, status=status.HTTP_200_OK)
+    
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
     
 
 
@@ -65,32 +83,34 @@ def get_available_employees(request):
 @permission_classes([IsAuthenticated])
 @admin_required
 def get_all_employees(request):
-    """ Method gets all employees assoiciated witha a company .
+    """ Method gets all employees associated with a company.
     The method gets the employee using the company id associated with 
     the request user to indicate they all work for the same company.
     """
     try:
-        # Check if the user is an owner or admin and get the company associated with the user
-        if request.user.is_owner:
-            company = get_object_or_404(Company, owner=request.user)
-        elif request.user.is_admin:
-            employee = get_object_or_404(Staff, user=request.user)
-            company = employee.company
-        else:
-            return Response({'error': 'You are not authorized to access this resource'}, status=status.HTTP_403_FORBIDDEN)
+        try:
+            # Check if the user is an owner or admin and get the company associated with the user
+            if request.user.is_owner:
+                company = get_object_or_404(Company, owner=request.user)
+            elif request.user.is_admin:
+                employee = get_object_or_404(Staff, user=request.user)
+                company = employee.company
+            else:
+                return Response({'error': 'You are not authorized to access this resource'}, status=status.HTTP_403_FORBIDDEN)
+        except Company.DoesNotExist as e:
+            return Response({'error': 'Company not found'}, status=status.HTTP_404_NOT_FOUND)
         
         # Get all employees associated with the company and sort them by name
         staff_members = Staff.objects.filter(company=company)
         
         employee_list = []
-        
         for staff in staff_members:
             # Get the user role
             role = 'admin' if staff.user.is_admin else 'staff'
 
             employee_list.append({
                 'id': staff.id,
-                'name': f'{staff.user.first_name} {staff.user.last_name}',  
+                'name': staff.user.get_full_name(),  
                 'email': staff.user.email,
                 'phone': staff.user.phone,
                 'role': role,
@@ -101,6 +121,68 @@ def get_all_employees(request):
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
     
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@admin_required
+def get_employee_details(request):
+    """ The method is used to retrieve the details of a single employee, given the employee id sent from the client """
+    try:
+        # Get the company of the request user
+        try:
+            if request.user.is_owner:
+                company = get_object_or_404(Company, owner=request.user)
+            elif request.user.is_admin:
+                staff = get_object_or_404(Staff, user=request.user)
+                company = staff.company
+            else:
+                return Response({'error': 'You are not authorized to access this resource'}, status=status.HTTP_403_FORBIDDEN)
+        except Company.DoesNotExist as e:
+            return Response({'error': 'Company not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Get the employee id from the request data and retrieve the employee details
+        employee_id = request.query_params.get('employee_id')
+        staff = get_object_or_404(Staff, id=employee_id)
+
+        # Calculate the total number of shifts completed by the employee
+        shifts = Shift.objects.filter(staff=staff, status='completed')
+        total_shifts = shifts.count()
+         
+        # Calculate the total number of hours they have worked
+        total_hours = 0
+        for shift in shifts:
+            total_hours += shift.start_time - shift.end_time
+
+        # Calculate the total number of shifts they have missed or cancelled
+        cancelled_shifts = Shift.objects.filter(staff=staff, status='cancelled').count()
+
+        # Check the total number of tasks the user has seleceted to complete himself 
+        # Check the total number of tasks the use has been assigned to complete
+        unassigned_tasks = shift.task.filter(status='selected').count()
+        assigned_task = shift.task.filter(status='assigned').count()
+
+        # Get the user role
+        role = 'admin' if staff.user.is_admin else 'staff'
+        employee_data = {
+            'role': role,
+            'name': staff.user.get_full_name(),
+            'email': staff.user.email,
+            'phone': staff.user.phone,
+            'date_hired': staff.date_hired,
+            'dob': staff.user.dob,
+            'department': role,
+            'total_number_of_projects_completed': total_shifts,
+            'total_hours_worked': total_hours,
+            'total_cancellations': cancelled_shifts,
+            'number_of_unassigned_tasks':unassigned_tasks,
+            'number_of_assigned_tasks': assigned_task,
+        }
+        return Response({'employee_data': employee_data}, status=status.HTTP_200_OK)
+    except Staff.DoesNotExist as e:
+        return Response({'error': 'Employee not found'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 
@@ -122,7 +204,7 @@ def get_shift_details(request):
     # return the shift details list
     try:
         staff = get_object_or_404(Staff, id=staff_id)
-        shifts = Shift.objects.filter(staff=staff, status__in=['assigned', 'pending'])
+        shifts = Shift.objects.filter(staff=staff, status__in=['assigned', 'started'])
         
         # Get all the tasks associated with the shifts
         for shift in shifts:

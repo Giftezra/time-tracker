@@ -11,51 +11,7 @@ from management.models import Shift, Task
 from management.view.main.decorators import staff_required
     
      
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-@staff_required
-def accept_shift(request):
-    shift_id = request.data.get('shift_id')
-    try:
-      # Get the shift id from the request data
-      # Retrieve the shift and the associated task setting the status to assigned.
-      # Save the shift and return the response.
-      shift = get_object_or_404(Shift, id=shift_id)
-      task = shift.task
-      if shift.status == 'pending':
-        shift.status = 'assigned'
-        task.status = 'assigned'
-        shift.save()
-        return Response({'message': 'Shift accepted successfully'}, status=status.HTTP_200_OK)
-      else:
-        return Response({'error': 'Shift is not pending'}, status=status.HTTP_400_BAD_REQUEST)
-    except Exception as e:
-      return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-    
 
-
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-@staff_required
-def cancel_shift(request):
-    shift_id = request.data.get('shift_id')
-    try:
-      # Get the shift id from the request data
-      # Retrieve the shift and the associated task setting the status to cancelled.
-      # Save the shift and return the response.
-      shift = get_object_or_404(Shift, id=shift_id)
-      task = shift.task
-      if shift.status == 'pending':
-        shift.status = 'cancelled'
-        task.status = 'pending'
-        shift.save()
-        return Response({'message': 'Shift cancelled successfully'}, status=status.HTTP_200_OK)
-      else:
-        return Response({'error': 'Shift is not pending'}, status=status.HTTP_400_BAD_REQUEST)
-    except Exception as e:
-      return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-    
-    
 
 
 @api_view(['POST'])

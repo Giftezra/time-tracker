@@ -12,9 +12,10 @@ import ClientDetailsComponent from "@/app/component/management/client/clients";
 import { ClientDetailsType } from "@/app/types/management/client";
 import { AntDesign } from "@expo/vector-icons";
 import { useClientContext } from "@/app/context/management/client/clientContext";
-import JobDetailsComponent from "@/app/component/management/client/job_details";
+import JobDetailsComponent from "@/app/component/management/client/jobDetails";
 import CustomModal from "@/app/component/helper/customModal";
 import AddContractComponent from "@/app/component/management/client/add-contract";
+import SearchInputContainer from "@/app/component/helper/searchInput";
 
 const ClientMobileComponent = () => {
   const { jobDetailsData, clientDetailsData } = useClientContext();
@@ -55,8 +56,8 @@ const ClientMobileComponent = () => {
             style={[
               styles.mobileselectButton,
               header === toggleView
-                ? { backgroundColor: activebtn }
-                : { backgroundColor: inactivebtn },
+                ? { borderBottomWidth: 2 }
+                : { borderBottomWidth: 0 },
             ]}
             onPress={() => handleToggleView(header)}
           >
@@ -76,29 +77,11 @@ const ClientMobileComponent = () => {
           ]}
         >
           {/* Add the search bar component to filter the client details */}
-          <View
-            style={[styles.searchContainer, { backgroundColor: textinput }]}
-          >
-            <TextInput
-              placeholder="Client id"
-              value={searchClient}
-              onChangeText={setSearchClient}
-              style={styles.input}
-            />
-            <Pressable
-              style={[
-                styles.searchbutton,
-                {
-                  backgroundColor: inactivebtn,
-                  borderBlockColor: highlight,
-                },
-              ]}
-            >
-              <AntDesign name="search1" size={20} color={text} />
-            </Pressable>
+          <View>
+            <SearchInputContainer />
           </View>
           <ScrollView style={styles.mobileScrollView}>
-            {clientDetailsData.map((client, index) => (
+            {clientDetailsData?.map((client, index) => (
               <View
                 key={index}
                 style={[
@@ -120,29 +103,8 @@ const ClientMobileComponent = () => {
       {toggleView === "assigned tasks" && (
         <View style={{ flex: 1, width: "100%" }}>
           {/* Add the search bar component to filter the client details */}
-          <View
-            style={[
-              styles.searchContainer,
-              { borderBlockColor: highlight, backgroundColor: textinput },
-            ]}
-          >
-            <TextInput
-              placeholder="Client id"
-              value={searchClient}
-              onChangeText={setSearchClient}
-              style={styles.input}
-            />
-            <Pressable
-              style={[
-                styles.searchbutton,
-                {
-                  backgroundColor: inactivebtn,
-                  borderBlockColor: highlight,
-                },
-              ]}
-            >
-              <AntDesign name="search1" size={20} color="white" />
-            </Pressable>
+          <View>
+            <SearchInputContainer />
           </View>
           <ScrollView style={styles.mobileScrollView}>
             {jobDetailsData.map((job, index) => (

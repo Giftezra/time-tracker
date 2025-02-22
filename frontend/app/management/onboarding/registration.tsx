@@ -19,21 +19,27 @@ import { router } from "expo-router";
 import { OwnerOnboardingType } from "@/app/types/management/onboarding";
 import RegistrationTextInputComponent from "@/app/component/helper/registrationTextinput";
 import ArrowButtonComponent from "@/app/component/helper/arrowButton";
-import { useAuth } from "@/app/context/management/authentication";
+import { useAuth } from "@/app/context/authentication";
 import CalendarComponent from "@/app/component/helper/customCalendar";
-import {tranY} from "@/app/utils/animations/onboardingAnimation";
+import { tranY } from "@/app/utils/animations/onboardingAnimation";
 
 /**
  * Component for the main admin registration page
  */
 
 const RegistrationComponent = () => {
-  const { ownerData, handleUserInput, handleDateInput, dateClicked, setDateClicked} = useAuth();
+  const {
+    ownerData,
+    handleUserInput,
+    handleDateInput,
+    dateClicked,
+    setDateClicked,
+  } = useAuth();
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <KeyboardAvoidingView style={{ flex: 1 }}>
-        <GestureHandlerRootView style = {{flex: 1}}>
+        <GestureHandlerRootView style={{ flex: 1 }}>
           <ScrollView
             style={styles.mainContainer}
             showsVerticalScrollIndicator={false}
@@ -129,7 +135,9 @@ const RegistrationComponent = () => {
                 />
               </View>
 
-              {dateClicked && <CalendarComponent onSelectDate={handleDateInput} />}
+              {dateClicked && (
+                <CalendarComponent onSelectDate={handleDateInput} />
+              )}
 
               <View style={{ padding: 10, marginBottom: 10 }}>
                 <Text style={styles.headerText}>date of birth</Text>

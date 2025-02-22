@@ -1,17 +1,13 @@
 import { StyleSheet, Text, View } from "react-native";
 import React, { useEffect, useMemo } from "react";
 
-import { ConversationDetailsProps } from "@/app/types/staff/messages";
+import { ChatRoomType } from "@/app/types/staff/messages";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { TouchableOpacity } from "react-native-gesture-handler";
 import { useLocalSearchParams } from "expo-router";
 import { useMessageContext } from "@/app/context/staff/staffMessageProvider";
 
-const ConversationComponent = ({
-  props,
-}: {
-  props: ConversationDetailsProps;
-}) => {
+const ConversationComponent = ({ props }: { props: ChatRoomType }) => {
   const { handlePress, handleModalVisibility } = useMessageContext();
 
   const text = useThemeColor({}, "text");

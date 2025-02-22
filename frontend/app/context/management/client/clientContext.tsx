@@ -6,7 +6,6 @@ import {
   ContractDetailsType,
   JobDetailsType,
 } from "@/app/types/management/client";
-import { loadToken } from "@/app/utils/loadData";
 import { BASE_URL } from "@/app/utils/urls";
 
 import { router } from "expo-router";
@@ -18,14 +17,15 @@ import {
   useEffect,
 } from "react";
 import { Alert, Linking, Platform } from "react-native";
-import { useAuth } from "../authentication";
+import { useAuth } from "../../authentication";
+import axios from "axios";
 
 const ClientContext = createContext<ClientContextType | undefined>(undefined);
 
 const ClientProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const clientContractDetailsData: ClientDetailsType[] = [
+  const clientDetailsData: ClientDetailsType[] = [
     {
       clients: {
         client_id: "1",
@@ -43,26 +43,18 @@ const ClientProvider: React.FC<{ children: React.ReactNode }> = ({
           name: "Contract A",
           address: "123 Main St",
           postcode: "12345",
-          description: "Description of Contract A",
           city: "Anytown",
-          country: "USA",
           start_date: "2025-01-20",
           end_date: "2025-01-21",
-          information: "Additional information about Contract A",
-          contract_type: "Type A",
         },
         {
           contract_id: "102",
           name: "Contract B",
           address: "456 Elm St",
           postcode: "67890",
-          description: "Description of Contract B",
           city: "Othertown",
-          country: "USA",
           start_date: "2025-01-20",
           end_date: "2025-01-21",
-          information: "Additional information about Contract B",
-          contract_type: "Type B",
         },
       ],
     },
@@ -83,13 +75,9 @@ const ClientProvider: React.FC<{ children: React.ReactNode }> = ({
           name: "Contract C",
           address: "789 Oak St",
           postcode: "11223",
-          description: "Description of Contract C",
           city: "Sometown",
-          country: "USA",
           start_date: "2023-03-01",
           end_date: "2023-10-31",
-          information: "Additional information about Contract C",
-          contract_type: "Type C",
         },
       ],
     },
@@ -126,7 +114,7 @@ const ClientProvider: React.FC<{ children: React.ReactNode }> = ({
       task_serial: "TS1256",
       task_start_time: "09:00",
       task_end_time: "17:00",
-      task_start_date: "2025-01-20",
+      task_start_date: "2025-02-20",
       pay: 15,
       contract_name: "Acme Corp Contract",
       contract_address: "123 Acme St, Springfield",
@@ -152,6 +140,12 @@ const ClientProvider: React.FC<{ children: React.ReactNode }> = ({
   const [timeElapsed, setTimeElapsed] = useState<string>("");
   const [clients, setClients] = useState<ClientDetail[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  // const [clientDetailsData, setClientContractDetails] = useState<
+  //   ClientDetailsType[]
+  // >([]);
+  const [contractJobDetails, setContractJobDetails] = useState<
+    JobDetailsType[]
+  >([]);
   // const [jobDetailsData, setJobDetailsData] = useState<JobDetailsType[]>([]);
   // const [clientDetailsData, setClientDetailsData] = useState<
   //   ClientDetailsType[]
@@ -164,6 +158,34 @@ const ClientProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Import the axios instance from the authentication context
   const { axiosInstance } = useAuth();
+
+  /**
+   * The hook is used to fetch details
+   * - Client contract details: would contain the details of all contracts associated with the client
+   * - Contract job details: would contain the details of all jobs associated with the contract
+   * After retrieving the data, it sets the data to the appropriate state.
+   */
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        console.log("Fetching data");
+        // const shiftDetails = await fetchContractAndJobDetails();
+        const clientContractDetails = await fetchClientContractDetails();
+        console.log("clientContractDetails", clientContractDetails);
+
+        if (clientContractDetails.length === 0) {
+          console.log("No client contract details returned from the server");
+        }
+        // setClientContractDetails(clientContractDetails);
+      } catch (error) {
+        console.error("Error fetching data", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
   /**
    * This hook is used to update the countdown timer for the task start time.
@@ -200,28 +222,6 @@ const ClientProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [clientJobDetailsData]);
 
   /**
-   * This hook is used to fetch the client data from the server.
-   * IF the request is successfull, it set the returned data to the appopriate state.
-   * If the request fails, it logs the error to the console.
-   */
-  useEffect(() => {
-    const fetchClientAndJobDetails = async () => {
-      setIsLoading(true);
-      try {
-        const token = await loadToken();
-        const clients = await fetchAllClients();
-        setClients(clients);
-      } catch (error) {
-        console.error("Error fetching details:", error);
-        alert("Error fetching details");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchClientAndJobDetails();
-  }, []);
-
-  /**
    * This method is used to collect the user data input required to create a new contract.
    * @param key is the string key of the input field
    * @param value  is the value of the input field to populate the contract details
@@ -242,10 +242,11 @@ const ClientProvider: React.FC<{ children: React.ReactNode }> = ({
    */
   const createContract = async () => {
     try {
-      const response = await axiosInstance.post(
-        "/api/create/contract/",
-        newContract
-      );
+      const response = await axiosInstance.post("/api/create/contract/", {
+        data: {
+          newContract,
+        },
+      });
       const responseData: ClientDetailsResponseType = response.data;
       console.log("Contract created", responseData);
       return responseData;
@@ -255,66 +256,53 @@ const ClientProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   /** Method is used to retrieve the client list from the server
-   * @params {token} string is the token used to authenticate the user
    * which will be retrieved using the loadToken method.
    * @returns {Promise<ClientDetailsType[]>} which is the list of clients returned from the server.
    * The method will return an empty array if no valid data is returned from the server.
    */
-  const fetchClientContractDetails = async (
-    token: string
-  ): Promise<ClientDetailsType[]> => {
-    console.log("fetching client details", token);
-    if (!token) {
-      return [];
-    }
-
+  const fetchClientContractDetails = async (): Promise<ClientDetailsType[]> => {
     try {
+      console.log("Fetching client contract details...");
       const response = await axiosInstance.get("/api/get/client/contracts/");
-      const data: ClientDetailsType[] = response.data.client_details;
-      return data;
+      return response.data.client_details;
     } catch (error) {
-      console.error("Error fetching client details", error);
+      if (axios.isAxiosError(error)) {
+        console.error("Axios error:", error.response?.data);
+        console.error("Status:", error.response?.status);
+      }
+      console.error("Error fetching client details:", error);
       return [];
     }
   };
 
   /**
    * The method is used to fetch the clients and the task details associated with the client.
-   * @param token is the token to be used for the authentication of the user.
    * @returns a promise of the job details type which is the list of job details returned from the server.
    */
   const fetchContractAndJobDetails = async (): Promise<JobDetailsType[]> => {
     try {
+      console.log("Fetching contract and job details...");
       const response = await axiosInstance.get(
         "/api/get/contract/shifts/details/"
       );
-      const data: JobDetailsType[] = response.data.client_contract_details;
-      return data;
-    } catch (error) {
-      console.error("Error fetching job details", error);
-      return [];
-    }
-  };
+      console.log("Response received:", response);
 
-  /**
-   * This method is used to get all the clients that are associated with the company.
-   * The method will return an empty array if no valid data is returned from the server.
-   */
-  const fetchAllClients = async (): Promise<ClientDetail[]> => {
-    try {
-      const response = await axiosInstance.get("/api/get/all/clients/");
-      // Check if the response is valid
       if (!response.data) {
-        // Check the response status
-        if (response.status === 401) {
-          // Sign out the user
-        }
+        console.log("No valid data returned from the server");
         return [];
       }
-      const data: ClientDetail[] = response.data.clients;
-      return data;
+
+      console.log(
+        "Contract job details:",
+        response.data.client_contract_details
+      );
+      return response.data.client_contract_details;
     } catch (error) {
-      console.error("Error fetching clients", error);
+      if (axios.isAxiosError(error)) {
+        console.error("Axios error:", error.response?.data);
+        console.error("Status:", error.response?.status);
+      }
+      console.error("Error fetching job details:", error);
       return [];
     }
   };
@@ -384,9 +372,8 @@ const ClientProvider: React.FC<{ children: React.ReactNode }> = ({
     return timeDifference > 0 ? timeDifference : 0;
   };
 
-  const value = {
+  const value: ClientContextType = {
     jobDetailsData: clientJobDetailsData,
-    clientDetailsData: clientContractDetailsData,
     handlePhone,
     handleMessage,
     calculateTaskStartTime,
@@ -397,6 +384,7 @@ const ClientProvider: React.FC<{ children: React.ReactNode }> = ({
     createContract,
     clients,
     isLoading,
+    clientDetailsData,
   };
 
   return (

@@ -1,10 +1,9 @@
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { Text, View } from "react-native";
 import LoginComponent from "./component/helper/login";
-import OnboardingPage from "./management/onboarding/onboarding";
-import AuthProvider from "./context/management/authentication";
+import OnboardingPageComponent from "./management/onboarding/onboarding";
+import AuthProvider from "./context/authentication";
 import ProfileProvider from "./context/management/profile/profileContext";
-
 
 export default function Index() {
   const primary = useThemeColor({}, "primaryColor");
@@ -22,7 +21,7 @@ export default function Index() {
     >
       <AuthProvider>
         <ProfileProvider>
-          <OnboardingPage />
+          <OnboardingPageComponent />
         </ProfileProvider>
       </AuthProvider>
     </View>

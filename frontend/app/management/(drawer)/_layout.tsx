@@ -13,7 +13,7 @@ import SideComponent from "@/app/component/helper/sideComponent";
 import { AntDesign, MaterialIcons } from "@expo/vector-icons";
 
 import { useThemeColor } from "@/hooks/useThemeColor";
-import AuthProvider from "@/app/context/management/authentication";
+import AuthProvider from "@/app/context/authentication";
 import { SafeAreaView } from "react-native-safe-area-context";
 import ProfileProvider from "@/app/context/management/profile/profileContext";
 import ExpandScreenComponent from "@/app/component/helper/expandScreen";

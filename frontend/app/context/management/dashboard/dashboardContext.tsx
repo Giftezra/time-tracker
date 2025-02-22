@@ -5,40 +5,29 @@ import {
 import { UserResponseType } from "@/app/types/management/onboarding";
 import { loadUserData, userData } from "@/app/utils/loadData";
 import { useContext, createContext, useState, useEffect } from "react";
-import { useAuth } from "../authentication";
+import { useAuth } from "../../authentication";
 
 const DashboardContext = createContext<DashboardContextType | undefined>(
   undefined
 );
 
-
-const DashboardProvider = ({
-  children,
-}: {
-  children: React.ReactNode;
-}) => {
+const DashboardProvider = ({ children }: { children: React.ReactNode }) => {
+  // Get the axios instance
+  const { axiosInstance } = useAuth();
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [contractStats, setContractStats] = useState<ContractStatistic[]>([]);
 
-  // Get the axios instance
-  const { axiosInstance } = useAuth();
-
   const fetchContractStatistics = async (year?: number) => {
-    setIsLoading(true);
     try {
-      const response = await axiosInstance.get(
-        "api/get/contract/statistics/",
-        {
-          params: { year },
-        }
-      );
+      const response = await axiosInstance.get("api/get/contract/statistics/", {
+        params: { year },
+      });
       setContractStats(response.data.statistics);
       return response.data.statistics;
     } catch (error) {
       console.error("Error fetching contract statistics:", error);
       return [];
     } finally {
-      setIsLoading(false);
     }
   };
 

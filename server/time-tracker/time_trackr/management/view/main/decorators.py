@@ -20,11 +20,10 @@ def owner_required(view_func):
 def staff_required(view_func):
     @wraps(view_func)
     def _wrapped_view_func(request, *args, **kwargs):
-        if not request.user.is_authenticated or not request.user.is_employee:
+        if not hasattr(request.user, 'is_employee') or not request.user.is_employee:
             return Response(
                 {"detail": "Access denied: Staff access required."},
-                status=status.HTTP_403_FORBIDDEN
-            )
+                status=status.HTTP_403_FORBIDDEN)
         return view_func(request, *args, **kwargs)
     return _wrapped_view_func
   

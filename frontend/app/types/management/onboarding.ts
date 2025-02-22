@@ -43,7 +43,6 @@ export interface UserResponseType {
   dob?: string | null;
   first_name?: string;
   last_name?: string;
-
   address?: string | null;
   postcode?: string | null;
   date_hired?: string | null;

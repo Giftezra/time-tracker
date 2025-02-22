@@ -1,0 +1,31 @@
+{% extends "base.html" %} {% block content %}
+<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto">
+  <h2>Shift Cancellation Notification</h2>
+
+  <p>Hello,</p>
+
+  <p>This is to inform you that the following shift has been cancelled:</p>
+
+  <div
+    style="
+      margin: 20px 0;
+      padding: 15px;
+      background-color: #f5f5f5;
+      border-radius: 5px;
+    "
+  >
+    <p><strong>Client:</strong> {{ client_name }}</p>
+    <p><strong>Staff Name:</strong> {{ staff_name }}</p>
+    <p><strong>Shift Date:</strong> {{ shift_date }}</p>
+    <p><strong>Shift Time:</strong> {{ shift_time }}</p>
+  </div>
+
+  <p>
+    Please review this information and contact the administrator if you have any
+    questions.
+  </p>
+
+  <p>
+    Best regards,<br />
+    Your Time Tracker Team
+  </p>

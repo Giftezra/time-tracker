@@ -2,7 +2,7 @@ import { router } from "expo-router";
 import { useContext, createContext, ReactNode, useState } from "react";
 
 import { SideComponentContextType } from "@/app/types/staff/sideComponent";
-import { LiveEventProps } from "@/app/types/staff/eventType";
+import { LiveEventInterface } from "@/app/types/staff/eventType";
 import { Alert, Linking } from "react-native";
 import { loadToken, userData } from "@/app/utils/loadData";
 import { BASE_URL } from "@/app/utils/urls";
@@ -14,7 +14,7 @@ const SideComponentContext = createContext<
 const SideComponentProvider = ({ children }: { children: ReactNode }) => {
   const user = userData();
 
-  const events: LiveEventProps = {
+  const events: LiveEventInterface = {
     event_serial: "1",
     month: new Date().toLocaleString("default", { month: "short" }),
     date: new Date().getDate().toString(),
@@ -144,7 +144,7 @@ const SideComponentProvider = ({ children }: { children: ReactNode }) => {
    * It uses
    */
   const savePreferences = async () => {
-    const token = await  loadToken();
+    const token = await loadToken();
     try {
       const response = await fetch(`${BASE_URL}/api/staff/update-preferences`, {
         method: "POST",

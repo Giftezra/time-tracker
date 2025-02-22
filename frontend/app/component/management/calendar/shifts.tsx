@@ -6,11 +6,10 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { CalendarShiftType } from "@/app/types/management/calendars";
 import { Status } from "@/constants/Status";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import {useCalendar} from "@/app/context/management/calendar/calendarContext";
+import { useCalendar } from "@/app/context/management/calendar/calendarContext";
 
 const CalendarShiftComponent = () => {
-
-    const {weekDays} = useCalendar();
+  const { weekDays } = useCalendar();
   const [activeShiftId, setActiveShiftId] = useState<number | null>(null); // Track active shift
 
   const handlemanageShiftID = (shiftId: number) => {
@@ -24,9 +23,9 @@ const CalendarShiftComponent = () => {
 
   // Sample data for employees and shifts
   const employees = [
-    { id: 1, name: "John Doe", role: "Cashier" },
-    { id: 2, name: "Jane Smith", role: "Cashier" },
-    { id: 3, name: "Mark Wright", role: "Floor Leader" },
+    { id: 1, name: "John Doe" },
+    { id: 2, name: "Jane Smith" },
+    { id: 3, name: "Mark Wright" },
   ];
 
   const shifts: CalendarShiftType[] = [
@@ -81,6 +80,99 @@ const CalendarShiftComponent = () => {
     return shift || "No shift";
   };
 
+  /**
+   * The component renders a calendar view of the shifts for the week
+   * The view contains the shift details and the time for each day of the week.
+   * For every shift that has been accepted or completed, the background color is green
+   * For every shift that is in progress, the background color is blue
+   * For every shift that is pending, the background color is yellow
+   * For every shift that has been declined or cancelled, the background color is red
+   */
+  const renderItems = (employee: any) => {
+    return (
+      <View style={styles.flailistRow}>
+        {/* Employee details */}
+        <View style={[styles.employeesDetails]}>
+          <Text style={[styles.employeeDetailsText, { color: text }]}>
+            {employee.name}
+          </Text>
+        </View>
+
+        {/* Shifts */}
+        {weekDays.map((day, index) => {
+          const shift = getShift(employee.id, day);
+          return (
+            <View
+              key={index}
+              style={[
+                styles.shiftCell,
+                typeof shift === "string"
+                  ? { backgroundColor: "lightgray" }
+                  : shift.status === Status.ACCEPTED ||
+                    shift.status === Status.COMPLETED
+                  ? { backgroundColor: "green" }
+                  : shift.status === Status.INPROGRESS
+                  ? { borderWidth: 1, borderColor: "blue" }
+                  : shift.status === Status.PENDING
+                  ? { backgroundColor: "yellow" }
+                  : shift.status === Status.DECLINED ||
+                    shift.status === Status.CANCELLED
+                  ? { backgroundColor: "red" }
+                  : { backgroundColor: secondaryColor },
+              ]}
+            >
+              <View style={styles.flailistRow}>
+                {/* Conditionally render cancel button */}
+                <View
+                  style={[
+                    styles.overlay,
+                    { backgroundColor: innerBackgroundColor },
+                  ]}
+                >
+                  {typeof shift !== "string" &&
+                    activeShiftId === shift.shiftId && (
+                      <TouchableOpacity>
+                        <Text style={[styles.cancelText, { color: text }]}>
+                          cancel
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                </View>
+
+                {/* Toggle manage shift */}
+                {typeof shift !== "string" && (
+                  <View style={styles.manageshiftContainer}>
+                    <Text style={styles.manageshiftText}>
+                      {typeof shift === "string" ? shift : `${shift.client}`}
+                    </Text>
+                    <Pressable
+                      onPress={() =>
+                        shift.shiftId !== undefined &&
+                        handlemanageShiftID(shift.shiftId)
+                      }
+                    >
+                      <MaterialCommunityIcons
+                        name="dots-horizontal"
+                        size={20}
+                        color="black"
+                      />
+                    </Pressable>
+                  </View>
+                )}
+              </View>
+
+              <Text style={styles.shiftCellText}>
+                {typeof shift === "string"
+                  ? shift
+                  : `${shift.starttime} - ${shift.endtime}`}
+              </Text>
+            </View>
+          );
+        })}
+      </View>
+    );
+  };
+
   return (
     <View
       style={[styles.mainContainer, { backgroundColor: innerBackgroundColor }]}
@@ -107,89 +199,7 @@ const CalendarShiftComponent = () => {
       <FlatList
         data={employees}
         keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item: employee }) => (
-          <View style={styles.flailistRow}>
-            {/* Employee details */}
-            <View style={[styles.employeesDetails]}>
-              <Text style={[styles.employeeDetailsText, { color: text }]}>
-                {employee.name}
-              </Text>
-              <Text style={[styles.employeeDetailsText, { color: othertext }]}>
-                {employee.role}
-              </Text>
-            </View>
-
-            {/* Shifts */}
-            {weekDays.map((day, index) => {
-              const shift = getShift(employee.id, day);
-              return (
-                <View
-                  key={index}
-                  style={[
-                    styles.shiftCell,
-                    typeof shift === "string"
-                      ? { backgroundColor: "lightgray" }
-                      : shift.status === Status.ACCEPTED ||
-                        shift.status === Status.COMPLETED
-                      ? { backgroundColor: "green" }
-                      : shift.status === Status.INPROGRESS
-                      ? { borderWidth: 1, borderColor: "blue" }
-                      : shift.status === Status.PENDING
-                      ? { backgroundColor: "yellow" }
-                      : shift.status === Status.DECLINED ||
-                        shift.status === Status.CANCELLED
-                      ? { backgroundColor: "red" }
-                      : { backgroundColor: secondaryColor },
-                  ]}
-                >
-                  <View style={styles.flailistRow}>
-                    {/* Conditionally render cancel button */}
-                    <View
-                      style={[
-                        styles.overlay,
-                        { backgroundColor: innerBackgroundColor },
-                      ]}
-                    >
-                      {typeof shift !== "string" &&
-                        activeShiftId === shift.shiftId && (
-                          <TouchableOpacity>
-                            <Text style={[styles.cancelText, { color: text }]}>
-                              cancel
-                            </Text>
-                          </TouchableOpacity>
-                        )}
-                    </View>
-
-                    {/* Toggle manage shift */}
-                    {typeof shift !== "string" && (
-                      <View style={styles.manageshiftContainer}>
-                        <Text style={styles.manageshiftText}>{typeof shift === 'string' ? shift : `${shift.client}`}</Text>
-                        <Pressable
-                          onPress={() =>
-                            shift.shiftId !== undefined &&
-                            handlemanageShiftID(shift.shiftId)
-                          }
-                        >
-                          <MaterialCommunityIcons
-                            name="dots-horizontal"
-                            size={20}
-                            color="black"
-                          />
-                        </Pressable>
-                      </View>
-                    )}
-                  </View>
-
-                  <Text style={styles.shiftCellText}>
-                    {typeof shift === "string"
-                      ? shift
-                      : `${shift.starttime} - ${shift.endtime}`}
-                  </Text>
-                </View>
-              );
-            })}
-          </View>
-        )}
+        renderItem={({ item: employee }) => renderItems(employee)}
       />
     </View>
   );

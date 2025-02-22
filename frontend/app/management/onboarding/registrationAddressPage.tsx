@@ -8,7 +8,7 @@ import {
   View,
 } from "react-native";
 import React, { useState } from "react";
-import { useAuth } from "@/app/context/management/authentication";
+import { useAuth } from "@/app/context/authentication";
 import RegistrationTextInputComponent from "@/app/component/helper/registrationTextinput";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import ArrowButtonComponent from "@/app/component/helper/arrowButton";
@@ -121,7 +121,6 @@ const SecondPageComponent = () => {
                     fontFamily: "BarlowRegular",
                     fontWeight: "300",
                   }}
-
                 >
                   enter manually
                 </Text>

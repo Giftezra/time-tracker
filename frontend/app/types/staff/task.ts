@@ -9,7 +9,7 @@ export type TaskDetailsType = {
   site_postcode: string | undefined;
   site_city: string | undefined;
   start_time: string;
-  end_time: string ;
+  end_time: string;
   start_date: string;
   information: string | undefined;
   pay: string | undefined;
@@ -29,7 +29,7 @@ type Response = {
   message: string;
 };
 
-export type TaskProviderProps = {
+export interface TaskProviderInterface {
   isModalVisible: boolean;
   handleTaskDetails: (id: string | null) => void;
   handleModalDisplay: () => void;
@@ -44,4 +44,4 @@ export type TaskProviderProps = {
   calculateTimeDifference: () => string;
   calculateTaskStartTime: () => string;
   applyForTask: (id: string) => Promise<Response>;
-};
+}

@@ -7,80 +7,14 @@ import {
 import SearchInputContainer from "@/app/component/helper/searchInput";
 import { useClientContext } from "@/app/context/management/client/clientContext";
 import ClientDetailsComponent from "@/app/component/management/client/clients";
-import JobDetailsComponent from "@/app/component/management/client/job_details";
+import JobDetailsComponent from "@/app/component/management/client/jobDetails";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import CustomModal from "@/app/component/helper/customModal";
 import AddContractComponent from "@/app/component/management/client/add-contract";
 import SideComponent from "@/app/component/helper/sideComponent";
-import { useAuth } from "@/app/context/management/authentication";
+import { useAuth } from "@/app/context/authentication";
 import { JobDetailsType } from "@/app/types/management/client";
 import { ContractListType } from "@/app/types/management/task";
-
-const client: ContractListType [] = [
-  {
-    contract_id: '1',
-    client_name: "Woodland ",
-    contract_name: "Amberstone",
-    contract_address: "324 woodland area",
-    contract_postcode: "W1 4TJ",
-    contract_city: "London",
-  },
-  {
-    contract_id: '2',
-    client_name: "Woodland ",
-    contract_name: "Amberstone",
-    contract_address: "324 woodland area",
-    contract_postcode: "W1 4TJ",
-    contract_city: "London",
-  }
-];
-
-const jobData: JobDetailsType[] = [
-  {
-    client: "Client A",
-    task_serial: "TS001",
-    task_start_time: "09:00",
-    task_end_time: "17:00",
-    task_start_date: "2023-10-01",
-    pay: 100,
-    contract_name: "Contract A",
-    contract_address: "123 Main St",
-    contract_postcode: "12345",
-    employee: [
-      {
-        id: "1",
-        name: "John Doe",
-        email: "enigma@gmai;.com",
-        phone: "1234567890",
-      },
-    ],
-  },
-  {
-    client: "Client B",
-    task_serial: "TS002",
-    task_start_time: "10:00",
-    task_end_time: "18:00",
-    task_start_date: "2023-10-02",
-    pay: 120,
-    contract_name: "Contract B",
-    contract_address: "456 Elm St",
-    contract_postcode: "67890",
-    employee: [
-      {
-        id: "1",
-        name: "Jane Smith",
-        email: "enigma@gmai;.com",
-        phone: "1234567890",
-      },
-      {
-        id: "1",
-        name: "Jane Smith",
-        email: "enigma@gmai;.com",
-        phone: "1234567890",
-      },
-    ],
-  },
-];
 
 const WebClientComponent = () => {
   const { windowWidth } = useAuth();
@@ -99,6 +33,7 @@ const WebClientComponent = () => {
       <View style={{ width: windowWidth * 0.2, flex: 1 }}>
         <SideComponent />
       </View>
+
       <View style={[styles.container, { width: windowWidth * 0.8 }]}>
         <View style={{ width: "40%" }}>
           <View style={{ padding: 5 }}>
@@ -133,11 +68,9 @@ const WebClientComponent = () => {
             nestedScrollEnabled={true}
             showsHorizontalScrollIndicator={false}
           >
-            <View>
-              {jobData.map((job, index) => (
-                <View key={index}>
-                  <JobDetailsComponent {...job} />
-                </View>
+            <View style={{ flex: 1 }}>
+              {jobDetailsData.map((job, index) => (
+                <JobDetailsComponent {...job} key={index} />
               ))}
             </View>
           </ScrollView>
@@ -215,7 +148,7 @@ const styles = StyleSheet.create({
   },
 
   taskContainer: {
-    flexGrow: 1,
+    flex: 1,
     padding: 2,
   },
 

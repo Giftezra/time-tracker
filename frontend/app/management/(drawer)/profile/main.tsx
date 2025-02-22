@@ -24,7 +24,7 @@ import UserDetailsComponent from "@/app/component/management/profile/user detail
 import EditUserDetailsComponent from "@/app/component/management/profile/edit_company_details";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import ProfileProvider from "@/app/context/management/profile/profileContext";
-import { useAuth } from "@/app/context/management/authentication";
+import { useAuth } from "@/app/context/authentication";
 import SideComponent from "@/app/component/helper/sideComponent";
 
 const MainAdminProfile = () => {

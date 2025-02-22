@@ -25,7 +25,6 @@ import WebClientComponent from "./webFile";
 import ClientMobileComponent from "./mobileFile";
 
 const MainClient = () => {
-  const [isModalVisible, setIsModalVisible] = useState(false);
 
   const background = useThemeColor({}, "primaryColor");
   const [windowWidth, setWindowWidth] = useState(

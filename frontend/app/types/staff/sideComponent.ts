@@ -1,10 +1,9 @@
-import { LiveEventProps } from "./eventType";
-
+import { LiveEventInterface } from "./eventType";
 
 export type SideComponentContextType = {
   active: string;
   handleActivity: (activity: string) => void;
-  events: LiveEventProps;
+  events: LiveEventInterface;
   handlePhoneCall(phone?: string): void;
   handleWebsiteCall(url?: string): void;
   allowPushNotification: boolean;
@@ -14,5 +13,4 @@ export type SideComponentContextType = {
   setAllowPushNotification(allow: boolean): void;
   setAllowEmailNotification(allow: boolean): void;
   setAllowMarketingEmails(allow: boolean): void;
-  
-}
+};

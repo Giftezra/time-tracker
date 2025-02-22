@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from django.shortcuts import get_object_or_404
+from django.views.decorators.csrf import csrf_exempt
 
 from .decorators import admin_required
 from ...models import User, Task, Shift, Contracts, Client, User
@@ -130,36 +131,36 @@ def create_shift(request):
     
     
 
-
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 @admin_required
 def get_all_contracts(request):
+    if request.method == 'OPTIONS':
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
     contract_list = []
     try:
-        # The issue is here - get_object_or_404 will raise 404 if not found
-        # We should use try/except for each separately
+        # Get the company object associated with the request user 
+        # Check if the user is an owner or an admin
+        # If the user is an owner, get the company object associated with the owner
+        # If the user is an admin, get the company object associated with the staff
+        # If the user is not associated with any company, return an error
         try:
-            owner_company = Company.objects.get(owner=request.user)
-            company = owner_company
+           if request.user.is_owner:
+              company = get_object_or_404(Company, owner=request.user)
+           elif request.user.is_admin:
+              company = get_object_or_404(Staff, user=request.user).company
+           else:
+              return Response({'error': 'User is not associated with any company'}, status=status.HTTP_400_BAD_REQUEST)
         except Company.DoesNotExist:
-            try:
-                staff = Staff.objects.get(user=request.user)
-                company = staff.company
-            except Staff.DoesNotExist:
-                return Response(
-                    {'error': 'User is not associated with any company'}, 
-                    status=status.HTTP_404_NOT_FOUND
-                )
+            return Response({'error': 'No company found for user'}, status=status.HTTP_404_NOT_FOUND) 
 
-        if not company:
-            return Response(
-                {'error': 'No company found for user'}, 
-                status=status.HTTP_404_NOT_FOUND
-            )
-
+        # Get all the clients associated with the company 
         clients = Client.objects.filter(company=company)
+        # Get all the contracts associated with the clients and that are not completed
         contracts = Contracts.objects.filter(client__in=clients, is_completed=False)
+
 
         if not contracts.exists():
             return Response(
@@ -190,29 +191,39 @@ def get_all_contracts(request):
 @permission_classes([IsAuthenticated])
 @admin_required
 def get_all_unassigned_task(request):
-  task_data = []
+  unassigned_tasks = []
   # Retrieve the company from the request user
   try:
-    company = request.user.company
-    clients = Client.objects.filter(company=company)
-    contracts = Contracts.objects.filter(client__in=clients)
-    tasks = Task.objects.filter(contract__in=contracts, status='pending')
+    try:
+      # Get the company based on the user role
+      if request.user.is_owner:
+        company = get_object_or_404(Company, owner=request.user)
+      elif request.user.is_admin:
+        company = get_object_or_404(Staff, user=request.user).company
+      else:
+        return Response({'error': 'User is not associated with any company'}, status=status.HTTP_400_BAD_REQUEST)
+    except Company.DoesNotExist:
+      return Response({'error': 'No company found for user'}, status=status.HTTP_404_NOT_FOUND)
+
+    # Get all clients associated with the company
+    # Get all contracts associated with the clients
+    # Get all tasks associated with the contracts and that are not assigned to a staff
+    tasks = Task.objects.filter(contract__client__company=company, status='pending')
     
     for task in tasks:
-      task_data.append({
+      unassigned_tasks.append({
         'task_id': task.id,
-        'client_name': task.client.name,
         'contract_name': task.contract.name,
         'task_serial': task.task_serial,
         'task_description': task.description,
+        'contract_address': task.contract.address,
+        'contract_postcode': task.contract.postcode,
         'task_start_date': task.start_date,
         'task_end_date': task.end_date,
-        'amount': task.amount,
-        'created_by': task.created_by.first_name + ' ' + task.created_by.last_name,
-        'priority': task.priority,
+        'created_by': task.created_by.get_full_name(),
         'created_at': task.created_at,
       })
-    return Response({'unassigned_tasks': task_data}, status=status.HTTP_200_OK)
+    return Response({'unassigned_tasks': unassigned_tasks}, status=status.HTTP_200_OK)
   except Task.DoesNotExist:
     return Response({'error': 'No tasks found'}, status=status.HTTP_400_BAD_REQUEST)
   except Exception as e:
@@ -224,7 +235,8 @@ def get_all_unassigned_task(request):
 @permission_classes([IsAuthenticated])
 @admin_required
 def assign_task(request):
-    """ Method is used to assign predesigned tasks to staffs given the task id and the staff id sent from the client.
+    """  This method is used when a staff member sends a requset to the admins for an open shift.
+    The method will expect the staff id and the task id from the request data.
     """
     if not request.data:
         return Response({'error': 'Please provide the task details'}, status=status.HTTP_400_BAD_REQUEST)
@@ -235,14 +247,19 @@ def assign_task(request):
     staff_id = request.data.get('staff_id')
     task_id = request.data.get('task_id')
     try:
-      staff = get_object_or_404(User, id=staff_id)
+      # Get the staff object using the staff id
+      # Get the task object using the task id
       task = get_object_or_404(Task, id=task_id)
+      staff = get_object_or_404(Staff, id=staff_id)
+
+      # Get the staff availability and ensure they are available for the task
       available = Availability.objects.filter(staff=staff, start_date__lte=task.start_date, end_date__gte=task.end_date, start_time__lte=task.start_time, end_time__gte=task.end_time)
       
+      # If a staff is not available for the task, return an error to the client
       if not available:
         return Response({'error': 'Staff is not available for the task'}, status=status.HTTP_400_BAD_REQUEST)
       
-      # Ensure task has not been assigned to a staff before
+      # Ensure the task is not already assigned to a staff before assigning the task to the staff
       if task.status == 'assigned':
         return Response({'error': 'Task is already assigned'}, status=status.HTTP_400_BAD_REQUEST)
       
@@ -259,7 +276,6 @@ def assign_task(request):
         task.save()
         
         # Update this part of the code to send an email to the staff with the task details
-        
       else:
         return Response({'error': 'Could not assign task to staff'}, status=status.HTTP_400_BAD_REQUEST)
       return Response({'success': 'Task assigned to staff successfully'}, status=status.HTTP_200_OK)
@@ -267,52 +283,45 @@ def assign_task(request):
       return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
       
       
-      
-    
-    
-      
-""" Method is used to retrieve all active shift or ongoing shift with the status ongoing. """
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 @admin_required
-def get_active_shifts(request):
-  company = None
-  try:
-    owner_company = get_object_or_404(Company, owner=request.user)
-    staff_company = get_object_or_404(Staff, user=request.user)
-    
-    if request.user.is_owner:
-      company = owner_company
-    elif request.user.is_admin:
-      company = staff_company.company
-    else:
-      return Response({'error': 'User does not have a company'}, status=status.HTTP_400_BAD_REQUEST)
-    
-    # Get all the shifts associated with the company and filter the shifts that has been started
-    shifts = Shift.objects.filter(task__contract__client__company=company, status='started')
-    
-    # Filter the shift data and append the shift details to shift data list
-    # Create a list for the shift and another for the employees assigned to the shift
-    shift_data = []
-    employee_list = []
-    for shift in shifts:
-      # Get the employees assigned to the shift
-      employees = shift.staff.all()
-      for employee in employees:
-        employee_list.append({
-          'employee_name': employee.first_name + ' ' + employee.last_name,
-          'employee_id': employee.id
-        })
-      shift_data.append({
-        'shift_id': shift.id,
-        'task_serial': shift.task.task_serial,
-        'client_name': shift.task.contract.client.name,
-        'employees': employee_list,
-        'start_time': shift.start_time,
-      })
-    return Response({'active_shifts': shift_data}, status=status.HTTP_200_OK)
-  except Exception as e:
-    return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+def get_active_tasks(request):
+    """Retrieve all active (ongoing) shifts, returning a separate entry for each assigned staff."""
+    try:
+        # Get the company object based on the user role
+        if hasattr(request.user, 'is_owner') and request.user.is_owner:
+            company = get_object_or_404(Company, owner=request.user)
+        elif hasattr(request.user, 'is_admin') and request.user.is_admin:
+            staff_member = get_object_or_404(Staff, user=request.user)
+            company = staff_member.company
+        else:
+            return Response({'error': 'User is not associated with any company'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Get all active (started) shifts for the company
+        shifts = Shift.objects.filter(task__contract__client__company=company, status='started')
+
+        shift_data = []
+
+        for shift in shifts:
+            # Create a separate entry for each employee assigned to the shift
+            for employee in shift.staff.all():
+                shift_data.append({
+                    'shift_id': shift.id,
+                    'task_serial': shift.task.task_serial,
+                    'client_name': shift.task.contract.client.name,
+                    'employee_id': employee.id,
+                    'employee_name': employee.user.get_full_name(),
+                    'start_time': shift.start_time,
+                })
+
+        return Response({'active_shifts': shift_data}, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
 
 
 

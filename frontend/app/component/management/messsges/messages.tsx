@@ -28,52 +28,61 @@ import {
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useMessageContext } from "@/app/context/management/messages/messageContext";
 
-import { MessageProps } from "@/app/types/management/messgaes";
+import {
+  Message,
+  MesssageComponentInterface,
+} from "@/app/types/management/messgaes";
 import { user_image } from "@/app/utils/images";
 
-interface MessageComponentProps {
-  conversation_id: string;
-  reciepient: string;
-  closeModal: () => void;
-  onMessageDelete: (messageId: string) => void;
-}
-
-const MessageComponent: React.FC<MessageComponentProps> = ({
-  conversation_id,
-  reciepient,
-  closeModal,
-  onMessageDelete,
+/**
+ * This method is used to render messages sent between users and reciepient in the chat component.
+ * The messages are rendered in a column view with the reciepient on the left and the user on the right.
+ * @param item
+ * @returns
+ */
+const renderMessage = ({
+  item,
+  isSentByMe,
+}: {
+  item: Message;
+  isSentByMe: boolean;
 }) => {
-  const { messages, sendMessage, fetchMessages } = useMessageContext();
-  const [text, setText] = useState("");
-
-  useEffect(() => {
-    if (conversation_id) {
-      fetchMessages(conversation_id);
-    }
-  }, [conversation_id]);
-
-  const handleMessages = async () => {
-    if (!text.trim()) return;
-
-    try {
-      await sendMessage(conversation_id, text);
-      setText("");
-    } catch (error) {
-      console.error("Error sending message:", error);
-    }
-  };
-
-  const renderRightActions = (messageId: string) => {
-    return (
-      <TouchableOpacity
-        style={styles.deleteAction}
-        onPress={() => onMessageDelete(messageId)}
+  return (
+    <Pressable style={{ flexDirection: "column", flex: 1 }}>
+      <View
+        style={[
+          styles.messageItem,
+          isSentByMe ? styles.sentMessage : styles.receivedMessage,
+        ]}
       >
-        <Text style={styles.deleteActionText}>Delete</Text>
-      </TouchableOpacity>
-    );
-  };
+        <Text
+          style={[styles.messageText, { color: isSentByMe ? "#fff" : "#000" }]}
+        >
+          {item.content}
+        </Text>
+        <View style={styles.messageFooter}>
+          <Text
+            style={[styles.timestamp, { color: isSentByMe ? "#eee" : "#666" }]}
+          >
+            {item.timestamp}
+          </Text>
+          {item.is_read && (
+            <MaterialIcons
+              name="check"
+              size={16}
+              color={isSentByMe ? "#fff" : "green"}
+              style={{ marginLeft: 5 }}
+            />
+          )}
+        </View>
+      </View>
+    </Pressable>
+  );
+};
+
+const MessageComponent: React.FC<MesssageComponentInterface> = (props) => {
+  const [text, setText] = useState("");
+  const { messages, isSentByMe, sendMessage} = useMessageContext();
 
   const secondaryColor = useThemeColor({}, "secondaryColor");
   const innerBackgroundColor = useThemeColor({}, "innerBackground");
@@ -86,11 +95,6 @@ const MessageComponent: React.FC<MessageComponentProps> = ({
       style={[styles.mainContainer, { backgroundColor: secondaryColor }]}
     >
       {/* Conditionally display a back button on mobile to enable the user close the modal */}
-      {Platform.OS !== "web" && (
-        <TouchableOpacity style={{ padding: 10 }} onPress={closeModal}>
-          <AntDesign name="arrowleft" size={24} color={textcolor} />
-        </TouchableOpacity>
-      )}
 
       {/* Use the passed props to set the header for the conversation */}
       <View
@@ -99,7 +103,7 @@ const MessageComponent: React.FC<MessageComponentProps> = ({
         <Image source={user_image} style={styles.image} />
         <View style={styles.reciepientandCallcontainer}>
           <Text style={[styles.reciepientText, { color: highlightColor }]}>
-            {reciepient}
+            {props.reciepient}
           </Text>
           <Pressable style={styles.sendButton}>
             <MaterialIcons name="call" size={26} color={"green"} />
@@ -107,21 +111,13 @@ const MessageComponent: React.FC<MessageComponentProps> = ({
         </View>
       </View>
 
-      {/* Contains the messages between both senders */}
+      {/* This view contains the messages sent betweeen the user and the reciepient */}
       <FlatList
         data={messages}
-        renderItem={({ item }) => (
-          <Swipeable
-            renderRightActions={() => renderRightActions(item.id)}
-            overshootRight={false}
-          >
-            <View style={styles.messageItem}>
-              <Text>{item.content}</Text>
-              <Text style={styles.timestamp}>{item.timestamp}</Text>
-            </View>
-          </Swipeable>
-        )}
-        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => renderMessage({ item, isSentByMe })}
+        keyExtractor={(item) => item.id?.toString() ?? ""}
+        style={{ flex: 1 }}
+        contentContainerStyle={{ padding: 10 }}
       />
 
       {/* The view contains the message inputs to be sent */}
@@ -132,12 +128,11 @@ const MessageComponent: React.FC<MessageComponentProps> = ({
           placeholder="Type a message"
           value={text}
           onChangeText={setText}
-          onSubmitEditing={handleMessages}
           style={styles.messageInput}
           autoCorrect={true}
           multiline={true}
         />
-        <Pressable onPress={handleMessages} style={styles.sendButton}>
+        <Pressable style={styles.sendButton} onPress={() => sendMessage(props.conversation_id, text)}>
           <AntDesign name="arrowright" size={24} color={textcolor} />
         </Pressable>
       </View>
@@ -210,14 +205,38 @@ const styles = StyleSheet.create({
   },
 
   messageItem: {
+    maxWidth: "80%",
+    marginVertical: 4,
+    marginHorizontal: 8,
     padding: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
+    borderRadius: 12,
+  },
+
+  sentMessage: {
+    alignSelf: "flex-end",
+    backgroundColor: "#0084ff", // Facebook Messenger blue
+    borderBottomRightRadius: 4,
+  },
+
+  receivedMessage: {
+    alignSelf: "flex-start",
+    backgroundColor: "#e4e6eb", // Light grey
+    borderBottomLeftRadius: 4,
+  },
+
+  messageText: {
+    fontSize: 16,
+    marginBottom: 4,
+  },
+
+  messageFooter: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-end",
   },
 
   timestamp: {
     fontSize: 12,
-    color: "#666",
   },
 
   deleteAction: {

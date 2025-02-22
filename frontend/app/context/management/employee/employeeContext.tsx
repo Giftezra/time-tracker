@@ -1,9 +1,9 @@
 import {
   Employee,
+  EmployeeAnalyticInterface,
   EmployeeContextType,
   EmployeeDetailsType,
 } from "@/app/types/management/employee";
-import { loadToken } from "@/app/utils/loadData";
 import { BASE_URL } from "@/app/utils/urls";
 import {
   useContext,
@@ -12,6 +12,8 @@ import {
   ReactNode,
   useEffect,
 } from "react";
+import { useAuth } from "../../authentication";
+import { Axios, AxiosError } from "axios";
 
 const EmployeeContext = createContext<EmployeeContextType | undefined>(
   undefined
@@ -20,10 +22,15 @@ const EmployeeContext = createContext<EmployeeContextType | undefined>(
 const EmployeeProvider: React.FC<{
   children: ReactNode;
 }> = ({ children }) => {
+  // Get the axois instance
+  const { axiosInstance } = useAuth();
+
   const [employees, setEmployees] = useState<Employee>();
   const [employeelist, setEmployeeList] = useState<EmployeeDetailsType[]>();
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<Employee | undefined>(undefined);
+
+  const [employeeData, setEmployeeData] = useState<EmployeeAnalyticInterface>();
 
   const [search, setSearch] = useState<string>("");
   const [filteredEmployeeList, setFilteredEmployeeList] =
@@ -61,35 +68,15 @@ const EmployeeProvider: React.FC<{
   /** The method is used to retrieve all of the employees associated with the user from the server.
    * Note that the server is designed to only return the employees if the request is made by an admin or the owner of the company.
    */
-  const getAllEmployees = async (): Promise<
-    EmployeeDetailsType[] | undefined
-  > => {
-    const token = await loadToken();
-    // Create a request to the server
+  const getAllEmployees = async (): Promise<EmployeeDetailsType[]> => {
     try {
-      const response = await fetch(`${BASE_URL}/api/get/employee/`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-      /** Check the response.
-       * if ok get the data from the response.
-       * check the data is valid
-       */
-      if (!response.ok) {
-        throw new Error("Failed to get employees");
-      }
-      const data = await response.json();
-      if (!data) {
-        return [];
-      }
-      // Return the employees from the server
-      const employee_list: EmployeeDetailsType[] = data.employees;
-      return employee_list;
+      const response = await axiosInstance.get(`/api/get/employees/`);
+      const employees = response.data.employees;
+      console.log("Employees:", employees);
+      return employees;
     } catch (error: any) {
       console.error("Error fetching employees:", error);
+      throw new Error("Failed to fetch employees");
     }
   };
 
@@ -114,14 +101,28 @@ const EmployeeProvider: React.FC<{
     );
   };
 
+  /**
+   * This method is used to get the details of the particular employee given the employee id.
+   * @params id: string The id of the employee to be fetched.
+   */
+  const retrieveEmployeeAnalyticsData = async (id: string) => {
+    try {
+      const response = await axiosInstance.get("/api/get/employee/details/", {
+        params: { employee_id: id },
+      });
+      const employee: EmployeeAnalyticInterface = response.data.employee_data;
+      setEmployeeData(employee);
+    } catch (error: any) {
+      console.error("Error fetching employee details:", error);
+      throw new Error("Failed to fetch employee details");
+    }
+  };
+
   /** This method is used to submit the employee details to the server.
    * The method uses no params but simply send the employee details stored in the states to the server.
    * The method returns a boolean value to indicate if the request was successful or not.
    */
-  const submitEmployee = async () => {
-    // Get the token from the local storage
-    const token = await loadToken();
-
+  const onboardNemEmployee = async () => {
     /** Filter the employee data to ensure that none of the data is undefined.
      * If any of the data is undefined, return an error message that tallies with the data that is undefined.
      * Set the error state to the error message.
@@ -140,27 +141,9 @@ const EmployeeProvider: React.FC<{
     }
 
     try {
-      const response = await fetch(`${BASE_URL}/api/onboard/employee/`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(employees),
-      });
-
-      // Check the response if ok.
-      // Throw an error if the response is not ok
-      if (!response.ok) {
-        throw new Error("Failed to add employee");
-      }
-      // Get the response data to retrieve the status of the request
-      const data = await response.json();
-      const message = data.message;
-      if (message === "Employee added successfully") {
-        return true;
-      }
-      return false;
+      const response = await axiosInstance.post(
+        `${BASE_URL}/api/onboard/employee/`
+      );
     } catch (error: any) {
       console.error("Error adding employee:", error);
     }
@@ -170,7 +153,7 @@ const EmployeeProvider: React.FC<{
   const value = {
     employees,
     handleAddEmployeeInput,
-    submitEmployee,
+    submitEmployee: onboardNemEmployee,
     error,
     loading,
     employeelist,

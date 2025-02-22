@@ -21,49 +21,18 @@ import CustomModal from "../../helper/customModal";
 import { OpenTaskProps } from "@/app/types/management/task";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import SearchInputContainer from "../../helper/searchInput";
+import { useManagementTask } from "@/app/context/management/task manager/managementTaskProvider";
 
 const OpenTaskComponents = () => {
-  const unassignedTask: OpenTaskProps[] = [
-    {
-      task_id: "123",
-      contract_name: "John Doe",
-      task_serial: "1234",
-      contract_address: "1234",
-      contract_postcode: "1234",
-      task_description: "1234",
-      task_status: "1234",
-      task_start_date: "1234",
-      task_end_date: "1234",
-      created_by: "1234",
-      task_priority: "1234",
-      task_created_at: "1234",
-    },
-    {
-      task_id: "123",
-      contract_name: "John Doe",
-      task_serial: "1234",
-      contract_address: "1234",
-      contract_postcode: "1234",
-      task_description: "1234",
-      task_status: "1234",
-      task_start_date: "1234",
-      task_end_date: "1234",
-      created_by: "1234",
-      task_priority: "1234",
-      task_created_at: "1234",
-    },
-  ];
+  // Get the methods from the context
+  const { unassignedTask } = useManagementTask();
 
   const inactivebtn = useThemeColor({}, "inactivebtn");
   const innerBackground = useThemeColor({}, "innerBackground");
   const text = useThemeColor({}, "text");
   const textinput = useThemeColor({}, "textinput");
-  const highlight = useThemeColor({}, "highlight");
+  const highlight = useThemeColor({}, "otherText");
   const background = useThemeColor({}, "background");
-
-  const [isLoading, setIsLoading] = useState(true);
-
-  const [search, setSearch] = useState<string>("");
 
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedTask, setSelectedTask] = useState<OpenTaskProps | null>(null);
@@ -133,7 +102,7 @@ const OpenTaskComponents = () => {
                 <Text style={[styles.text, { color: highlight }]}>
                   {task.contract_address}
                 </Text>
-                <Text style={[styles.text, { color: highlight }]}>
+                <Text style={[styles.text, { color: highlight, textTransform: "uppercase" }]}>
                   {task.contract_postcode}
                 </Text>
                 <View style={{ flexWrap: "wrap" }}>
@@ -143,9 +112,6 @@ const OpenTaskComponents = () => {
                 </View>
               </View>
               <View style={styles.containers}>
-                <Text style={[styles.text, { color: highlight }]}>
-                  {task.task_status}
-                </Text>
                 <Text style={[styles.text, { color: highlight }]}>
                   {task.task_start_date}
                 </Text>
@@ -238,6 +204,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     fontFamily: "BarlowRegular",
     textTransform: "lowercase",
+    padding: 2,
   },
 
   containers: {

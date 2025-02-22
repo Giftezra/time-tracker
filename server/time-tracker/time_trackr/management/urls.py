@@ -3,11 +3,11 @@ from .view.account.authentication import register_owner, onboard_employee
 
 from .view.main.dashboard import update_company, delete_company
 from .view.main.profile import create_company
-from .view.main.employees import get_available_employees, get_all_employees, get_shift_details
+from .view.main.employees import get_available_employees, get_all_employees, get_shift_details, get_employee_details
 
 from .view.main.client import create_client, create_contract, getContractsAndJobDetails, getClientAndContracts, update_contract, complete_contract
 
-from .view.main.task_manager import get_active_shifts, get_clients_shifts, create_shift, create_task,assign_task,terminate_shift,approve_task, get_all_contracts, get_all_unassigned_task
+from .view.main.task_manager import get_active_tasks, get_clients_shifts, create_shift, create_task,assign_task,terminate_shift,approve_task, get_all_contracts, get_all_unassigned_task
 
 from .view.main.dashboard import get_today_events, get_contract_statistics
 from .view.main.checkout import get_owner_address, get_publishable_key, create_payment_sheet
@@ -55,9 +55,10 @@ urlpatterns = [
     path('get/employees/', get_all_employees, name='get_all_employees'),
     path('get/employee/shift/', get_shift_details, name='get_shift_details'),
     path('get/available/employees/', get_available_employees, name='get_available_employees'),
-    path('get/active/shifts/', get_active_shifts, name='get_active_shifts'),
+    path('get/active/tasks/', get_active_tasks, name='get_active_tasks'),
     path('get/assigned/shifts/', get_clients_shifts, name='get_assigned_or_ongoing_shifts'),
     path('get/unassigned/tasks/', get_all_unassigned_task, name='get_all_unassigned_task'),
+    path('get/employee/details/', get_employee_details, name='get_employee_details'),
 
     # The path definitions for the dashboard
     path('get/today/events/', get_today_events, name='get_today_events'),

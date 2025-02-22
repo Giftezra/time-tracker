@@ -9,23 +9,27 @@ import React, { useContext, useState } from "react";
 import { FontAwesome, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { CardType } from "@/app/types/management/checkout";
-import { useCheckout } from "@/app/context/management/checkout/checkoutContext";
+// import { useCheckout } from "@/app/context/management/checkout/checkoutContext";
+
 
 const PaymentComponent = () => {
-  const { selectedCard, setSelectedCard, savedCards } = useCheckout();
+  // const { selectedCard, setSelectedCard, savedCards } = useCheckout();
 
   const primary = useThemeColor({}, "primaryColor");
+
 
   const renderCard = (card: CardType) => (
     <TouchableOpacity
       key={card.id}
       style={[
         styles.cardContainer,
-        selectedCard === card.id && styles.selectedCard,
+        // selectedCard === card.id && styles.selectedCard,
+
       ]}
-      onPress={() => setSelectedCard(card.id)}
+      // onPress={() => setSelectedCard(card.id)}
     >
       <View style={styles.cardInfo}>
+
         {card.brand === "visa" ? (
           <FontAwesome name="cc-visa" size={24} color={primary} />
         ) : (
@@ -35,7 +39,7 @@ const PaymentComponent = () => {
         {card.isDefault && <Text style={styles.defaultBadge}>Default</Text>}
       </View>
       <MaterialCommunityIcons
-        name={selectedCard === card.id ? "radiobox-marked" : "radiobox-blank"}
+        //name={selectedCard === card.id ? "radiobox-marked" : "radiobox-blank"}
         size={24}
         color={primary}
       />
@@ -47,8 +51,9 @@ const PaymentComponent = () => {
       <Text style={styles.title}>Payment Method</Text>
 
       <ScrollView style={styles.cardsContainer}>
-        {savedCards.map(renderCard)}
+        {/* {savedCards.map(renderCard)} */}
       </ScrollView>
+
 
       <View style={styles.billingDetailsContainer}>
         <Text style={styles.subtitle}>Billing Summary</Text>

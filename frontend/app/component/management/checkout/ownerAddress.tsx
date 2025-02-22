@@ -4,12 +4,12 @@ import {
   GestureHandlerRootView,
   Pressable,
 } from "react-native-gesture-handler";
-import { useCheckout } from "@/app/context/management/checkout/checkoutContext";
+// import { useCheckout } from "@/app/context/management/checkout/checkoutContext";
 import { AntDesign } from "@expo/vector-icons";
 import { userData } from "@/app/utils/loadData";
 
 const OwnerAddressComponent = () => {
-  const { handleCheckboxPress, isChecked } = useCheckout();
+  // const { handleCheckboxPress, isChecked } = useCheckout();
   const  user  = userData();
 
   return (
@@ -36,11 +36,11 @@ const OwnerAddressComponent = () => {
 
         {/* Checkbox to select the address */}
         <View style={styles.checkboxContainer}>
-          <Pressable style={styles.checkbox} onPress={handleCheckboxPress}>
+          <Pressable style={styles.checkbox}>
             <View
               style={[
                 styles.innerCheckbox,
-                isChecked ? { display: "flex" } : { display: "none" },
+                //isChecked ? { display: "flex" } : { display: "none" },
               ]}
             >
               <AntDesign name="check" size={24} color="white" />

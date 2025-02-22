@@ -10,10 +10,12 @@ import {
 } from "react-native";
 import React, { useState } from "react";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { EventProps } from "@/app/types/staff/eventType";
+import { EventDetailsInterface } from "@/app/types/staff/eventType";
 import PopupButton from "@/app/component/helper/popupButton";
 
-const EventDetailsComponent = ({ props }: { props: EventProps }) => {
+const EventDetailsComponent: React.FC<{ props?: EventDetailsInterface }> = ({
+  props,
+}) => {
   const text = useThemeColor({}, "text");
   const background = useThemeColor({}, "innerBackground");
   const activebtn = useThemeColor({}, "activebtn");
@@ -24,23 +26,20 @@ const EventDetailsComponent = ({ props }: { props: EventProps }) => {
       <Text style={styles.headerText}>Shift details</Text>
       <View style={styles.container}>
         <Text style={[styles.headerText, { color: text }]}>client</Text>
-        <Text style={[styles.text, { color: text }]}>{props.client}</Text>
+        <Text style={[styles.text, { color: text }]}>{props?.client}</Text>
       </View>
       <View style={styles.container}>
         <Text style={[styles.headerText, { color: text }]}>site</Text>
-        <Text style={[styles.text, { color: text }]}>{props.site_name}</Text>
-      </View>
-
-      <View style={styles.container}>
-        <Text style={[styles.headerText, { color: text }]}>department</Text>
-        <Text style={[styles.text, { color: text }]}>{props.department}</Text>
+        <Text style={[styles.text, { color: text }]}>{props?.site_name}</Text>
       </View>
 
       <View style={styles.container}>
         <Text style={[styles.headerText, { color: text }]}>adress</Text>
-        <Text style={[styles.text, { color: text }]}>{props.site_address}</Text>
         <Text style={[styles.text, { color: text }]}>
-          {props.site_postcode}
+          {props?.site_address}
+        </Text>
+        <Text style={[styles.text, { color: text }]}>
+          {props?.site_postcode}
         </Text>
       </View>
 
@@ -48,28 +47,29 @@ const EventDetailsComponent = ({ props }: { props: EventProps }) => {
       <View style={styles.rowContainer}>
         <View>
           <Text style={[styles.headerText, { color: text }]}>Start Time</Text>
-          <Text style={[styles.text, { color: text }]}>{props.start_time}</Text>
+          <Text style={[styles.text, { color: text }]}>
+            {props?.start_time}
+          </Text>
         </View>
         <View>
           <Text style={[styles.headerText, { color: text }]}>End Time</Text>
-          <Text style={[styles.text, { color: text }]}>{props.end_time}</Text>
+          <Text style={[styles.text, { color: text }]}>{props?.end_time}</Text>
         </View>
       </View>
 
       <View style={styles.container}>
         <Text style={[styles.headerText, { color: text }]}>Information</Text>
-        <Text style={[styles.text, { color: text }]}>{props.information}</Text>
+        <Text style={[styles.text, { color: text }]}>{props?.information}</Text>
       </View>
 
       <View style={styles.container}>
         <Text style={[styles.headerText, { color: text }]}>Pay</Text>
-        <Text style={[styles.text, { color: text }]}>{props.paylevel}</Text>
-        <Text style={[styles.text, { color: text }]}>{props.pay}</Text>
+        <Text style={[styles.text, { color: text }]}>{props?.pay}</Text>
       </View>
 
       <View style={styles.container}>
         <Text style={[styles.headerText, { color: text }]}>Colleagues</Text>
-        {props.colleague.map((colleague, index) => (
+        {props?.colleague.map((colleague, index) => (
           <Pressable
             key={index}
             style={[styles.colleagueButtons, { backgroundColor: inactivebtn }]}
