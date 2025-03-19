@@ -28,10 +28,6 @@ const StaffSideComponent = () => {
 
   const [isModalVisible, setModalVisible] = useState(false);
 
-  const toggleModal = () => {
-    setModalVisible(!isModalVisible);
-  };
-
   /**
    * Set the colors for the component based on the user mobile theme.
    * Use the `useThemeColor` hook with no parameters to get the theme colors.
@@ -45,16 +41,26 @@ const StaffSideComponent = () => {
 
   const { active, handleActivity } = useSideComponentContext();
 
+  // Add navigation handling for sign out
+  const handleSignOut = async () => {
+    try {
+      // Perform any cleanup needed before signing out
+      await signOut();
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
+  };
+
   return (
     <View style={[styles.maincontainer, { backgroundColor: secondaryColor }]}>
-      {/* Contains the items in the side component itself */}
-      <View style={[styles.rowContainer, { position: "sticky" }]}>
-        {/* TODO: Replace with the logo image and the app name */}
-        <MaterialIcons name="calendar-today" size={20} color={icon} />
-        <Text>Logo</Text>
-        {/* Animate the view so the border color rotates and changes constantly */}
-        <Pressable style={styles.imagecontainer} onPress={toggleModal}>
-          <Image source={user_image} style={[styles.image]} />
+      <View style={[styles.headerContainer]}>
+        <MaterialIcons name="calendar-today" size={24} color={icon} />
+        <Text style={[styles.logoText, { color: text }]}>Logo</Text>
+        <Pressable
+          style={styles.profileButton}
+          onPress={() => setModalVisible(true)}
+        >
+          <Image source={user_image} style={styles.profileImage} />
         </Pressable>
       </View>
 
@@ -62,241 +68,256 @@ const StaffSideComponent = () => {
         style={styles.scrollview}
         showsHorizontalScrollIndicator={false}
       >
-        <View>
+        <View style={styles.menuContainer}>
           <TouchableOpacity
             style={[
-              styles.rowContainer,
-              { backgroundColor: primaryColor },
-              styles.buttons,
-              active === "events" && { backgroundColor: activebtn },
+              styles.menuButton,
+              active === "events" && styles.activeButton,
+              {
+                backgroundColor: active === "events" ? activebtn : primaryColor,
+              },
             ]}
             onPress={() => handleActivity("events")}
           >
-            <MaterialIcons name="event" size={20} color={icon} />
-            <Text style={[styles.buttonText, { color: text }]}>events</Text>
+            <MaterialIcons name="event" size={22} color={icon} />
+            <Text style={[styles.menuText, { color: text }]}>events</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={[
-              styles.rowContainer,
-              { backgroundColor: primaryColor },
-              styles.buttons,
-              active === "task" && { backgroundColor: activebtn },
+              styles.menuButton,
+              active === "task" && styles.activeButton,
+              { backgroundColor: active === "task" ? activebtn : primaryColor },
             ]}
             onPress={() => handleActivity("task")}
           >
-            <MaterialIcons name="task" size={20} color={icon} />
-            <Text style={[styles.buttonText, { color: text }]}>
-              Manage task
-            </Text>
+            <MaterialIcons name="task" size={22} color={icon} />
+            <Text style={[styles.menuText, { color: text }]}>Manage task</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={[
-              styles.rowContainer,
-              { backgroundColor: primaryColor },
-              styles.buttons,
-              active === "notification" && { backgroundColor: activebtn },
+              styles.menuButton,
+              active === "notification" && styles.activeButton,
+              {
+                backgroundColor:
+                  active === "notification" ? activebtn : primaryColor,
+              },
             ]}
             onPress={() => handleActivity("notification")}
           >
-            <MaterialIcons name="notifications" size={20} color={icon} />
-            <Text style={[styles.buttonText, { color: text }]}>
-              notification
-            </Text>
+            <MaterialIcons name="notifications" size={22} color={icon} />
+            <Text style={[styles.menuText, { color: text }]}>notification</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={[
-              styles.rowContainer,
-              { backgroundColor: primaryColor },
-              styles.buttons,
-              active === "messages" && { backgroundColor: activebtn },
-              ,
+              styles.menuButton,
+              active === "messages" && styles.activeButton,
+              {
+                backgroundColor:
+                  active === "messages" ? activebtn : primaryColor,
+              },
             ]}
             onPress={() => handleActivity("messages")}
           >
-            <MaterialIcons name="message" size={20} color={icon} />
-            <Text style={[styles.buttonText, { color: text }]}>messages</Text>
+            <MaterialIcons name="message" size={22} color={icon} />
+            <Text style={[styles.menuText, { color: text }]}>messages</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={[
-              styles.rowContainer,
-              { backgroundColor: primaryColor, shadowColor: secondaryColor },
-              styles.buttons,
-              active === "availability" && { backgroundColor: activebtn },
+              styles.menuButton,
+              active === "availability" && styles.activeButton,
+              {
+                backgroundColor:
+                  active === "availability" ? activebtn : primaryColor,
+              },
             ]}
             onPress={() => handleActivity("availability")}
           >
-            <MaterialIcons name="event-available" size={20} color={icon} />
-            <Text style={[styles.buttonText, { color: text }]}>
-              availability
-            </Text>
+            <MaterialIcons name="event-available" size={22} color={icon} />
+            <Text style={[styles.menuText, { color: text }]}>availability</Text>
           </TouchableOpacity>
         </View>
-        {/* Contains the inner components for timesheet, dashboard */}
-        <View style={styles.seemoreContainer}>
-          <Text style={[styles.seemoreText, { marginVertical: 10 }]}>
-            see more
-          </Text>
-          <View style={styles.seemorerowContainer}>
+
+        <View style={styles.seeMoreSection}>
+          <Text style={[styles.seeMoreTitle, { color: text }]}>see more</Text>
+          <View style={styles.seeMoreGrid}>
             <TouchableOpacity
               style={[
-                styles.seemoreButtons,
-                active !== "dashboard" && { backgroundColor: activebtn },
+                styles.seeMoreButton,
+                active === "dashboard" && styles.activeButton,
+                {
+                  backgroundColor:
+                    active === "dashboard" ? activebtn : primaryColor,
+                },
               ]}
               onPress={() => handleActivity("dashboard")}
             >
               <MaterialIcons name="dashboard" size={24} color={icon} />
-              <Text style={styles.seemoreText}>Dashboard</Text>
+              <Text style={[styles.seeMoreButtonText, { color: text }]}>
+                Dashboard
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={[
-                styles.seemoreButtons,
-                active !== "timesheet" && { backgroundColor: activebtn },
+                styles.seeMoreButton,
+                active === "timesheet" && styles.activeButton,
+                {
+                  backgroundColor:
+                    active === "timesheet" ? activebtn : primaryColor,
+                },
               ]}
               onPress={() => handleActivity("timesheet")}
             >
               <MaterialIcons name="timelapse" size={24} color={icon} />
-              <Text style={styles.seemoreText}>Timesheet</Text>
+              <Text style={[styles.seeMoreButtonText, { color: text }]}>
+                Timesheet
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
-        {/* Contains components required in the side component */}
-        <View style={[styles.rowContainer, styles.liveEventContainer]}>
-          <View style={styles.liveEventInnerContainer}>
-            <LiveEventComponent />
-          </View>
+
+        {/* Display the event component */}
+        <View style={styles.liveEventWrapper}>
+          <LiveEventComponent />
         </View>
 
-        {/* Contains the logout button to sign the user out */}
-        <Pressable style={styles.logoutButton} onPress={signOut}>
-          <Text>Logout</Text>
-          <MaterialIcons name="logout" size={20} color={icon} />
-        </Pressable>
+        <TouchableOpacity style={styles.logoutButton} onPress={handleSignOut}>
+          <Text style={[styles.logoutText, { color: text }]}>Logout</Text>
+          <MaterialIcons name="logout" size={22} color={icon} />
+        </TouchableOpacity>
       </ScrollView>
 
       {/* This modal displays the user profile */}
       <Modal animationType="slide" transparent={false} visible={isModalVisible}>
         <View style={{ flex: 1 }}>
-          <ProfileDisplayComponent user={user} onPress={toggleModal} />
+          <ProfileDisplayComponent
+            user={user}
+            onPress={() => {
+              setModalVisible(false);
+            }}
+          />
         </View>
       </Modal>
     </View>
   );
 };
 
-export default StaffSideComponent;
-
 const styles = StyleSheet.create({
   maincontainer: {
     flex: 1,
-    justifyContent: "space-between",
-    paddingTop: 30,
+    paddingTop: Platform.OS === "ios" ? 50 : 30,
+    paddingHorizontal: 15,
   },
-
-  scrollview: {
-    flex: 1,
-    width: "100%",
-  },
-
-  rowContainer: {
-    width: "100%",
+  headerContainer: {
     flexDirection: "row",
+    alignItems: "center",
     justifyContent: "space-between",
-    alignItems: "center",
-    padding: 5,
-    columnGap: 10,
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(0,0,0,0.1)",
   },
-
-  image: {
-    width: 40,
-    height: 40,
-    padding: 10,
-    borderRadius: 20,
-  },
-
-  imagecontainer: {
-    borderWidth: 1,
-    borderRadius: 20,
-    shadowRadius: 5,
-    elevation: 5,
-    shadowOpacity: 0.5,
-  },
-
-  buttons: {
-    padding: 5,
-    alignItems: "center",
-    justifyContent: "space-around",
-    shadowRadius: 10,
-    elevation: 10,
-  },
-
-  buttonText: {
-    flex: 1,
-    fontSize: Platform.OS === "web" ? 14 : 16,
+  logoText: {
+    fontSize: 20,
     fontWeight: "700",
     fontFamily: "BarlowRegular",
-    textTransform: "capitalize",
-    padding: 5,
-    textShadowRadius: 5,
   },
-
-  seemoreContainer: {
-    width: "100%",
-    flexDirection: "column",
-    padding: 5,
+  profileButton: {
+    padding: 2,
+    borderRadius: 25,
+    borderWidth: 2,
+    borderColor: "rgba(0,0,0,0.1)",
   },
-
-  seemorerowContainer: {
-    width: "100%",
-    flexDirection: "row",
-    justifyContent: "space-evenly",
-    alignItems: "center",
-    padding: 5,
-  },
-
-  seemoreButtons: {
-    padding: 10,
+  profileImage: {
+    width: 40,
+    height: 40,
     borderRadius: 20,
-    alignItems: "center",
-    elevation: 10,
-    shadowRadius: 10,
   },
-
-  seemoreText: {
-    fontSize: 15,
-    fontWeight: "bold",
+  scrollview: {
+    flex: 1,
+    marginTop: 10,
+  },
+  menuContainer: {
+    gap: 5,
+  },
+  menuButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 10,
+    borderRadius: 5,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+  },
+  activeButton: {
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  menuText: {
+    marginLeft: 15,
+    fontSize: 16,
+    fontWeight: "600",
     fontFamily: "BarlowRegular",
     textTransform: "capitalize",
-    padding: 5,
   },
-
-  liveEventContainer: {
-    flexGrow: 1,
-    alignItems: "center",
-    justifyContent: "center",
+  seeMoreSection: {
+    marginTop: 25,
+    marginBottom: 15,
   },
-
-  liveEventInnerContainer: {
-    width: "80%",
-    justifyContent: "center",
-    alignItems: "center",
-    borderRadius: 30,
+  seeMoreTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    marginBottom: 15,
+    textTransform: "uppercase",
+    letterSpacing: 1,
   },
-
-  logoutButton: {
-    padding: 10,
-    borderRadius: 10,
-    alignItems: "center",
+  seeMoreGrid: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 20,
+    gap: 10,
+  },
+  seeMoreButton: {
+    flex: 1,
+    alignItems: "center",
+    padding: 15,
+    borderRadius: 12,
+  },
+  seeMoreButtonText: {
+    marginTop: 8,
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  liveEventWrapper: {
+    marginVertical: 20,
+    padding: 1,
+    borderRadius: 5,
+  },
+  logoutButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: 15,
+    marginTop: 10,
+    marginBottom: 20,
+    borderRadius: 12,
+    backgroundColor: "rgba(255,0,0,0.1)",
     borderWidth: 1,
-    shadowOffset: { width: 0, height: 1 },
-    marginHorizontal: 10,
-    marginVertical: 10,
+    borderColor: "rgba(255,0,0,0.2)",
+  },
+  logoutText: {
+    fontSize: 16,
+    fontWeight: "600",
   },
 });
+
+export default StaffSideComponent;

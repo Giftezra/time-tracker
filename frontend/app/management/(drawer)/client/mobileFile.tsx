@@ -1,52 +1,54 @@
 import {
+  Modal,
   Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
+  KeyboardAvoidingView,
 } from "react-native";
 import React, { useState } from "react";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { Pressable, ScrollView, TextInput } from "react-native-gesture-handler";
+import {
+  FlatList,
+  Pressable,
+  ScrollView,
+  TextInput,
+} from "react-native-gesture-handler";
 import ClientDetailsComponent from "@/app/component/management/client/clients";
 import { ClientDetailsType } from "@/app/types/management/client";
-import { AntDesign } from "@expo/vector-icons";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useClientContext } from "@/app/context/management/client/clientContext";
 import JobDetailsComponent from "@/app/component/management/client/jobDetails";
 import CustomModal from "@/app/component/helper/customModal";
-import AddContractComponent from "@/app/component/management/client/add-contract";
+import AddContractComponent from "@/app/component/management/client/addcontract";
 import SearchInputContainer from "@/app/component/helper/searchInput";
+import AddClientComponent from "@/app/component/management/client/addClient";
 
 const ClientMobileComponent = () => {
-  const { jobDetailsData, clientDetailsData } = useClientContext();
+  const {
+    jobDetailsData,
+    clientDetailsData,
+    isCreateContractModalVisible,
+    toggleCreateContractModal,
+    setIsCreateClientModalVisible,
+  } = useClientContext();
   const [toggleView, setToggleView] = useState("clients");
-  const [isModalVisible, setIsModalVisible] = useState(false);
-  const [searchClient, setSearchClient] = useState("");
+
+  const secondaryColor = useThemeColor({}, "secondaryColor");
+  const text = useThemeColor({}, "text");
 
   const handleToggleView = (header: string) => {
     setToggleView(header);
   };
 
-  const primary = useThemeColor({}, "primaryColor");
-  const secondaryColor = useThemeColor({}, "secondaryColor");
-  const inactivebtn = useThemeColor({}, "inactivebtn");
-  const activebtn = useThemeColor({}, "activebtn");
-  const text = useThemeColor({}, "text");
-  const highlight = useThemeColor({}, "highlight");
-  const textinput = useThemeColor({}, "textinput");
-
+  // Subheader for the mobile view
   const subHeader = ["clients", "assigned tasks"];
 
-  const onModalVisible = () => {
-    setIsModalVisible(!isModalVisible);
-  };
-
   return (
-    <View style={[styles.mobileContainer, { backgroundColor: secondaryColor }]}>
-      <View>
-        <Text>enter</Text>
-      </View>
-
+    <KeyboardAvoidingView
+      style={[styles.mobileContainer, { backgroundColor: secondaryColor }]}
+    >
       {/* Map the header in a row.
                 Check the active button and change the color */}
       <View style={styles.mobileSelectButtonContainer}>
@@ -80,22 +82,12 @@ const ClientMobileComponent = () => {
           <View>
             <SearchInputContainer />
           </View>
-          <ScrollView style={styles.mobileScrollView}>
-            {clientDetailsData?.map((client, index) => (
-              <View
-                key={index}
-                style={[
-                  { flex: 1, width: "100%" },
-                  { backgroundColor: primary },
-                ]}
-              >
-                <ClientDetailsComponent
-                  props={client}
-                  onModalVisible={onModalVisible}
-                />
-              </View>
-            ))}
-          </ScrollView>
+
+          <FlatList
+            data={clientDetailsData}
+            keyExtractor={(item, index) => `client-${item.client_id}-${index}`}
+            renderItem={({ item }) => <ClientDetailsComponent props={item} />}
+          />
         </View>
       )}
 
@@ -106,19 +98,15 @@ const ClientMobileComponent = () => {
           <View>
             <SearchInputContainer />
           </View>
-          <ScrollView style={styles.mobileScrollView}>
-            {jobDetailsData.map((job, index) => (
-              <View key={index} style={{ flex: 1, width: "100%" }}>
-                <JobDetailsComponent {...job} />
-              </View>
-            ))}
-          </ScrollView>
+
+          <FlatList
+            data={jobDetailsData}
+            keyExtractor={(item, index) => `job-${item.client_id}-${index}`}
+            renderItem={({ item }) => <JobDetailsComponent {...item} />}
+          />
         </View>
       )}
-      <CustomModal isModalOpen={isModalVisible} closeModal={onModalVisible}>
-        <AddContractComponent />
-      </CustomModal>
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -186,4 +174,6 @@ const styles = StyleSheet.create({
     marginHorizontal: 0.5,
     borderWidth: 0.4,
   },
+
+
 });

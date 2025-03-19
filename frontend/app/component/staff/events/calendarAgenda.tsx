@@ -1,64 +1,20 @@
-import { StyleSheet, Text, View, TouchableOpacity } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  View,
+  TouchableOpacity,
+  ActivityIndicator,
+} from "react-native";
 import React, { useEffect, useState } from "react";
 import { Agenda } from "react-native-calendars";
 
 import {
   EventDisplayInterface,
   EventDetailsInterface,
-} from "@/app/types/staff/eventType";
+  AgendaItem,
+} from "@/app/types/staff/event";
 import EventDisplay from "./eventDisplay";
 import { useEventContext } from "@/app/context/staff/staffEventProvider";
-
-type AgendaItem = {
-  [key: string]: EventDisplayInterface[];
-};
-
-// Sample data that follows the ShiftDisplayProps structure
-const items: AgendaItem = {
-  "2025-01-01": [
-    {
-      id: "1",
-      site_name: "Main Office",
-      site_address: "123 Main St",
-      site_postcode: "AB12 3CD",
-      start_time: "09:00",
-      end_time: "17:00",
-      information: "Regular day shift",
-    },
-    {
-      id: "2",
-      site_name: "Downtown Site",
-      site_address: "456 Elm St",
-      site_postcode: "EF45 6GH",
-      start_time: "10:00",
-      end_time: "18:00",
-      information: "Overlapping shift with the main office",
-    },
-  ],
-  "2025-01-06": [
-    {
-      id: "3",
-      site_name: "Warehouse",
-      site_address: "789 Maple Ave",
-      site_postcode: "IJ67 8KL",
-      start_time: "08:00",
-      end_time: "16:00",
-      information: "Early morning shift",
-    },
-  ],
-  "2025-01-03": [], // No shifts for this day
-  "2025-01-08": [
-    {
-      id: "4",
-      site_name: "Remote Site",
-      site_address: "101 Pine Rd",
-      site_postcode: "MN90 1OP",
-      start_time: "12:00",
-      end_time: "20:00",
-      information: "Afternoon to evening shift",
-    },
-  ],
-};
 
 /**
  * This function render the EventDisplay when the component mounts.
@@ -71,13 +27,15 @@ const items: AgendaItem = {
  */
 const renderItem = (
   item: EventDisplayInterface,
-  onPress: (id: string) => void
+  onPress: (id: string) => Promise<void>
 ) => {
   if (!item) return null;
   return (
     <TouchableOpacity
       style={styles.renderItemButton}
-      onPress={() => onPress(item.id)}
+      onPress={async () => {
+        await onPress(item.id);
+      }}
     >
       <EventDisplay props={item} />
     </TouchableOpacity>
@@ -92,13 +50,14 @@ const renderItem = (
  * @returns The CalendarAgendaComponent
  */
 
-const CalendarAgendaComponent = ({
-  onPress,
-}: {
-  onPress: (id: string) => void;
-}) => {
-  const { assignedShifts } = useEventContext();
+const CalendarAgendaComponent = () => {
+  const {
+    assignedShifts = [],
+    retrieveShiftDetails,
+    setIsModalOpen,
+  } = useEventContext();
   const [items, setItems] = useState<AgendaItem>({});
+  const [loading, setLoading] = useState(true);
 
   /**  The hooks is used to format the date for the agendaItems.
    * The date is formatted as yyyy-mm-dd
@@ -106,34 +65,57 @@ const CalendarAgendaComponent = ({
    */
   useEffect(() => {
     const formattedItems: AgendaItem = {};
-
-    // Loop the assigned shifts and format the date
-    assignedShifts.forEach((shift) => {
-      const dateKey = shift.start_date?.split("T")[0];
-      if (dateKey) {
-        if (formattedItems[dateKey]) {
-          formattedItems[dateKey].push(shift);
-        } else {
-          formattedItems[dateKey] = [];
-        }
+    // Add null check before forEach
+    try {
+      setLoading(true);
+      if (assignedShifts && assignedShifts.length > 0) {
+        assignedShifts.forEach((shift: EventDisplayInterface) => {
+          const dateKey = shift.start_date;
+          if (dateKey) {
+            if (!formattedItems[dateKey]) {
+              formattedItems[dateKey] = [];
+            }
+            formattedItems[dateKey].push(shift);
+          }
+        });
       }
-    });
-    setItems(formattedItems);
+      setItems(formattedItems);
+      setLoading(false);
+    } catch (error) {
+      console.log("error", error);
+    }
   }, [assignedShifts]);
+
+  const renderEmptyDate = () => {
+    return (
+      <View style={styles.emptyDate}>
+        <Text style={styles.renderEmptyDateText}>
+          No shifts scheduled for this day
+        </Text>
+      </View>
+    );
+  };
+
+  // Return a loading indicator if the data is still loading
+  if (loading) {
+    return <ActivityIndicator size="large" color="#0000ff" />;
+  }
 
   return (
     <View style={styles.container}>
       <Agenda
         items={items}
-        renderItem={(item: EventDisplayInterface) => renderItem(item, onPress)}
-        renderEmptyDate={() => (
-          <View style={styles.renderEmptyDateContainer}>
-            <Text style={styles.renderEmptyDateText}>
-              you do not have any active shifts for this day
-            </Text>
-          </View>
-        )}
+        renderItem={(item: EventDisplayInterface) =>
+          renderItem(item, async (id) => {
+            await retrieveShiftDetails(id);
+            setIsModalOpen(true);
+          })
+        }
+        renderEmptyData={renderEmptyDate}
         hideKnob={false}
+        showOnlySelectedDayItems={false}
+        pastScrollRange={12}
+        futureScrollRange={12}
       />
     </View>
   );
@@ -174,6 +156,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: "BarlowRegular",
     fontWeight: "500",
-    textTransform: "capitalize",
+    color: "#666",
+    textAlign: "center",
+  },
+
+  emptyDate: {
+    height: 15,
+    flex: 1,
+    paddingTop: 30,
+    paddingHorizontal: 20,
   },
 });

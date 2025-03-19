@@ -6,10 +6,11 @@ import {
   EventDetailsInterface,
   EventDisplayInterface,
   EventProviderInterface,
-} from "@/app/types/staff/eventType";
+} from "@/app/types/staff/event";
 
 import { MessageComponentProps } from "@/app/types/staff/messages";
 import { useAuth } from "../authentication";
+import { Alert } from "react-native";
 
 /**
  * Create a new context for the event provider.
@@ -35,6 +36,9 @@ const EventProvider = ({ children }: { children: React.ReactNode }) => {
     id: "",
     name: "",
   });
+  const [shiftDetails, setShiftDetails] = useState<
+    EventDetailsInterface | undefined
+  >(undefined);
 
   const [assignedShifts, setAssignedShifts] = useState<EventDisplayInterface[]>(
     []
@@ -45,24 +49,22 @@ const EventProvider = ({ children }: { children: React.ReactNode }) => {
     setDetails({ ...detail, id, name: name });
   };
 
-  const handleModal = () => {
-    setIsModalOpen(!isModalOpen);
-  };
-
-  /* The hook is used to retrieve the shifts assigned to the user when the page mounts */
+  /**
+   * Load the shifts using the hook as soon as the component mounts.
+   */
   useEffect(() => {
-    const fetchAssignedShifts = async () => {
+    const loadShifts = async () => {
+      setIsLoading(true);
       try {
-        setIsLoading(true);
-        const shifts = await retrieveAllShifts();
+        const shifts = await fetchCalendarShifts();
         setAssignedShifts(shifts);
       } catch (error: any) {
-        console.log(error);
+        console.error("Error fetching shifts:", error);
       } finally {
         setIsLoading(false);
       }
     };
-    fetchAssignedShifts();
+    loadShifts();
   }, []);
 
   /**
@@ -74,16 +76,19 @@ const EventProvider = ({ children }: { children: React.ReactNode }) => {
    */
   const retrieveShiftDetails = async (id: string) => {
     try {
+      setIsLoading(true);
       const response = await axiosInstance.get("/api/get/shift/details/", {
         params: {
           shift_id: id,
         },
       });
       const shiftDetails: EventDetailsInterface = response.data.shift_details;
-      return shiftDetails;
+      setShiftDetails(shiftDetails);
     } catch (error: any) {
       console.log(error);
-      return undefined;
+      setShiftDetails(undefined);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -98,9 +103,16 @@ const EventProvider = ({ children }: { children: React.ReactNode }) => {
       const response = await axiosInstance.patch("/api/accept/shift/", {
         shift_id: id,
       });
-      return response.data;
+      if (response.status === 200) {
+        setIsModalOpen(false);
+        Alert.alert("Success", "Shift accepted successfully");
+        // Refresh the shifts list
+        const shifts = await fetchCalendarShifts();
+        setAssignedShifts(shifts);
+      }
     } catch (error: any) {
-      console.log(error);
+      console.error("Error accepting shift:", error);
+      throw error; // Propagate error to component
     }
   };
 
@@ -115,26 +127,31 @@ const EventProvider = ({ children }: { children: React.ReactNode }) => {
       const response = await axiosInstance.patch("/api/decline/shift/", {
         shift_id: id,
       });
-      return response.data;
+      if (response.status === 200) {
+        setIsModalOpen(false);
+        Alert.alert("Success", "Shift declined successfully");
+        // Refresh the shifts list
+        const shifts = await fetchCalendarShifts();
+        setAssignedShifts(shifts);
+      }
     } catch (error: any) {
       console.log(error);
     }
   };
 
   /**
-   * This method is used to get all the shifts associated with the request user.
-   *
+   * Fetch the shifts for the calendar agenda view.
+   * The method is designed to fetch and return the shifts asssigned and pending to the user.
+   * @returns Promise<EventDisplayInterface[]>
    */
-  const retrieveAllShifts = async (): Promise<EventDisplayInterface[]> => {
-    try {
-      const response = await axiosInstance.get("/api/get/assigned/shifts/");
-      console.log(response);
-      const assignedShifts: EventDisplayInterface[] = response.data.shift_data;
-      return assignedShifts;
-    } catch (error: any) {
-      console.log(error);
-      return [];
+  const fetchCalendarShifts = async () => {
+    const response = await axiosInstance.get("/api/get/calendar/shifts/");
+    if (response.status === 200) {
+      const calendarShifts: EventDisplayInterface[] =
+        response.data.calendar_data;
+      return calendarShifts;
     }
+    return [];
   };
 
   /**
@@ -143,7 +160,7 @@ const EventProvider = ({ children }: { children: React.ReactNode }) => {
    */
   const handleMessageNavigation = () => {
     setIsClicked(false);
-    handleModal();
+    setIsModalOpen(false);
     router.push({
       pathname: "/staff/(drawer)/messages/main",
       params: {
@@ -156,11 +173,15 @@ const EventProvider = ({ children }: { children: React.ReactNode }) => {
   const value: EventProviderInterface = {
     handlePress,
     handleMessageNavigation,
-    handleModal,
     isClicked,
     isModalOpen,
     retrieveShiftDetails,
     assignedShifts,
+    shiftDetails,
+    isLoading,
+    setIsModalOpen,
+    acceptShift,
+    declineShift,
   };
 
   return (

@@ -7,61 +7,44 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import LeaderBoardCardComponent from "./leaderBoardCardComponent";
 import OtherEmployeeOnLeaderboard from "./otherEmployeeLeaderboard";
 import { id } from "react-native-paper-dates";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useThemeColor } from "@/hooks/useThemeColor";
-
-const leaderBoardData = [
-  {
-    name: "John Doe",
-    role: "Software Engineer",
-    totalTasks: 20,
-  },
-  {
-    name: "Jane Doe",
-    role: "Software Engineer",
-    totalTasks: 15,
-  },
-  {
-    name: "John Smith",
-    role: "Product Manager",
-    totalTasks: 10,
-  },
-  {
-    name: "Alice Brown",
-    role: "Designer",
-    totalTasks: 5,
-  },
-];
-
-const otherEmployeeData = [
-  {
-    id: "1",
-    name: "John Doe",
-    email: "johndoes@example.com",
-    phone: "1234567890",
-    role: "Software Engineer",
-    taskCompleted: 20,
-    lineData: [{ value: 0 }, { value: 5 }, { value: 2 }, { value: 1 }],
-  },
-  {
-    id: "2",
-    name: "John Doe",
-    email: "johndoes@example.com",
-    phone: "1234567890",
-    role: "Software Engineer",
-    taskCompleted: 20,
-    lineData: [{ value: 5 }, { value: 0 }, { value: 2 }, { value: 3 }],
-  },
-];
+import { useDashboardContext } from "@/app/context/management/dashboard/dashboardContext";
+import { LeaderBoardData } from "@/app/types/management/dashboard";
 
 const LeaderBoardComponent = () => {
+  const { topPerformers, setIsModalVisible } = useDashboardContext();
+
   const background = useThemeColor({}, "white");
   const otherText = useThemeColor({}, "otherText");
   const innerBackground = useThemeColor({}, "innerBackground");
+
+  const [topEmployeeData, setTopEmployeeData] = useState<LeaderBoardData[]>([]);
+  const [otherEmployeeData, setOtherEmployeeData] = useState<LeaderBoardData[]>(
+    []
+  );
+
+  /* The hook check the top performers data, and it sets the top employees with the most rank to the topEmployeeData state, and the rest to the otherEmployeeData state */
+  useEffect(() => {
+    if (topPerformers && topPerformers.length > 0) {
+      // Sort performers by rank (assuming lower rank number is better)
+      const sortedPerformers = [...topPerformers].sort(
+        (a, b) => (a.rank || 0) - (b.rank || 0)
+      );
+
+      // Get top 5 performers
+      const topFive = sortedPerformers.slice(0, 5);
+      setTopEmployeeData(topFive);
+
+      // Get the remaining performers
+      const remainingPerformers = sortedPerformers.slice(5);
+      setOtherEmployeeData(remainingPerformers);
+    }
+  }, [topPerformers]);
 
   return (
     <GestureHandlerRootView
@@ -80,12 +63,15 @@ const LeaderBoardComponent = () => {
           top employees
         </Text>
         <ScrollView horizontal={true} showsVerticalScrollIndicator={false}>
-          {leaderBoardData.map((item, index) => (
+          {topEmployeeData.map((item, index) => (
             <LeaderBoardCardComponent
-              key={index}
-              name={item.name}
-              role={item.role}
-              totalTasks={item.totalTasks}
+              key={item.id || index}
+              id={item.id || ""}
+              name={item.name || ""}
+              role={item.role || ""}
+              totalTasks={item.taskCompleted || 0}
+              rank={item.rank || 0}
+              setIsModalVisible={setIsModalVisible}
             />
           ))}
         </ScrollView>
@@ -124,16 +110,14 @@ const LeaderBoardComponent = () => {
         <ScrollView showsVerticalScrollIndicator={false}>
           {otherEmployeeData.map((item) => (
             <OtherEmployeeOnLeaderboard
-              key={item.id}
-              id={item.id}
-              name={item.name}
-              email={item.email}
-              phone={item.phone}
-              role={item.role}
-              taskCompleted={item.taskCompleted}
-              onPress={() => {
-                console.log(`profile ${item.id}`); // naviagte to the user profile when clicked
-              }}
+              key={item.id || ""}
+              id={item.id || ""}
+              name={item.name || ""}
+              email={item.email || ""}
+              phone={item.phone || ""}
+              role={item.role || ""}
+              taskCompleted={item.taskCompleted || 0}
+              setIsModalVisible={setIsModalVisible}
             />
           ))}
         </ScrollView>

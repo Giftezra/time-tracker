@@ -8,9 +8,19 @@ export interface ContractDetailsType {
   city?: string;
   start_date?: string;
   end_date?: string;
-};
+}
 
-export interface ClientDetail {
+export interface NewClientDetailsInterface {
+  name: string;
+  address: string;
+  postcode: string;
+  email: string;
+  phone: string;
+  city: string;
+  country: string;
+}
+
+export interface ClientDetailsType {
   client_id: string;
   name: string;
   address: string;
@@ -19,23 +29,16 @@ export interface ClientDetail {
   phone: string;
   city: string;
   country: string;
-};
-
-export interface ClientDetailsType {
-  clients: ClientDetail;
   contracts: ContractDetailsType[];
-};
-
+}
 
 export interface ResponseType {
   message: string;
 }
 
-
 export interface ClientDetailsResponseType {
   response: Promise<ResponseType>;
 }
-
 
 export interface ClientContextType {
   jobDetailsData: JobDetailsType[];
@@ -46,15 +49,35 @@ export interface ClientContextType {
   countDown: string | null;
   timeElapsed: string;
   newContract: ContractDetailsType | undefined;
-  handleAddContractInput: (key: string, value:string) => void;
-  createContract: () => void;
-  clients: ClientDetail[];
+  handleAddContractInput: (key: string, value: string) => void;
+  createContract: () => Promise<any>;  
   isLoading: boolean;
+  isCreateContractModalVisible: boolean;
+  toggleCreateContractModal: (client_id?: string | undefined) => void;
+  isCreateClientModalVisible: boolean;
+  setIsCreateClientModalVisible: (visible: boolean) => void;
+  activeContract: ContractDetailsType | undefined;
+  editContract: (contract: ContractDetailsType) => void;
+  isEditContractModalVisible: boolean;
+  setIsEditContractModalVisible: (visible: boolean) => void;
+  deleteContract: (contract: ContractDetailsType) => Promise<any>;
+  updateContract: (contract: ContractDetailsType) => Promise<any>;
+  isUpdateContractLoading: boolean;
+  editClient: (client: ClientDetailsType) => void;
+  isEditClientLoading: boolean;
+  isEditClientModalVisible: boolean;
+  setIsEditClientModalVisible: (visible: boolean) => void;
+  activeClient: ClientDetailsType | undefined;
+  updateClient: (client: ClientDetailsType) => Promise<any>;
+  deleteClient: (client_id: string) => Promise<any>;
+  setIsCreateContractModalVisible: (visible: boolean) => void;
+  createClient: (newClientDetails: NewClientDetailsInterface) => Promise<any>;
+  isNewClientLoading: boolean;
+}
 
-};
-  
 export interface JobDetailsType {
-  client?: string;
+  client_id: string;
+  client_name?: string;
   task_serial?: string;
   task_start_time?: string;
   task_end_time?: string;
@@ -64,4 +87,4 @@ export interface JobDetailsType {
   contract_address?: string;
   contract_postcode?: string;
   employee: EmployeeDetailsComponentType[];
-};
+}

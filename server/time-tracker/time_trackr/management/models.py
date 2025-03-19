@@ -11,6 +11,8 @@ from django.conf import settings
 from datetime import date
 from django.utils import timezone
 
+from staff.models import TimeSheet
+
 ROLE_PERMISSIONs = {
   'owner': {
     'can_view': ['owner', 'staff', 'admin'],
@@ -190,7 +192,6 @@ class BillingAddress(models.Model):
 
 class Company(models.Model):
   """ The company model describes a company database model that identifies all the company details
-
     """
   owner = models.ForeignKey(User, on_delete=models.CASCADE, null=True, related_name='company_owner')
   name = models.CharField(max_length=100)
@@ -255,7 +256,7 @@ class Contracts(models.Model):
 
 
 class Task(models.Model):
-    contract = models.ForeignKey('Contracts', on_delete=models.CASCADE)
+    contract = models.ForeignKey('Contracts', on_delete=models.CASCADE, related_name='task_contract')
     task_serial = models.CharField(max_length=100, default=None)
     name = models.CharField(max_length=100, default=None, blank=True, null=True)
     description = models.TextField()
@@ -267,37 +268,160 @@ class Task(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='task_creator')
+    selected_by = models.ManyToManyField('staff.Staff', 
+        related_name='task_selected_by', 
+        blank=True
+    )
     status = models.CharField(max_length=20, choices=[('pending', 'Pending'), ('assigned', 'Assigned'), ('selected', 'Selected'), ('completed', 'Completed')], default='pending')
     
     def __str__(self):
         return f'{self.name} - {self.contract} - {self.status}'
 
-      
+    def check_and_update_status(self):
+        """Check if task should be marked as completed based on scheduled end date/time"""
+        if self.end_date and self.end_time:
+            task_end_datetime = timezone.datetime.combine(self.end_date, self.end_time)
+            task_end_datetime = timezone.make_aware(task_end_datetime)
+            
+            if timezone.now() >= task_end_datetime:
+                self.status = 'completed'
+                self.save()
+                
+                # Update associated shifts that haven't been ended yet
+                incomplete_shifts = self.task_shift.exclude(status='completed')
+                for shift in incomplete_shifts:
+                    shift.auto_complete()
+
+    def save(self, *args, **kwargs):
+        self.check_and_update_status()
+        super().save(*args, **kwargs)
+        
 
 class Shift(models.Model):
     """ The model defines the shift database and the fields that are required for the shift model."""
     task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='task_shift')
-    staff = models.ManyToManyField('staff.Staff',related_name='shift_staff')
-    start_time = models.DateTimeField(blank=True, null=True)
-    end_time = models.DateTimeField(blank=True, null=True)
+    staff = models.ManyToManyField('staff.Staff', related_name='shift_staff')
+    start_date = models.DateField(blank=True, null=True)
+    end_date = models.DateField(blank=True, null=True)
+    start_time = models.TimeField(blank=True, null=True)  # When staff actually started
+    end_time = models.TimeField(blank=True, null=True)    # When staff actually ended
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    status = models.CharField(max_length=20, choices=[('pending', 'Pending'),('assigned', 'Assigned'), ('completed', 'Completed'), ('cancelled', 'Cancelled'), ('started', 'Started')])
+    status = models.CharField(
+        max_length=20, 
+        choices=[
+            ('pending', 'Pending'),
+            ('assigned', 'Assigned'), 
+            ('started', 'Started'),
+            ('completed', 'Completed'), 
+            ('cancelled', 'Cancelled')
+        ],
+        default='pending'
+    )
     created_by = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL, related_name='shift_creator')
-    def __str__(self):
-        return f'{self.task} - {self.staff}'
+
+    def can_end_shift(self):
+        """Check if shift can be ended manually"""
+        if self.status != 'started':
+            return False
+            
+        # Can only end shift before task's scheduled end time
+        task_end_datetime = timezone.datetime.combine(
+            self.start_time,
+            self.end_time
+        )
+        task_end_datetime = timezone.make_aware(task_end_datetime)
+        
+        return timezone.now() <= task_end_datetime
+
+    def create_timesheets(self):
+        """Create timesheet entries for all staff members"""
+        for staff_member in self.staff.all():
+            TimeSheet.objects.get_or_create(
+                shift=self,
+                staff=staff_member,
+                status='pending'
+            )
+
+    def end_shift(self):
+        """Manually end a shift if allowed"""
+        if not self.can_end_shift():
+            raise ValueError("Cannot end shift after scheduled end time")
+            
+        self.status = 'completed'
+        self.end_time = timezone.now().time()
+        self.save()
+        
+        # Create timesheets
+        self.create_timesheets()
+        
+        # Check if all shifts for task are completed
+        task_shifts = self.task.task_shift.all()
+        if all(shift.status == 'completed' for shift in task_shifts):
+            self.task.status = 'pending'
+            self.task.save()
+
+    def auto_complete(self):
+        """Automatically complete shift when task end time is reached"""
+        self.status = 'completed'
+        self.end_time = self.task.end_time  # Use task's end time
+        self.save()
+        self.create_timesheets()
+        
+        # Add automatic comments for each staff member
+        for staff_member in self.staff.all():
+            TaskComment.objects.get_or_create(
+                shift=self,
+                created_by=staff_member.user,
+                defaults={'comment': 'Shift was completed successfully'}
+            )
+
+    def check_and_update_status(self):
+        """Check if shift should be marked as completed based on task end time"""
+        if self.status not in ['completed', 'cancelled'] and self.task.end_date and self.task.end_time:
+            task_end_datetime = timezone.datetime.combine(
+                self.task.end_date,
+                self.task.end_time
+            )
+            task_end_datetime = timezone.make_aware(task_end_datetime)
+            
+            if timezone.now() >= task_end_datetime:
+                self.auto_complete()
+
+    def save(self, *args, **kwargs):
+        self.check_and_update_status()
+        super().save(*args, **kwargs)
+
+
+
+
       
 class TaskComment(models.Model):
     """ The model defines the task comment database and the fields that are required for the task comment model."""
     comment = models.TextField()
-    task = models.ForeignKey(Task, on_delete=models.CASCADE)
+    shift = models.ForeignKey(Shift, on_delete=models.CASCADE)
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True, related_name='comment_creator')
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f'{self.task} - {self.comment}'
 
-      
+    def save(self, *args, **kwargs):
+        if self.shift.status == 'completed':
+            # Check if this staff member has already commented on this shift
+            existing_comment = TaskComment.objects.filter(
+                shift=self.shift,
+                created_by=self.created_by
+            ).exists()
+            
+            if not existing_comment:
+                # If no existing comment from this staff member, save the new comment
+                if not self.comment:  # If no specific comment provided
+                    self.comment = "Shift was completed successfully"
+                super().save(*args, **kwargs)
+        else:
+            # For non-completed shifts, save normally
+            super().save(*args, **kwargs)
 
 class ChatRoom(models.Model):
     name = models.CharField(max_length=255)
@@ -324,69 +448,65 @@ class Message(models.Model):
         return f'{self.sender.username}: {self.content[:50]}'
   
 
-class Subscription(models.Model):
-    SUBSCRIPTION_STATUS_CHOICES = [
-        ('trial', 'Trial'),
-        ('active', 'Active'),
-        ('past_due', 'Past Due'),
-        ('canceled', 'Canceled'),
+class SubscriptionPlan(models.Model):
+    COMPANY_SIZE_TIERS = [
+        (20, '20 employees'),
+        (50, '50 employees'),
+        (100, '100 employees'),
+        (200, '200 employees'),
+        (500, '500 employees'),
+        (1000, '1000 employees'),
+        (0000, 'unlimited employees'),
     ]
 
-    company = models.OneToOneField(Company, on_delete=models.CASCADE, related_name='subscription')
-    status = models.CharField(max_length=20, choices=SUBSCRIPTION_STATUS_CHOICES, default='trial')
-    trial_ends_at = models.DateTimeField()
-    next_billing_date = models.DateTimeField()
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    def calculate_amount_due(self):
-        """Calculate the amount due for the next billing cycle"""
-        # Get all staff members who should be billed
-        billable_staff = self.company.staff_members.filter(
-            models.Q(date_hired__lte=self.next_billing_date - timezone.timedelta(days=7)) |  # Staff past trial
-            models.Q(date_hired__lte=timezone.now() - timezone.timedelta(days=7))  # Staff whose trial just ended
-        )
-        
-        active_staff_count = billable_staff.count()
-        return active_staff_count * 5.00  # £5 per employee
-
-    def generate_invoice(self):
-        """Generate an invoice for the current billing period"""
-        amount = self.calculate_amount_due()
-        employee_count = self.company.staff_members.count()
-        
-        invoice = SubscriptionInvoice.objects.create(
-            subscription=self,
-            billing_date=self.next_billing_date,
-            amount=amount,
-            employee_count=employee_count,
-            status='pending'
-        )
-        
-        # Update next billing date
-        self.next_billing_date = self.next_billing_date + timezone.timedelta(days=30)
-        self.save()
-        
-        return invoice
-
-    def __str__(self):
-        return f"{self.company.name} - {self.status}"
-
-class SubscriptionInvoice(models.Model):
-    PAYMENT_STATUS_CHOICES = [
-        ('pending', 'Pending'),
-        ('paid', 'Paid'),
-        ('failed', 'Failed'),
+    COMPANY_BILLING_CYCLE = [
+        ('monthly', 'Monthly'),
+        ('annual', 'Annual'),
     ]
-
-    subscription = models.ForeignKey(Subscription, on_delete=models.CASCADE, related_name='invoices')
-    billing_date = models.DateTimeField()
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
-    employee_count = models.IntegerField()
-    status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default='pending')
-    created_at = models.DateTimeField(auto_now_add=True)
-    paid_at = models.DateTimeField(null=True, blank=True)
-
+    
+    company = models.OneToOneField(Company, on_delete=models.CASCADE)
+    tier = models.PositiveIntegerField(choices=COMPANY_SIZE_TIERS)
+    billing_cycle = models.CharField(max_length=10, choices=COMPANY_BILLING_CYCLE)
+    base_price = models.DecimalField(max_digits=10, decimal_places=2)
+    overage_rate = models.DecimalField(max_digits=10, decimal_places=2)  # Per employee rate
+    start_date = models.DateField()
+    renewal_date = models.DateField()
+    is_active = models.BooleanField(default=True)
+    
     def __str__(self):
-        return f"{self.subscription.company.name} - {self.billing_date.strftime('%Y-%m-%d')} - £{self.amount}"
+        return f"{self.company.name} - {self.get_tier_display()}"
+    
+
+
+class EmployeeCountHistory(models.Model):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    date = models.DateField(auto_now_add=True)
+    count = models.PositiveIntegerField()
+    
+    class Meta:
+        indexes = [
+            models.Index(fields=['company', 'date']),
+        ]
+    
+    def __str__(self):
+        return f"{self.company.name} - {self.date}: {self.count} employees"
+    
   
+# company/models.py
+class Overage(models.Model):
+    subscription = models.ForeignKey(SubscriptionPlan, on_delete=models.CASCADE)
+    start_date = models.DateField()
+    end_date = models.DateField()
+    extra_employees = models.PositiveIntegerField()
+    overage_days = models.PositiveIntegerField()  # Number of days over limit
+    calculated_charge = models.DecimalField(max_digits=10, decimal_places=2)
+    is_paid = models.BooleanField(default=False)
+    
+    def calculate_charge(self):
+        daily_rate = (self.subscription.overage_rate / 30)  # Monthly proration
+        return round(self.extra_employees * daily_rate * self.overage_days, 2)
+    
+    def save(self, *args, **kwargs):
+        if not self.calculated_charge:
+            self.calculated_charge = self.calculate_charge()
+        super().save(*args, **kwargs)

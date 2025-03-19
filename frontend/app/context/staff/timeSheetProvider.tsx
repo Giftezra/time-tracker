@@ -1,106 +1,50 @@
 import {
   TimesheetContextType,
   TimeSheetType,
+  OngoingShiftType,
 } from "@/app/types/staff/timeSheet";
-import { createContext, useContext } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
+import { useAuth } from "../authentication";
 
 const TimeSheetContext = createContext<TimesheetContextType | undefined>(
   undefined
 );
 
 const TimeSheetProvider = ({ children }: { children: React.ReactNode }) => {
-  const data: TimeSheetType[] = [
-    {
-      taskSerial: "SD-123",
-      contractName: "contract1",
-      status: "approved",
-      startTime: "12:00",
-      endTime: "12:00",
-      loggedTime: "13:00",
-      startDate: "2024-12-01",
-    },
-    {
-      taskSerial: "SD-124",
-      contractName: "contract2",
-      status: "pending",
-      startTime: "12:00",
-      endTime: "12:00",
-      loggedTime: "13:00",
-      startDate: "2024-11-01",
-    },
-    {
-      taskSerial: "SD-124",
-      contractName: "contract2",
-      status: "pending",
-      startTime: "12:00",
-      endTime: "12:00",
-      loggedTime: "13:00",
-      startDate: "2024-11-02",
-    },
-    {
-      taskSerial: "SD-125",
-      contractName: "contract3",
-      status: "approved",
-      startTime: "12:00",
-      endTime: "12:00",
-      loggedTime: "13:00",
-      startDate: "2024-10-01",
-    },
-    {
-      taskSerial: "SD-124",
-      contractName: "contract2",
-      status: "pending",
-      startTime: "12:00",
-      endTime: "12:00",
-      loggedTime: "13:00",
-      startDate: "2024-11-04",
-    },
-    {
-      taskSerial: "SD-125",
-      contractName: "contract3",
-      status: "approved",
-      startTime: "12:00",
-      endTime: "12:00",
-      loggedTime: "13:00",
-      startDate: "2024-11-08",
-    },
-    {
-      taskSerial: "SD-125",
-      contractName: "contract3",
-      status: "canceled",
-      startTime: "12:00",
-      endTime: "12:00",
-      loggedTime: "13:00",
-      startDate: "2024-10-02",
-    },
-    {
-      taskSerial: "SD-125",
-      contractName: "contract3",
-      status: "approved",
-      startTime: "12:00",
-      endTime: "12:00",
-      loggedTime: "13:00",
-      startDate: "2024-10-03",
-    },
-    {
-      taskSerial: "SD-124",
-      contractName: "contract2",
-      status: "pending",
-      startTime: "12:00",
-      endTime: "12:00",
-      loggedTime: "13:00",
-      startDate: "2024-11-06",
-    },
-    {
-      taskSerial: "SD-125",
-      contractName: "contract3",
-      status: "approved",
-      startTime: "12:00",
-      endTime: "12:00",
-      loggedTime: "13:00",
-      startDate: "2024-10-10",
-    },
-  ];
+  const { axiosInstance } = useAuth();
+
+  const [selectedStatus, setSelectedStatus] = useState<string>("approved");
+  const [timesheets, setTimesheets] = useState<TimeSheetType[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [ongoingShift, setOngoingShift] = useState<OngoingShiftType | null>(null);
+
+  /* Filter the data based on the selected status */
+  const filteredData = timesheets.filter(
+    (item) => item.status === selectedStatus
+  );
+
+  /* Handle the change of the selected status */
+  const handleStatusChange = (status: string) => {
+    setSelectedStatus(status);
+  };
+
+  /* Fetch the timesheet data from the server */
+  useEffect(() => {
+    const fetchTimesheetData = async () => {
+      try{
+        setIsLoading(true);
+        const timesheets = await getTimesheetData();
+        setTimesheets(timesheets);
+        const ongoingShift = await getOngoingShiftData();
+        setOngoingShift(ongoingShift);
+      }catch(error){
+        console.error("Error fetching timesheet data:", error);
+      }finally{
+        setIsLoading(false);
+      }
+    };
+    fetchTimesheetData();
+  }, []);
 
   // Helper function to get the start of the week for a given date
   const getWeekStart = (date: Date) => {
@@ -122,8 +66,14 @@ const TimeSheetProvider = ({ children }: { children: React.ReactNode }) => {
 
   // Function to group data by week
   const groupByWeek = (data: TimeSheetType[]) => {
-    const grouped = data.reduce((acc, item) => {
-      const date = new Date(item.startDate);
+    // Sort data by date first
+    const sortedData = [...data].sort(
+      (a, b) =>
+        new Date(b.start_date).getTime() - new Date(a.start_date).getTime()
+    );
+
+    const grouped = sortedData.reduce((acc, item) => {
+      const date = new Date(item.start_date);
       const weekStart = getWeekStart(new Date(date)).toISOString();
 
       if (!acc[weekStart]) {
@@ -133,18 +83,61 @@ const TimeSheetProvider = ({ children }: { children: React.ReactNode }) => {
       return acc;
     }, {} as Record<string, TimeSheetType[]>);
 
-    return Object.entries(grouped).map(([weekStart, tasks]) => ({
-      title: formatWeekRange(new Date(weekStart)),
-      data: tasks,
-    }));
+    // Sort the weeks in descending order
+    return Object.entries(grouped)
+      .sort(
+        ([weekA], [weekB]) =>
+          new Date(weekB).getTime() - new Date(weekA).getTime()
+      )
+      .map(([weekStart, tasks]) => ({
+        title: formatWeekRange(new Date(weekStart)),
+        // Sort tasks within each week
+        data: tasks.sort(
+          (a, b) =>
+            new Date(b.start_date).getTime() - new Date(a.start_date).getTime()
+        ),
+      }));
   };
 
 
- 
+  /**
+   * Get the timesheet data from the server.
+   * Set the timesheet data to the state if status is 200 or undefined.
+   */
+  const getTimesheetData = async () => {
+    try{
+      const response = await axiosInstance.get("/api/get/timesheet/data/");
+      console.log(response.data.timesheets);
+      return response.data.timesheets;
+    }catch(error){
+      console.error("Error fetching timesheet data:", error);
+      return [];
+    }
 
-  const value = {
-    data,
+  }
+
+  /**
+   * Get the ongoing shift data from the server.
+   * Set the ongoing shift data to the state if status is 200 or undefined.
+   */
+  const getOngoingShiftData = async () => {
+    try{
+      const response = await axiosInstance.get("/api/get/ongoing/shift/");
+      return response.data.shift;
+    }catch(error){
+      console.error("Error fetching ongoing shift data:", error);
+      return null;
+    }
+  }
+
+
+  const value: TimesheetContextType = {
+    timesheets,
+    filteredData,
     groupByWeek,
+    handleStatusChange,
+    selectedStatus,
+    ongoingShift,
   };
 
   return (

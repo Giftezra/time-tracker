@@ -1,23 +1,22 @@
-export interface OwnerAddress {
+export interface OwnerDetails {
   address: string;
   postcode: string;
   city: string;
   country: string;
+  phone: string;
 }
 
 export interface CheckoutContextType {
-  // error: string | null;
-  // isLoading: boolean;
-  // handleCheckboxPress: () => void;
-  // isChecked: boolean;
-  // handleBillingAddress: (key: string, value: string) => void;
-  // billingAddress: BillingAddress | undefined;
-  // selectedCard: string | null;
-  // setSelectedCard: (cardId: string) => void;
-  // savedCards: CardType[];
-  // publishableKey: string;
+  ownerAddress: OwnerDetails | undefined;
+  billingAddress: BillingAddress;
+  handleBillingAddress: (field: keyof BillingAddress, value: string) => void;
+  savedCards: CardType[];
+  selectedCard: string;
+  setSelectedCard: (id: string) => void;
+  useOwnerAddress: boolean;
+  setUseOwnerAddress: (value: boolean) => void;
+  billingDetails: BillingDetails;
 }
-
 
 export interface BillingAddress {
   fullName: string;

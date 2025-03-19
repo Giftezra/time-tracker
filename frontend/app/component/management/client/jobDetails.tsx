@@ -14,23 +14,13 @@ import React, { useState } from "react";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { AntDesign, MaterialIcons } from "@expo/vector-icons";
 import { useClientContext } from "@/app/context/management/client/clientContext";
-import { ClientDetail, JobDetailsType } from "@/app/types/management/client";
-import { ContractListType } from "@/app/types/management/task";
-import { FlatList } from "react-native-gesture-handler";
-import ClientAndContractDetails from "./clientAndContract";
-
+import { JobDetailsType } from "@/app/types/management/client";
 /* The component displays the job details and which employee was assigned to a shift.
 
 Each shift has a pay range , and other data to simulate a site.*/
 const JobDetailsComponent: React.FC<JobDetailsType> = (props) => {
-  const {
-    handlePhone,
-    handleMessage,
-    countDown,
-    timeElapsed,
-    clients,
-    isLoading,
-  } = useClientContext();
+  const { handlePhone, handleMessage, countDown, timeElapsed, isLoading } =
+    useClientContext();
 
   /**
    * Use the useThemeColor hook to get the color of the theme based on the device color scheme
@@ -50,7 +40,7 @@ const JobDetailsComponent: React.FC<JobDetailsType> = (props) => {
       <Pressable onPress={toggleContractDisplay}>
         <View style={styles.clientHeader}>
           <Text style={[styles.headerText, { color: text }]}>
-            {props.client}
+            {props.client_name}
           </Text>
           <AntDesign
             name={toggleContract ? "caretup" : "caretdown"}
@@ -207,46 +197,49 @@ export default JobDetailsComponent;
 
 const styles = StyleSheet.create({
   maincontainer: {
-    marginVertical: 5,
-    borderRadius: 2,
+    marginVertical: 8,
+    borderRadius: 8,
     overflow: "hidden",
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
+    marginHorizontal: 4,
   },
 
   clientHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: 10,
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(0,0,0,0.1)",
   },
 
   detailsContainer: {
-    padding: 12,
+    padding: 10,
     borderTopWidth: 1,
+    borderTopColor: "rgba(0,0,0,0.1)",
   },
 
   staffSection: {
-    marginBottom: 16,
+    marginBottom: 10,
   },
 
   sectionHeader: {
-    fontSize: 16,
+    fontSize: 15,
     fontFamily: "BarlowRegular",
     fontWeight: "600",
-    marginBottom: 8,
+    marginBottom: 5,
     textTransform: "capitalize",
+    letterSpacing: 0.7,
   },
 
   employeeContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
     borderBottomWidth: 1,
+    borderBottomColor: "rgba(0,0,0,0.05)",
+    marginBottom: 5,
   },
 
   infoSection: {
@@ -256,85 +249,96 @@ const styles = StyleSheet.create({
   infoRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    justifyContent: "space-between",
+    paddingVertical: 6,
   },
 
   infoLabel: {
     fontFamily: "BarlowRegular",
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "500",
     textTransform: "capitalize",
+    letterSpacing: 0.3,
   },
 
   infoValue: {
     fontFamily: "BarlowLight",
-    fontSize: 14,
+    fontSize: 15,
   },
 
   headerText: {
-    fontSize: Platform.OS === "web" ? 16 : 18,
+    fontSize: Platform.OS === "web" ? 18 : 20,
     fontFamily: "BarlowRegular",
     fontWeight: "600",
+    textTransform: "capitalize",
+    letterSpacing: 0.5,
   },
 
   text: {
-    fontSize: 14,
+    fontSize: 15,
     fontFamily: "BarlowRegular",
     fontWeight: "500",
     textTransform: "capitalize",
+    marginBottom: 1,
   },
 
   contractContainer: {
-    paddingHorizontal: 10,
-    paddingBottom: 5,
+    paddingHorizontal: 16,
+    paddingBottom: 16,
   },
 
   contractInfoRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 2,
+    paddingVertical: 1,
   },
 
   contractLabel: {
-    fontSize: 12,
+    fontSize: 14,
     fontFamily: "BarlowRegular",
     fontWeight: "500",
-    marginRight: 8,
+    letterSpacing: 0.2,
   },
 
   contractValue: {
-    fontSize: 12,
+    fontSize: 14,
     fontFamily: "BarlowLight",
     flex: 1,
     textAlign: "right",
   },
 
   timeFrameContainer: {
-    marginTop: 8,
+    marginTop: 16,
+    backgroundColor: "rgba(0,0,0,0.02)",
+    padding: 12,
+    borderRadius: 6,
   },
 
   timeFrameContent: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginTop: 4,
+    marginTop: 8,
   },
 
   timeFrameItem: {
     alignItems: "center",
+    flex: 1,
+    paddingHorizontal: 8,
   },
 
   timeFrameLabel: {
-    fontSize: 12,
+    fontSize: 13,
     fontFamily: "BarlowRegular",
     fontWeight: "500",
-    marginBottom: 2,
+    marginBottom: 4,
     textTransform: "capitalize",
+    letterSpacing: 0.2,
   },
 
   timeFrameValue: {
-    fontSize: 12,
+    fontSize: 13,
     fontFamily: "BarlowLight",
   },
 });

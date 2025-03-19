@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import React from "react";
 
-import { TaskProps } from "@/app/types/staff/task";
+import { TaskInterface } from "@/app/types/staff/task";
 import { AntDesign, MaterialIcons } from "@expo/vector-icons";
 import { useThemeColor } from "@/hooks/useThemeColor";
 
@@ -9,10 +9,9 @@ const TasksComponent = ({
   props,
   onPress,
 }: {
-  props: TaskProps;
-  onPress: (id: string) => void;
+  props: TaskInterface;
+  onPress: () => void;
 }) => {
-
   const background = useThemeColor({}, "innerBackground");
   const text = useThemeColor({}, "text");
   const icons = useThemeColor({}, "icon");
@@ -20,25 +19,29 @@ const TasksComponent = ({
 
   return (
     <View style={[styles.mainContainer, { backgroundColor: background }]}>
-      <MaterialIcons name="task-alt" size={20} color="black" />
       <View style={styles.detailsContainer}>
-        <Text style={[styles.siteNameText, { color: otherText }]}>
-          {props.site_name}
-        </Text>
-        <Text style={[styles.siteNameText, { color: text }]}>
-          {props.site_address}
-        </Text>
+        <View style={styles.innerContainer}>
+          <Text style={[styles.siteNameText, { color: otherText }]}>
+            {props.site_name}
+          </Text>
+          <Text style={[styles.siteNameText, { color: text }]}>
+            {props.site_address}
+          </Text>
+        </View>
         <Text style={[styles.text, { color: text }]}>
           {props.start_time} - {props.end_time}
         </Text>
+        <Text style={[styles.text, { color: text }]}>{props.start_date}</Text>
       </View>
 
       <Pressable
-        onPress={() => onPress(props.task_id)}
-        style={[styles.viewSiteButton, {shadowColor:background}]}
+        onPress={onPress}
+        style={[styles.viewSiteButton, { shadowColor: background }]}
       >
         <MaterialIcons name="arrow-right-alt" size={20} color={icons} />
-        <Text style = {[styles.viewmoreText, {color:otherText}]}>view more</Text>
+        <Text style={[styles.viewmoreText, { color: otherText }]}>
+          view more
+        </Text>
       </Pressable>
     </View>
   );
@@ -94,6 +97,10 @@ const styles = StyleSheet.create({
     fontWeight: "400",
     fontFamily: "BarlowLight",
     textTransform: "capitalize",
-  }
-
+  },
+  innerContainer: {
+    padding: 2,
+    rowGap: 2,
+    marginBottom: 5,
+  },
 });

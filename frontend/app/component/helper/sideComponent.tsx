@@ -76,7 +76,7 @@ const SideComponent = () => {
             style={styles.buttons}
             onPress={() => router.push("/management/(drawer)/calendar/main")}
           >
-            <MaterialIcons name="calendar-month" size={20} color={icon} />{" "}
+            <MaterialIcons name="calendar-month" size={20} color={icon} />
             {/* Conditionally render the texts when the window width is over 50% */}
             {windowWidth >= screenWidth / 2 && (
               <Text style={[styles.buttonText, { color: text }]}>calendar</Text>
@@ -87,7 +87,7 @@ const SideComponent = () => {
             style={styles.buttons}
             onPress={() => router.push("/management/(drawer)/client/main")}
           >
-            <MaterialIcons name="cases" size={20} color={icon} />{" "}
+            <MaterialIcons name="cases" size={20} color={icon} />
             {/* Conditionally render the texts when the window width is over 50% */}
             {windowWidth >= screenWidth / 2 && (
               <Text style={[styles.buttonText, { color: text }]}>client</Text>
@@ -98,7 +98,7 @@ const SideComponent = () => {
             style={styles.buttons}
             onPress={() => router.push("/management/(drawer)/employee/main")}
           >
-            <AntDesign name="user" size={20} color={icon} />{" "}
+            <AntDesign name="user" size={20} color={icon} />
             {/* Conditionally render the texts when the window width is over 50% */}
             {windowWidth >= screenWidth / 2 && (
               <Text style={[styles.buttonText, { color: text }]}>
@@ -127,17 +127,6 @@ const SideComponent = () => {
             )}
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.buttons}
-            onPress={() => router.push("/management/(drawer)/settings/main")}
-          >
-            <MaterialIcons name="settings" size={20} color={icon} />
-            {/* Conditionally render the texts when the window width is over 50% */}
-            {windowWidth >= screenWidth / 2 && (
-              <Text style={[styles.buttonText, { color: text }]}>settings</Text>
-            )}
-          </TouchableOpacity>
-
           <TouchableOpacity style={styles.buttons} onPress={handleProfileRoute}>
             <AntDesign name="profile" size={20} color={icon} />
             {/* Conditionally render the texts when the window width is over 50% */}
@@ -150,7 +139,7 @@ const SideComponent = () => {
             style={styles.buttons}
             onPress={() => router.push("/management/(drawer)/messages/main")}
           >
-            <MaterialIcons name="all-inbox" size={20} color={icon} />{" "}
+            <MaterialIcons name="all-inbox" size={20} color={icon} />
             {/* Conditionally render the texts when the window width is over 50% */}
             {windowWidth >= screenWidth / 2 && (
               <Text style={[styles.buttonText, { color: text }]}>messages</Text>

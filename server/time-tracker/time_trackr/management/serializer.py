@@ -34,17 +34,22 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
           raise e
 
       user = self.user
-      print("user", user);
 
-      # Check if the user is a staff member and has a Staff profile
+      # Get company data - either from staff profile or owned company
       company = None
       date_hired = None
       if hasattr(user, 'staff'):
-        staff_profile = user.staff
-        company = staff_profile.company
-        date_hired = staff_profile.date_hired
+          staff_profile = user.staff
+          company = staff_profile.company
+          date_hired = staff_profile.date_hired
+      elif user.is_owner:
+          # If user is owner, get their company from the company_owner relationship
+          try:
+              company = user.company_owner.first()  # Assuming owner might have multiple companies, get the first one
+          except:
+              company = None
 
-      # Add user and staff/company details to the response
+      # Add user and company details to the response
       data['user'] = {
           'id': user.id,
           'email': user.email,
@@ -121,7 +126,7 @@ class ChatRoomSerializer(serializers.ModelSerializer):
     class Meta:
         model = ChatRoom
         fields = '__all__'
-        
+
 
 class MessageSerializer(serializers.ModelSerializer):
   class Meta:

@@ -9,22 +9,6 @@ from django.conf import settings
 
 # Initialize Stripe with your secret key
 stripe.api_key = settings.STRIPE_SECRET_KEY
-
-@api_view(["GET"])
-@owner_required
-def get_owner_address(request):
-    """This method is used to get the owner's address from the database using the request user object"""
-    try:
-        user = request.user
-        address_data = {
-            "address": user.address,
-            "postcode": user.postcode,
-            "city": user.city,
-            "country": user.country
-        }
-        return Response({"address": address_data}, status=status.HTTP_200_OK)
-    except Exception as e:
-        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
         
 @api_view(["POST"])

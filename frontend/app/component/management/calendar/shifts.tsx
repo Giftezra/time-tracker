@@ -7,78 +7,56 @@ import { CalendarShiftType } from "@/app/types/management/calendars";
 import { Status } from "@/constants/Status";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useCalendar } from "@/app/context/management/calendar/calendarContext";
+import { EmployeeType } from "@/app/types/management/employee";
 
 const CalendarShiftComponent = () => {
-  const { weekDays } = useCalendar();
-  const [activeShiftId, setActiveShiftId] = useState<number | null>(null); // Track active shift
+  // Add new state to track the specific shift being managed
+  const [selectedShift, setSelectedShift] = useState<
+    | {
+        shiftId: number;
+        employeeId: number;
+        date: string;
+      }
+    | undefined
+  >(undefined);
 
-  const handlemanageShiftID = (shiftId: number) => {
-    setActiveShiftId(activeShiftId === shiftId ? null : shiftId); // Toggle the active shift
+  const {
+    employees,
+    getShift,
+    weekDays,
+    cancelShift,
+    activeShift,
+    setActiveShift,
+    showEditShiftModal,
+    setShowEditShiftModal,
+    handleActiveShift,
+  } = useCalendar();
+
+  /**
+   * Handle the shift click event to store the active shift in the state
+   * @param shiftId - the shift id
+   * @param employeeId - the employee id
+   * @param date - the date of the shift
+   */
+  const handleShiftClick = (
+    shiftId: number | undefined,
+    employeeId: number,
+    date: string
+  ) => {
+    if (shiftId !== undefined) {
+      setSelectedShift(
+        selectedShift?.shiftId === shiftId &&
+          selectedShift?.employeeId === employeeId &&
+          selectedShift?.date === date
+          ? undefined
+          : { shiftId, employeeId, date }
+      );
+    }
   };
 
   const innerBackgroundColor = useThemeColor({}, "innerBackground");
   const secondaryColor = useThemeColor({}, "secondaryColor");
   const text = useThemeColor({}, "text");
-  const othertext = useThemeColor({}, "otherText");
-
-  // Sample data for employees and shifts
-  const employees = [
-    { id: 1, name: "John Doe" },
-    { id: 2, name: "Jane Smith" },
-    { id: 3, name: "Mark Wright" },
-  ];
-
-  const shifts: CalendarShiftType[] = [
-    {
-      shiftId: 1,
-      employeeId: 1,
-      startdate: dayjs().startOf("week").add(1, "day").format("YYYY-MM-DD"),
-      starttime: "09:00",
-      endtime: "17:00",
-      status: Status.PENDING,
-      task_serial: "1234",
-      client: "client",
-    },
-    {
-      shiftId: 2,
-      employeeId: 2,
-      startdate: dayjs().startOf("week").add(2, "day").format("YYYY-MM-DD"),
-      starttime: "10:00",
-      endtime: "18:00",
-      status: Status.APPROVED,
-      task_serial: "1234",
-      client: "client2",
-    },
-    {
-      shiftId: 3,
-      employeeId: 3,
-      startdate: dayjs().startOf("week").add(3, "day").format("YYYY-MM-DD"),
-      starttime: "08:00",
-      endtime: "16:00",
-      status: Status.DECLINED,
-      task_serial: "1234",
-      client: "client3",
-    },
-    {
-      shiftId: 4,
-      employeeId: 3,
-      startdate: dayjs().month(10).date(15).format("YYYY-MM-DD"),
-      starttime: "08:00",
-      endtime: "16:00",
-      status: Status.COMPLETED,
-      task_serial: "1234",
-      client: "client3",
-    },
-  ];
-
-  // Function to find shift for an employee on a specific day
-  const getShift = (employeeId: number, date: dayjs.Dayjs) => {
-    const dateStr = date.format("YYYY-MM-DD"); // Format the date to match 'YYYY-MM-DD'
-    const shift = shifts.find(
-      (shift) => shift.employeeId === employeeId && shift.startdate === dateStr // Check date only
-    );
-    return shift || "No shift";
-  };
 
   /**
    * The component renders a calendar view of the shifts for the week
@@ -89,83 +67,117 @@ const CalendarShiftComponent = () => {
    * For every shift that has been declined or cancelled, the background color is red
    */
   const renderItems = (employee: any) => {
+    // Calculate maximum height based on shifts
+    const maxShiftHeight = weekDays.reduce((maxHeight, day) => {
+      const shifts = getShift(employee.employee_id, day);
+      const shiftCount = Array.isArray(shifts) ? shifts.length : 1;
+      return Math.max(maxHeight, shiftCount * 30);
+    }, 30);
+
     return (
       <View style={styles.flailistRow}>
-        {/* Employee details */}
-        <View style={[styles.employeesDetails]}>
+        {/* Employee details - now uses calculated height */}
+        <View style={[styles.employeesDetails, { minHeight: maxShiftHeight }]}>
           <Text style={[styles.employeeDetailsText, { color: text }]}>
-            {employee.name}
+            {employee.employee_name}
           </Text>
         </View>
 
         {/* Shifts */}
         {weekDays.map((day, index) => {
-          const shift = getShift(employee.id, day);
+          const shifts = getShift(employee.employee_id, day);
           return (
             <View
               key={index}
               style={[
                 styles.shiftCell,
-                typeof shift === "string"
-                  ? { backgroundColor: "lightgray" }
-                  : shift.status === Status.ACCEPTED ||
-                    shift.status === Status.COMPLETED
-                  ? { backgroundColor: "green" }
-                  : shift.status === Status.INPROGRESS
-                  ? { borderWidth: 1, borderColor: "blue" }
-                  : shift.status === Status.PENDING
-                  ? { backgroundColor: "yellow" }
-                  : shift.status === Status.DECLINED ||
-                    shift.status === Status.CANCELLED
-                  ? { backgroundColor: "red" }
-                  : { backgroundColor: secondaryColor },
+                {
+                  minHeight: Array.isArray(shifts) ? shifts.length * 30 : 30,
+                },
               ]}
             >
-              <View style={styles.flailistRow}>
-                {/* Conditionally render cancel button */}
-                <View
-                  style={[
-                    styles.overlay,
-                    { backgroundColor: innerBackgroundColor },
-                  ]}
-                >
-                  {typeof shift !== "string" &&
-                    activeShiftId === shift.shiftId && (
-                      <TouchableOpacity>
-                        <Text style={[styles.cancelText, { color: text }]}>
-                          cancel
+              {typeof shifts === "string" ? (
+                <Text style={styles.shiftCellText}>{shifts}</Text>
+              ) : (
+                <View style={styles.multipleShiftsContainer}>
+                  {shifts.map(
+                    (shift: CalendarShiftType, shiftIndex: number) => (
+                      <View
+                        key={shiftIndex}
+                        style={[
+                          styles.singleShiftContainer,
+                          {
+                            backgroundColor:
+                              shift.status === "assigned"
+                                ? "lightgreen"
+                                : shift.status === "pending"
+                                ? "yellow"
+                                : shift.status === "started"
+                                ? "blue"
+                                : shift.status === "cancelled"
+                                ? "red"
+                                : shift.status === "completed"
+                                ? "green"
+                                : secondaryColor,
+                          },
+                        ]}
+                      >
+                        {/* Overlay for the shift */}
+                        <View style={styles.flailistRow}>
+                          {selectedShift?.shiftId === shift.shiftId &&
+                            selectedShift?.employeeId ===
+                              employee.employee_id &&
+                            selectedShift?.date ===
+                              day.format("YYYY-MM-DD") && (
+                              <View
+                                style={[
+                                  styles.overlay,
+                                  { backgroundColor: innerBackgroundColor },
+                                ]}
+                              >
+                                <TouchableOpacity
+                                  onPress={() => handleActiveShift(shift)}
+                                >
+                                  <Text
+                                    style={[styles.cancelText, { color: text }]}
+                                  >
+                                    manage shift
+                                  </Text>
+                                </TouchableOpacity>
+                              </View>
+                            )}
+
+                          <View style={styles.manageshiftContainer}>
+                            <Text style={styles.manageshiftText}>
+                              {shift.client}
+                            </Text>
+                            <Pressable
+                              onPress={() =>
+                                // Handle the horizontal dots click event to open the overlay given the shift id, employee id and date
+                                handleShiftClick(
+                                  shift.shiftId,
+                                  employee.employee_id,
+                                  day.format("YYYY-MM-DD")
+                                )
+                              }
+                            >
+                              <MaterialCommunityIcons
+                                name="dots-horizontal"
+                                size={20}
+                                color="black"
+                              />
+                            </Pressable>
+                          </View>
+                        </View>
+
+                        <Text style={styles.shiftCellText}>
+                          {`${shift.start_time} - ${shift.end_time}`}
                         </Text>
-                      </TouchableOpacity>
-                    )}
+                      </View>
+                    )
+                  )}
                 </View>
-
-                {/* Toggle manage shift */}
-                {typeof shift !== "string" && (
-                  <View style={styles.manageshiftContainer}>
-                    <Text style={styles.manageshiftText}>
-                      {typeof shift === "string" ? shift : `${shift.client}`}
-                    </Text>
-                    <Pressable
-                      onPress={() =>
-                        shift.shiftId !== undefined &&
-                        handlemanageShiftID(shift.shiftId)
-                      }
-                    >
-                      <MaterialCommunityIcons
-                        name="dots-horizontal"
-                        size={20}
-                        color="black"
-                      />
-                    </Pressable>
-                  </View>
-                )}
-              </View>
-
-              <Text style={styles.shiftCellText}>
-                {typeof shift === "string"
-                  ? shift
-                  : `${shift.starttime} - ${shift.endtime}`}
-              </Text>
+              )}
             </View>
           );
         })}
@@ -198,7 +210,7 @@ const CalendarShiftComponent = () => {
       {/* This flatlist contains the list of both the employees and shifts assigned to them in a row format */}
       <FlatList
         data={employees}
-        keyExtractor={(item) => item.id.toString()}
+        keyExtractor={(item) => item.employee_id.toString()}
         renderItem={({ item: employee }) => renderItems(employee)}
       />
     </View>
@@ -210,14 +222,11 @@ export default CalendarShiftComponent;
 const styles = StyleSheet.create({
   mainContainer: {
     flex: 1,
-    flexDirection: "column",
-    width: "100%",
-    padding: 2,
   },
 
   flailistRow: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "stretch",
   },
 
   overlay: {
@@ -232,25 +241,23 @@ const styles = StyleSheet.create({
 
   shiftCell: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    height: 40,
+    justifyContent: "flex-start",
+    padding: 2,
     borderBottomWidth: 1,
-    padding: 5,
   },
 
   shiftCellText: {
     fontSize: 12,
-    fontVariant: ["contextual"],
-    fontFamily: "BarlowRegular",
+    fontFamily: "BarlowLight",
     textTransform: "capitalize",
+    fontWeight: "700",
   },
 
   manageshiftText: {
     fontSize: 12,
-    fontWeight: "300",
-    fontFamily: "BarlowLight",
-    textTransform: "lowercase",
+    fontWeight: "700",
+    fontFamily: "RobotoRegular",
+    textTransform: "capitalize",
   },
 
   topheaderRow: {
@@ -262,11 +269,11 @@ const styles = StyleSheet.create({
   },
 
   employeesDetails: {
-    flexGrow: 1,
+    width: 100,
     padding: 5,
     borderBottomWidth: 1,
     borderRadius: 5,
-    height: 40,
+    justifyContent: "center",
   },
 
   employeeDetailsText: {
@@ -303,5 +310,16 @@ const styles = StyleSheet.create({
     fontFamily: "OswaldVariable",
     textTransform: "capitalize",
     padding: 2,
+  },
+
+  multipleShiftsContainer: {
+    width: "100%",
+    gap: 2,
+  },
+
+  singleShiftContainer: {
+    padding: 4,
+    borderRadius: 4,
+    marginVertical: 2,
   },
 });

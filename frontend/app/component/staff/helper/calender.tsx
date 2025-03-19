@@ -4,18 +4,21 @@ import { useTask } from "@/app/context/staff/staffTaskProvider";
 import {arrowDown} from "@/app/utils/animations/onboardingAnimation";
 
 const CalenderComponent = ({
-  setSelectedDate,
   markedDates,
 }: {
-  setSelectedDate: (date: string) => void;
   markedDates: string;
 }) => {
+  const { handleMonthChangeEvent, handleDaySelectedEvent } = useTask();
+
   return (
     <View style={styles.maincontainer}>
       <Calendar
-        onDayPress={({ day }: { day: string }) => {
-          setSelectedDate(day);
-        }}
+      /* Get the exact day, month and year for the date clicked */
+          onDayPress={(day: any) => {
+            handleDaySelectedEvent(day);
+          }}
+          // Get the month change event
+        onMonthChange={(month:any) => handleMonthChangeEvent(month)}
         firstDay={1}
         showWeekNumbers={true}
         markedDates={markedDates}

@@ -1,61 +1,56 @@
-import {
-  ImageBackground,
-  KeyboardAvoidingView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import React from "react";
 import StaffDashboardHeader from "@/app/component/staff/dashboard/header";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { GestureHandlerRootView, ScrollView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import DashboardOngoingTask from "@/app/component/staff/dashboard/dashboardOngoingTasks";
+import { useStaffDashboard } from "@/app/context/staff/dashboardProvider";
 
-/**
- * This inner container is used to display card pertaining the users tasks.
- * @param param0
- * @returns
- */
-const TaskCardContainer = ({
-  title,
-  value,
-}: {
-  title: string;
-  value: number;
-}) => {
+interface TaskCardProps {
+  title?: string;
+  value?: number;
+  unit?: string;
+}
+
+const TaskCard: React.FC<TaskCardProps> = ({ title, value, unit }) => {
   return (
     <View style={styles.cardContainer}>
-      <Text style={styles.cardContainerText}>{title}</Text>
-      <Text style={styles.cardContainerText}>{value}</Text>
+      <Text style={styles.cardTitle}>{title}</Text>
+      <View style={styles.cardValueContainer}>
+        <Text style={styles.cardValue}>{value}</Text>
+        {unit && <Text style={styles.cardUnit}>{unit}</Text>}
+      </View>
     </View>
   );
 };
 
-const MainStaffDashboard = () => {
+const MainStaffDashboard: React.FC = () => {
+  const { completedShifts } = useStaffDashboard();
   return (
-    <SafeAreaProvider style={{ flex: 1 }}>
-        <GestureHandlerRootView style={styles.maincontainer}>
-          <View style={{ flex: 1 }}>
-            <StaffDashboardHeader />
-          </View>
-          <View style={{ flex: 1 }}>
-            <DashboardOngoingTask />
+    <SafeAreaProvider style={styles.safeArea}>
+      <GestureHandlerRootView style={styles.mainContainer}>
+        <View style={styles.headerSection}>
+          <StaffDashboardHeader />
+        </View>
+
+        <View style={styles.tasksSection}>
+          <DashboardOngoingTask />
+        </View>
+
+        <ScrollView style={styles.reviewSection}>
+          <Text style={styles.sectionTitle}>Monthly Performance Review</Text>
+
+          <View style={styles.statsContainer}>
+            <TaskCard title="Total Hours" value={completedShifts?.total_hours ?? 0} unit="hrs" />
+            <TaskCard title="Completed Shifts" value={completedShifts?.total_shifts ?? 0} />
           </View>
 
-          <View style={styles.taskReviewContainer}>
-            <Text>monthly shift review</Text>
-            <View style={styles.innerReviewContainer}>
-              <TaskCardContainer title="total hours" value={20} />
-              <TaskCardContainer title="total shifts" value={20} />
-            </View>
-
-
-            <View style={styles.innerReviewContainer}>
-              <TaskCardContainer title="total hours" value={20} />
-              <TaskCardContainer title="total shifts" value={20} />
-            </View>
+          <View style={styles.statsContainer}>
+            <TaskCard title="Amount Earned" value={completedShifts?.total_earnings ?? 0} unit="£" />
+            <TaskCard title="Assigned Shifts" value={completedShifts?.pending_tasks ?? 0} />
           </View>
-        </GestureHandlerRootView>
+        </ScrollView>
+      </GestureHandlerRootView>
     </SafeAreaProvider>
   );
 };
@@ -63,45 +58,74 @@ const MainStaffDashboard = () => {
 export default MainStaffDashboard;
 
 const styles = StyleSheet.create({
-  maincontainer: {
+  safeArea: {
+    flex: 1,
+  },
+  mainContainer: {
     flex: 1,
     padding: 5,
   },
-
-  taskReviewContainer: {
-    flex: 1,
+  headerSection: {
+    marginBottom: 10,
+  },
+  tasksSection: {
+    marginBottom: 10,
     padding: 5,
-    flexDirection: "column",
+    
   },
-
-  innerReviewContainer: {
+  reviewSection: {
     flex: 1,
-    padding: 5,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    flexWrap: "wrap",
-    rowGap: 10,
-    columnGap: 10,
+    marginTop: 16,
   },
-
-  cardContainer: {
-    flex: 1,
-    padding: 10,
-    flexDirection: "column",
-    justifyContent: "center",
-    alignItems: "center",
-    borderRadius: 5,
-    elevation: 5,
-    shadowOpacity: 0.5,
-    shadowRadius: 5,
-  },
-
-  cardContainerText: {
-    fontSize: 16,
+  sectionTitle: {
+    fontSize: 20,
     fontWeight: "600",
     fontFamily: "BarlowRegular",
+    color: "#2c3e50",
+    marginBottom: 16,
     textTransform: "capitalize",
-    marginStart: 5,
-    marginBottom: 5,
+  },
+  statsContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 16,
+    gap: 12,
+  },
+  cardContainer: {
+    flex: 1,
+    padding: 16,
+    backgroundColor: "#ffffff",
+    borderRadius: 12,
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  cardTitle: {
+    fontSize: 14,
+    color: "#666",
+    fontFamily: "BarlowRegular",
+    textTransform: "capitalize",
+    marginBottom: 8,
+  },
+  cardValueContainer: {
+    flexDirection: "row",
+    alignItems: "baseline",
+  },
+  cardValue: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#2c3e50",
+    fontFamily: "BarlowRegular",
+  },
+  cardUnit: {
+    fontSize: 14,
+    color: "#666",
+    marginLeft: 4,
+    fontFamily: "BarlowRegular",
   },
 });

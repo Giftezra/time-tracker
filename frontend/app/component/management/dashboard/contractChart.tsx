@@ -15,6 +15,7 @@ import { transform } from "@babel/core";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useAuth } from "@/app/context/authentication";
 import { useDashboardContext } from "@/app/context/management/dashboard/dashboardContext";
+import { BarDat, BarData } from "@/app/types/management/dashboard";
 
 const renderTitle = () => {
   return (
@@ -68,17 +69,28 @@ const renderTitle = () => {
 const ContractChartComponent = ({ width }: { width: number }) => {
   const { windowWidth, screenWidth } = useAuth();
   const highlight = useThemeColor({}, "highlight");
-  const { contractStats, fetchContractStatistics, isLoading } =
-    useDashboardContext();
-
+  const {
+    fetchContractStatistics,
+    contractStats,
+    isLoading,
+    setSelectedYear,
+    selectedYear,
+  } = useDashboardContext();
   const [showOverlay, setShowOverlay] = useState(false);
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+
+  const currentYear = new Date().getFullYear();
+  const minYear = 2020; // You can adjust this to your needs
+  const maxYear = currentYear + 1; // Allow selection up to next year
+
+  const yearsToDisplay = Array.from({ length: 5 }, (_, i) => currentYear - i);
 
   const handleOverlay = () => setShowOverlay(!showOverlay);
 
   const handleYearChange = (year: number) => {
-    setSelectedYear(year);
-    setShowOverlay(false);
+    if (year >= minYear && year <= maxYear) {
+      setSelectedYear(year);
+      setShowOverlay(false);
+    }
   };
 
   // Calculate bar width based on screen size
@@ -89,22 +101,49 @@ const ContractChartComponent = ({ width }: { width: number }) => {
   };
   const barWidth = calcBarWidth();
 
+  // Transform the data for the BarChart component
+  const transformedData: any = [];
+  contractStats.forEach((stat) => {
+    // Add client bar
+    transformedData.push({
+      value: stat.stacks?.[0].value || 0,
+      label: stat.label,
+      frontColor: "#177AD5",
+      spacing: 2,
+    });
+
+    // Add contract bar next to it
+    transformedData.push({
+      value: stat.stacks?.[1].value || 0,
+      label: "", // Empty label for the second bar
+      frontColor: "#ED6665",
+      spacing: 12, // Larger spacing after contract bar to separate month groups
+    });
+  });
+
   return (
     <View style={styles.maincontainer}>
       {showOverlay && (
         <View style={styles.overlay}>
-          <Pressable
-            style={styles.pressable}
-            onPress={() => handleYearChange(selectedYear - 1)}
-          >
-            <Text style={styles.pressableText}>{selectedYear - 1}</Text>
-          </Pressable>
-          <Pressable
-            style={styles.pressable}
-            onPress={() => handleYearChange(selectedYear)}
-          >
-            <Text style={styles.pressableText}>{selectedYear}</Text>
-          </Pressable>
+          {yearsToDisplay.map((year, index) => (
+            <Pressable
+              key={index}
+              style={[
+                styles.pressable,
+                selectedYear === year && styles.selectedPressable,
+              ]}
+              onPress={() => handleYearChange(year)}
+            >
+              <Text
+                style={[
+                  styles.pressableText,
+                  selectedYear === year && styles.selectedText,
+                ]}
+              >
+                {year}
+              </Text>
+            </Pressable>
+          ))}
         </View>
       )}
 
@@ -131,12 +170,13 @@ const ContractChartComponent = ({ width }: { width: number }) => {
 
       <View style={styles.chartContainer}>
         <BarChart
-          data={contractStats}
+          data={transformedData}
           barWidth={Math.max(7, width * 0.02)}
           spacing={Math.max(5, width * 0.02)}
           labelWidth={Math.max(20, width * 0.02)}
           initialSpacing={width * 0.02}
-          barBorderRadius={5}
+          barBorderTopLeftRadius={5}
+          barBorderTopRightRadius={5}
           disablePress={true}
           animationDuration={3000}
           yAxisThickness={0}
@@ -148,6 +188,8 @@ const ContractChartComponent = ({ width }: { width: number }) => {
           xAxisLabelTextStyle={styles.xAxisLabelTextStyle}
           hideRules={true}
           backgroundColor="transparent"
+          noOfSections={5}
+          maxValue={100} // You might want to calculate this based on your data
         />
       </View>
     </View>
@@ -221,5 +263,22 @@ const styles = StyleSheet.create({
     transform: [{ rotate: "-30deg" }], // Rotate for better spacing
     fontWeight: "500",
     fontFamily: "BarlowLight",
+  },
+
+  disabledPressable: {
+    opacity: 0.5,
+  },
+
+  disabledText: {
+    color: "#999",
+  },
+
+  selectedPressable: {
+    backgroundColor: "#f0f0f0",
+  },
+
+  selectedText: {
+    color: "#177AD5",
+    fontWeight: "600",
   },
 });

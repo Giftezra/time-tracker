@@ -1,18 +1,17 @@
 from django.urls import path, include
 from .view.account.authentication import register_owner, onboard_employee
 
-from .view.main.dashboard import update_company, delete_company
-from .view.main.profile import create_company
-from .view.main.employees import get_available_employees, get_all_employees, get_shift_details, get_employee_details
+from .view.main.dashboard import update_company, delete_company, get_task_statistics, get_top_performers, get_today_events, get_contract_statistics,  get_employees_on_leave, get_today_events
 
-from .view.main.client import create_client, create_contract, getContractsAndJobDetails, getClientAndContracts, update_contract, complete_contract
+from .view.main.profile import create_company, update_user_preferences
+from .view.main.employees import get_available_employees, get_all_employees_details, get_shift_details, get_employee_details, get_all_employees, get_employee_with_id, get_employee_task_details, get_employee_work_log
 
-from .view.main.task_manager import get_active_tasks, get_clients_shifts, create_shift, create_task,assign_task,terminate_shift,approve_task, get_all_contracts, get_all_unassigned_task
+from .view.main.client import create_client, create_contract, getContractsAndJobDetails, getClientAndContracts, update_contract, complete_contract, delete_contract, update_client, delete_client
+from .view.main.task_manager import get_active_tasks, get_clients_shifts, create_shift, create_task, assign_task, terminate_shift, approve_task, get_all_contracts, get_all_open_task, start_shift, update_task
 
-from .view.main.dashboard import get_today_events, get_contract_statistics
-from .view.main.checkout import get_owner_address, get_publishable_key, create_payment_sheet
+from .view.main.checkout import get_publishable_key, create_payment_sheet
 
-from .view.main.calender import get_shifts
+from .view.main.calender import get_shifts, email_shift_report, cancel_shift, update_shift, approve_shift 
 
 from .view.account.login import CustomTokenObtainPairView
 
@@ -28,6 +27,7 @@ urlpatterns = [
     path('token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     
+    path('cancel/shift/', cancel_shift, name='cancel_shift'),
     path('create/company/', create_company, name='create_company'),
     path('create/client/', create_client, name='create_client'),
     path('create/contract/', create_contract, name='create_contract'),
@@ -35,39 +35,55 @@ urlpatterns = [
     path('create/task/', create_task, name='create_task'),
     
     path('approve/task/', approve_task, name='approve_task'),
+    path('approve/shift/', approve_shift, name='approve_shift'),
     path('assign/task/', assign_task, name='assign_task'),
-    path('terminate/shift/', terminate_shift, name='terminate_shift'),
-    
-    
-    path('update/company/', update_company, name='update_company'),
-    path('update/contract/', update_contract, name='update_contract'),
     
     path('complete/contract/', complete_contract, name='complete_contract'),
     
     
     path('delete/company/', delete_company, name='delete_company'),
+    path('delete/contract/', delete_contract, name='delete_contract'),
+    path('delete/client/', delete_client, name='delete_client'),
+
+    path('email/shift/report/', email_shift_report, name='email_shift_report'),
     
     
     path('get/shifts/', get_shifts, name='get_shifts'),
     path('get/all/contracts/', get_all_contracts, name='get_all_contracts'),
     path('get/contract/shifts/details/', getContractsAndJobDetails, name='get_contract'),
+    path('get/all/employees/', get_all_employees, name='get_all_employees'),
     path('get/client/contracts/', getClientAndContracts, name='get_contract'),
-    path('get/employees/', get_all_employees, name='get_all_employees'),
+    path('get/employees/with/details/', get_all_employees_details, name='get_all_employees'),
     path('get/employee/shift/', get_shift_details, name='get_shift_details'),
     path('get/available/employees/', get_available_employees, name='get_available_employees'),
+    path('get/employees/on/leave/', get_employees_on_leave, name='get_employees_on_leave'),
+    path('get/today/events/', get_today_events, name='get_today_events'),
     path('get/active/tasks/', get_active_tasks, name='get_active_tasks'),
     path('get/assigned/shifts/', get_clients_shifts, name='get_assigned_or_ongoing_shifts'),
-    path('get/unassigned/tasks/', get_all_unassigned_task, name='get_all_unassigned_task'),
+    path('get/open/tasks/', get_all_open_task, name='get_all_open_task'),
     path('get/employee/details/', get_employee_details, name='get_employee_details'),
+    path('get/employee/with/id/', get_employee_with_id, name='get_employee_with_id'),
+    path('get/employee/task/details/', get_employee_task_details, name='get_employee_task_details'),
+    path('get/employee/work/log/', get_employee_work_log, name='get_employee_work_log'),
+
 
     # The path definitions for the dashboard
     path('get/today/events/', get_today_events, name='get_today_events'),
     path('get/contract/statistics/', get_contract_statistics, name='get_contract_statistics'),
-
-    # The path definitions for the checkout
-    path('get/owner/address/', get_owner_address, name='get_owner_address'),
     path('get/publishable/key/', get_publishable_key, name='get_publishable_key'),
     path('create/payment/sheet/', create_payment_sheet, name='create_payment_sheet'),
-    
 
+    path('start/shift/', start_shift, name='start_shift'),
+    path('terminate/shift/', terminate_shift, name='terminate_shift'),
+    
+    
+    path('update/company/', update_company, name='update_company'),
+    path('update/contract/', update_contract, name='update_contract'),
+    path('update/user/preferences/', update_user_preferences, name='update_user_preferences'),
+    path('update/task/', update_task, name='update_task'),
+    path('update/shift/', update_shift, name='update_shift'),
+    path('update/client/', update_client, name='update_client'),
+    
+    path('get/task/statistics/', get_task_statistics, name='get_task_statistics'),
+    path('get/top/performers/', get_top_performers, name='get_top_performers'),
 ]

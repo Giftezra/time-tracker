@@ -2,11 +2,13 @@ import {
   ProfileContextType,
   ProfileUpdateType,
 } from "@/app/types/management/profile";
-import { loadToken } from "@/app/utils/loadData";
 import { BASE_URL } from "@/app/utils/urls";
 import { useContext, createContext, useState } from "react";
 import { Alert, Linking } from "react-native";
 import { de } from "react-native-paper-dates";
+import { useAuth } from "../../authentication";
+import { AxiosResponse } from "axios";
+import { userData } from "@/app/utils/loadData";
 
 const ProfileContext = createContext<ProfileContextType | undefined>(undefined);
 
@@ -15,9 +17,22 @@ const ProfileContext = createContext<ProfileContextType | undefined>(undefined);
  *
  */
 const ProfileProvider = ({ children }: { children: React.ReactNode }) => {
+  const { axiosInstance } = useAuth();
+  const user = userData();
+
   const [notificationToggle, setNotificationToggle] = useState<string[]>([]);
   const [userDetails, setUserDetails] = useState<ProfileUpdateType | null>(
     null
+  );
+
+  const [allowPushNotification, setAllowPushNotification] = useState<boolean>(
+    user?.allow_push_notification || false
+  );
+  const [allowEmailNotification, setAllowEmailNotification] = useState<boolean>(
+    user?.allow_email_notification || false
+  );
+  const [allowMarketingEmails, setAllowMarketingEmails] = useState<boolean>(
+    user?.allow_marketing_emails || false
   );
 
   /** Handle the notification toggle to enable the user select and deselect a radio button */
@@ -32,47 +47,14 @@ const ProfileProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const updateProfile = async (data: ProfileUpdateType) => {
-    const token = await loadToken();
     try {
-      // Send the data to the server to update the user profile
-      const response = await fetch(`${BASE_URL}/api/update/profile/`, {
-        method: "UPDATE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      /** Check the response is ok.
-       * Get the message from the server, determine is 200 status code is returned.
-       */
-      if (!response.ok) {
-        throw new Error("Failed to update profile");
-      }
-
-      // Load the return data
-      const data = await response.json();
-      if (!data) {
-        return;
-      }
-
+      const response = await axiosInstance.patch("/api/update/profile/", data);
       alert("Profile updated successfully");
     } catch (error: any) {
       console.error(error);
     }
   };
 
-  const handlePhone = (phone: string) => {
-    if (!phone) return;
-    Alert.alert("Call", `Do you want to call the number? ${phone} `, [
-      {
-        text: "Cancel",
-        onPress: () => console.log("Cancel Pressed"),
-        style: "cancel",
-      },
-      { text: "OK", onPress: () => Linking.openURL(`tel:${phone}`) },
-    ]);
-  };
 
   const handleLink = (link: string) => {
     if (!link) return;
@@ -98,14 +80,94 @@ const ProfileProvider = ({ children }: { children: React.ReactNode }) => {
     });
   };
 
-  const value = {
+  /**
+   * This method is used to handle the users ability to open the company website.
+   * It uses linking to open a the url provided by the company
+   * @param url is the company website url.
+   * @returns void
+   */
+  const handleWebsiteCall = (url?: string) => {
+    if (!url) return;
+    try {
+      Alert.alert(
+        "Opening the website",
+        "Are you sure you want to open the website?",
+        [
+          /* Confirm the users choice */
+          {
+            text: "Cancel",
+            onPress: () => console.log("Cancel Pressed"),
+            style: "cancel",
+          },
+          { text: "OK", onPress: () => Linking.openURL(url) },
+        ]
+      );
+    } catch (error) {
+      console.error("Error opening the website", error);
+    }
+  };
+
+  /**
+   * This method is used to  handle the users ability to send call the phone number provided by the company.
+   * It uses linking to open the phone number provided by the company but first asks for confirmation before proceeding to place the call
+   */
+  const handlePhone = (phone?: string) => {
+    if (!phone) return;
+    try {
+      Alert.alert(
+        "Calling the phone number",
+        "Are you sure you want to call the phone number?",
+        [
+          {
+            text: "Cancel",
+            onPress: () => console.log("Cancel Pressed"),
+            style: "cancel",
+          },
+          { text: "OK", onPress: () => Linking.openURL(`tel:${phone}`) },
+        ]
+      );
+    } catch (error) {
+      console.error("Error calling the phone number", error);
+    }
+  };
+
+  /**
+   * This method is used to update the users notification choices to the server whren the page unmounts.
+   * It uses
+   */
+  const savePreferences = async () => {
+    const response = await axiosInstance.patch('/api/update/user/preferences/', {
+      allow_push_notification: allowPushNotification,
+      allow_email_notification: allowEmailNotification,
+      allow_marketing_emails: allowMarketingEmails,
+    })
+    
+    if (response.status === 200) {
+      const newData = response.data.new_data;
+      setAllowEmailNotification(newData.allow_email_notification);
+      setAllowPushNotification(newData.allow_push_notification);
+      setAllowMarketingEmails(newData.allow_marketing_emails);
+    } else {
+      console.error(response.data.error);
+    }
+  };
+
+  const value: ProfileContextType = {
     notificationToggle,
     handleToggle,
-    handlePhone,
     handleLink,
     handleUpdate,
     userDetails,
     updateProfile,
+    allowEmailNotification,
+    allowPushNotification,
+    allowMarketingEmails,
+    savePreferences,
+    setAllowPushNotification,
+    setAllowEmailNotification,
+    setAllowMarketingEmails,
+    handleWebsiteCall,
+    handlePhone,
   };
 
   return (

@@ -1,19 +1,27 @@
 import {
-  ActivityIndicator,
   Pressable,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
-import React from "react";
-import { LiveEventInterface } from "@/app/types/staff/eventType";
+import React, { useState } from "react";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { AntDesign, MaterialIcons } from "@expo/vector-icons";
 import { useSideComponentContext } from "@/app/context/staff/sideComponentProvider";
 
 const LiveEventComponent = () => {
-  const { events } = useSideComponentContext();
+  const {
+    event,
+    currentDate,
+    fetchUpcomingShifts,
+    handleNextShift,
+    handlePreviousShift,
+    handleStartShift,
+    handleEndShift,
+  } = useSideComponentContext();
+
+  const [isStarting, setIsStarting] = useState(false);
+  const [isEnding, setIsEnding] = useState(false);
 
   /**
    * Set the colors for the component based on the user mobile theme.
@@ -30,12 +38,57 @@ const LiveEventComponent = () => {
   const icon = useThemeColor({}, "icon");
   const innerBackground = useThemeColor({}, "innerBackground");
 
+  const handleStartPress = async () => {
+    if (!event.shift_id) return;
+    setIsStarting(true);
+    try {
+      await handleStartShift(event.shift_id);
+      await fetchUpcomingShifts(); // Refresh the shifts after starting
+    } catch (error) {
+      console.error("Error starting shift:", error);
+    } finally {
+      setIsStarting(false);
+    }
+  };
+
+  const handleEndPress = async () => {
+    if (!event.shift_id) return;
+    setIsEnding(true);
+    try {
+      await handleEndShift(event.shift_id);
+      await fetchUpcomingShifts(); // Refresh the shifts after ending
+    } catch (error) {
+      console.error("Error ending shift:", error);
+    } finally {
+      setIsEnding(false);
+    }
+  };
+
   return (
     <View style={[styles.mainContainer, { backgroundColor: innerBackground }]}>
-      <View
-        style={[styles.rowContainers, { borderBottomWidth: 0.3, padding: 10 }]}
+      <View style={styles.navigateContainer}>
+        <Pressable
+          onPress={handlePreviousShift}
+          style={[styles.navigateButton, { backgroundColor: primaryColor }]}
+        >
+          <Text style={[styles.navigateBtnText, { color: text }]}>Now</Text>
+        </Pressable>
+        <Pressable
+          onPress={handleNextShift}
+          style={[styles.navigateButton, { backgroundColor: primaryColor }]}
+        >
+          <Text style={[styles.navigateBtnText, { color: text }]}>Later</Text>
+        </Pressable>
+      </View>
+
+      <Pressable
+        style={[styles.refreshButton, { backgroundColor: primaryColor }]}
+        onPress={fetchUpcomingShifts}
       >
-        {/* Calender*/}
+        <Text style={[styles.refreshBtnText, { color: text }]}>Refresh</Text>
+      </Pressable>
+
+      <View style={[styles.eventHeader, { borderBottomColor: secondaryColor }]}>
         <View
           style={[
             styles.calenderContainer,
@@ -44,100 +97,93 @@ const LiveEventComponent = () => {
         >
           <Text
             style={[
-              styles.calenderText,
+              styles.calenderMonth,
               { backgroundColor: highlight, color: text },
             ]}
           >
-            {events.month}
+            {currentDate.month}
           </Text>
-          <Text style={styles.calenderText}>{events.date}</Text>
+          <Text style={[styles.calenderDay]}>{currentDate.day}</Text>
         </View>
 
-        {/* Event */}
-        <View style={[styles.rowContainers, { flex: 1 }]}>
+        <View style={styles.eventTitleContainer}>
           <View>
-            <Text style={[styles.eventText, { color: text }]}>live event</Text>
-            <Text
-              style={{
-                padding: 5,
-                fontSize: 16,
-                fontFamily: "RobotoRegular",
-                color: text,
-                textTransform: "uppercase",
-              }}
+            <TouchableOpacity
+              style={[styles.nowIndicator, { borderBottomColor: primaryColor }]}
             >
-              {events.event}
+              <Text style={[styles.eventText, { color: text }]}>now</Text>
+            </TouchableOpacity>
+            <Text style={[styles.contractName, { color: text }]}>
+              {event.contract_name}
             </Text>
-          </View>
-
-          {/* Icon */}
-          <View
-            style={[styles.iconContainer, { backgroundColor: primaryColor }]}
-          >
-            <MaterialIcons
-              name="open-in-full"
-              size={20}
-              style={{ color: icon }}
-            />
           </View>
         </View>
       </View>
 
-      {/*  */}
-      <View>
-        <View style={styles.rowContainers}>
-          {/* Event start and end time */}
-          <View>
+      <View style={styles.eventDetails}>
+        <View style={styles.timeContainer}>
+          <View style={styles.timeBlock}>
             <Text style={[styles.eventTimeText, { color: text }]}>
-              {events.start_time}
+              {event.start_time}
             </Text>
-            <Text style={[styles.eventText, { color: text }]}>am</Text>
+            <Text style={[styles.timePeriod, { color: secondaryColor }]}>
+              am
+            </Text>
           </View>
-          <View>
+          <View style={styles.timeBlock}>
             <Text style={[styles.eventTimeText, { color: text }]}>
-              {events.start_time}
+              {event.end_time}
             </Text>
-            <Text style={[styles.eventText, { color: text }]}>pm</Text>
+            <Text style={[styles.timePeriod, { color: secondaryColor }]}>
+              pm
+            </Text>
           </View>
         </View>
 
-        {/* Team members */}
-        <View>
-          {/* Map the employees on the same task */}
-          <TouchableOpacity
-            style={[
-              styles.myTeamMembercontainer,
-              { backgroundColor: primaryColor },
-            ]}
-          >
-            <Text style={[styles.myteamMembesText, { color: text }]}>
-              team members
-            </Text>
-            <Text style={[styles.myteamMembesText, { color: text }]}>
-              {events.team_member.length}
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Button */}
-      <View style={styles.rowContainers}>
         <TouchableOpacity
-          style={[styles.buttons, { backgroundColor: inactivebtn }]}
+          style={[
+            styles.teamMemberContainer,
+            { backgroundColor: primaryColor },
+          ]}
         >
-          <Text
-            style={[styles.buttonText, { textShadowRadius: 5, color: text }]}
-          >
-            start
+          <Text style={[styles.teamMemberText, { color: text }]}>
+            team members
+          </Text>
+          <Text style={[styles.teamMemberCount, { color: text }]}>
+            {event.team_member.length}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity
+          onPress={handleStartPress}
+          disabled={isStarting || !event.shift_id || event.status === "started"}
+          style={[
+            styles.actionButton,
+            {
+              backgroundColor:
+                event.status === "started" ? secondaryColor : inactivebtn,
+            },
+          ]}
+        >
+          <Text style={[styles.buttonText, { color: text }]}>
+            {isStarting ? "Starting..." : event.status === "started" ? "Started" : "start"}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.buttons, { backgroundColor: inactivebtn }]}
+          onPress={handleEndPress}
+          disabled={isEnding || !event.shift_id || event.status !== "started"}
+          style={[
+            styles.actionButton,
+            {
+              backgroundColor:
+                event.status !== "started" ? secondaryColor : inactivebtn,
+            },
+          ]}
         >
-          <Text
-            style={[styles.buttonText, { textShadowRadius: 5, color: text }]}
-          >
-            end
+          <Text style={[styles.buttonText, { color: text }]}>
+            {isEnding ? "Ending..." : event.status !== "started" ? "Ended" : "end"}
           </Text>
         </TouchableOpacity>
       </View>
@@ -150,105 +196,142 @@ export default LiveEventComponent;
 const styles = StyleSheet.create({
   mainContainer: {
     flex: 1,
-    width: "100%",
-    justifyContent: "space-between",
-    padding: 5,
-    borderRadius: 30,
-    shadowRadius: 10,
-    elevation: 10,
+    padding: 12,
+    borderRadius: 10,
+    gap: 15,
   },
-
-  rowContainers: {
+  navigateContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
-    padding: 5,
+    marginBottom: 5,
   },
-
+  navigateButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 20,
+    elevation: 2,
+  },
+  navigateBtnText: {
+    fontSize: 14,
+    fontFamily: "BarlowRegular",
+    textTransform: "capitalize",
+  },
+  eventHeader: {
+    flexDirection: "row",
+    borderBottomWidth: 1,
+    paddingBottom: 15,
+    gap: 15,
+  },
   calenderContainer: {
     borderRadius: 10,
-    marginTop: 10,
+    overflow: "hidden",
+    elevation: 2,
   },
-
-  calenderText: {
-    minWidth: 70,
-    fontSize: 15,
+  calenderMonth: {
+    width: 65,
+    fontSize: 14,
     fontWeight: "600",
     fontFamily: "RobotoRegular",
     textTransform: "uppercase",
     padding: 5,
     textAlign: "center",
   },
-
+  calenderDay: {
+    fontSize: 22,
+    fontWeight: "bold",
+    textAlign: "center",
+    padding: 5,
+  },
+  eventTitleContainer: {
+    flex: 1,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+  },
+  nowIndicator: {
+    borderBottomWidth: 2,
+    alignSelf: "flex-start",
+  },
+  contractName: {
+    fontSize: 16,
+    fontFamily: "RobotoRegular",
+    textTransform: "uppercase",
+    marginTop: 8,
+  },
+  refreshButton: {
+    borderRadius: 10,
+    padding: 8,
+    elevation: 3,
+  },
+  refreshBtnText: {
+    fontSize: 14,
+    fontFamily: "BarlowRegular",
+    textTransform: "capitalize",
+    textAlign: "center",
+  },
+  eventDetails: {
+    gap: 15,
+  },
+  timeContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingHorizontal: 10,
+  },
+  timeBlock: {
+    alignItems: "center",
+  },
+  eventTimeText: {
+    fontSize: 28,
+    fontWeight: "600",
+    fontFamily: "RobotoRegular",
+    textTransform: "uppercase",
+  },
+  timePeriod: {
+    fontSize: 14,
+    fontFamily: "RobotoRegular",
+    textTransform: "uppercase",
+  },
+  teamMemberContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 12,
+    borderRadius: 8,
+    elevation: 2,
+  },
+  teamMemberText: {
+    fontSize: 16,
+    fontFamily: "BarlowRegular",
+    textTransform: "capitalize",
+  },
+  teamMemberCount: {
+    fontSize: 16,
+    fontWeight: "600",
+    fontFamily: "BarlowRegular",
+  },
+  buttonContainer: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 5,
+  },
+  actionButton: {
+    flex: 1,
+    padding: 12,
+    borderRadius: 8,
+    alignItems: "center",
+    elevation: 2,
+  },
+  buttonText: {
+    fontSize: 16,
+    fontWeight: "500",
+    fontFamily: "OswaldRegular",
+    textTransform: "capitalize",
+  },
   eventText: {
     fontSize: 15,
     fontWeight: "600",
     fontFamily: "RobotoRegular",
     textTransform: "capitalize",
     padding: 5,
-  },
-
-  eventContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 10,
-  },
-
-  iconContainer: {
-    borderRadius: 50,
-    padding: 5,
-    alignItems: "center",
-    shadowRadius: 5,
-    elevation: 5,
-  },
-
-  eventTimeText: {
-    fontSize: 25,
-    fontWeight: "bold",
-    fontFamily: "RobotoRegular",
-    textTransform: "uppercase",
-    padding: 2,
-  },
-
-  myteamMembesText: {
-    fontSize: 17,
-    fontWeight: "600",
-    fontFamily: "BarlowRegular",
-    textTransform: "capitalize",
-    padding: 2,
-  },
-
-  myTeamMembercontainer: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    alignItems: "center",
-    padding: 10,
-    borderRadius: 10,
-    maxWidth: 200,
-    marginTop: 10,
-    elevation: 5,
-    shadowRadius: 5,
-    shadowOpacity: 0.5,
-  },
-
-  buttons: {
-    padding: 10,
-    borderRadius: 30,
-    margin: 5,
-    flex: 1,
-    marginHorizontal: 10,
-    alignItems: "center",
-    shadowRadius: 10,
-    elevation: 10,
-    shadowOpacity: 0.6,
-  },
-
-  buttonText: {
-    fontSize: 15,
-    fontWeight: "400",
-    fontFamily: "OswaldRegular",
-    textTransform: "uppercase",
-    textShadowRadius: 5,
   },
 });

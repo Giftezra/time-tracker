@@ -7,43 +7,54 @@ import {
   Ionicons,
   MaterialCommunityIcons,
 } from "@expo/vector-icons";
-import { useNotificationContext } from "@/app/context/staff/notificationProvider";
+import { useNotificationContext } from "@/app/context/management/notificationProvider";
 
 const NotificationDetailsComponent: React.FC<NotificationType> = (props) => {
-  const { toggleReadStatus} = useNotificationContext();
-
+  const { toggleReadStatus } = useNotificationContext();
   const highlight = useThemeColor({}, "highlight");
 
   return (
-    <View
+    <Pressable
+      onPress={() => toggleReadStatus(props.id)}
       style={[
         styles.maincontainer,
-        props.isRead ? { borderColor: "blue" } : { borderColor: highlight },
+        props.isRead
+          ? { backgroundColor: "#f8f9fa" }
+          : {
+              backgroundColor: "#fff",
+              borderLeftColor: highlight,
+              borderLeftWidth: 4,
+            },
       ]}
     >
-      <Text
-        style={[
-          styles.title,
-          props.isRead ? { color: "blue" } : { color: highlight },
-        ]}
-      >
-        {props.title}
-      </Text>
-      <Text style={styles.detailsText}>{props.description}</Text>
-      <View style={styles.rowContainer}>
-        <Text style={styles.timeText}>{props.time}</Text>
-        <Pressable style={styles.buttonContainer} onPress={() => toggleReadStatus(props.id)}>
-          <Text style={styles.timeText}>
-            {props.isRead ? "read" : "mark as read"}
+      <View style={styles.contentContainer}>
+        <View style={styles.headerRow}>
+          <Text style={styles.title}>{props.title}</Text>
+          <Text style={styles.timeText}>{props.time}</Text>
+        </View>
+        <Text style={styles.detailsText}>{props.description}</Text>
+        <View
+          style={[
+            styles.buttonContainer,
+            props.isRead ? styles.buttonRead : styles.buttonUnread,
+          ]}
+        >
+          <Text
+            style={[
+              styles.buttonText,
+              props.isRead ? styles.buttonTextRead : styles.buttonTextUnread,
+            ]}
+          >
+            {props.isRead ? "Read" : "Mark as read"}
           </Text>
           <MaterialCommunityIcons
-            name="check"
-            size={15}
-            color={props.isRead ? "blue" : highlight}
+            name="check-circle"
+            size={16}
+            color={props.isRead ? "#6c757d" : highlight}
           />
-        </Pressable>
+        </View>
       </View>
-    </View>
+    </Pressable>
   );
 };
 
@@ -51,46 +62,66 @@ export default NotificationDetailsComponent;
 
 const styles = StyleSheet.create({
   maincontainer: {
-    padding: 10,
-    marginVertical: 5,
-    marginHorizontal: 5,
-    flex: 1,
-    rowGap: 5,
-    borderRadius: 5,
-    borderWidth: 0.3,
+    marginVertical: 4,
+    marginHorizontal: 12,
+    borderRadius: 8,
+    elevation: 1,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
   },
-
+  contentContainer: {
+    padding: 16,
+  },
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
   title: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "600",
     fontFamily: "BarlowRegular",
-    textTransform: "capitalize",
+    color: "#1a1a1a",
   },
-
   detailsText: {
-    fontSize: 16,
+    fontSize: 14,
     fontFamily: "BarlowLight",
-    textTransform: "capitalize",
-    fontWeight: "400",
+    color: "#4a4a4a",
+    marginBottom: 12,
+    lineHeight: 20,
   },
-
   timeText: {
     fontSize: 12,
     fontFamily: "BarlowLight",
-    fontWeight: "400",
-    textTransform: "capitalize",
+    color: "#6c757d",
   },
-
-  rowContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-
   buttonContainer: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    padding: 5,
+    alignSelf: "flex-start",
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    gap: 6,
+  },
+  buttonUnread: {
+    backgroundColor: "#f8f9fa",
+  },
+  buttonRead: {
+    backgroundColor: "#e9ecef",
+  },
+  buttonText: {
+    fontSize: 12,
+    fontFamily: "BarlowRegular",
+    fontWeight: "500",
+  },
+  buttonTextUnread: {
+    color: "#1a1a1a",
+  },
+  buttonTextRead: {
+    color: "#6c757d",
   },
 });

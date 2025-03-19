@@ -4,15 +4,16 @@ from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from django.utils import timezone
+from django.db import models
 
 from django.shortcuts import get_object_or_404
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.db.models.functions import ExtractMonth
 
 from ...models import Company, Contracts, Client
 from staff.models import Staff, Availability, Leave
-from staff.models import Leave
-from staff.models import Availability
+from management.models import Task, Shift
 
 from .decorators import owner_required, staff_required, admin_required, superuser_required
 
@@ -65,92 +66,47 @@ def delete_company(request):
 @permission_classes([IsAuthenticated])
 @admin_required
 def get_today_events(request):
-  """ This method is used to retrieve the date of birth of staff members associated with the company.
-  The method checks through all the staffs and returns the details of the staff who has their birthday today."""
+  """ This method retrieves details of staff members who have their birthday today.
+  Returns a list containing employee information including their ID, name, email, role, and age."""
     
   try:
-    # Check if the user is an owner or staff and use the associated company to initialize the company variable
+    # Check if the user is an owner or staff and get the associated company
     if request.user.is_owner:
       company = get_object_or_404(Company, owner=request.user)
     elif request.user.is_employee:
       company = get_object_or_404(Staff, user=request.user).company 
       
+    # Get today's date
+    today = timezone.now().date()
+    
+    # Filter staffs with birthdays today
+    staffs = Staff.objects.filter(
+      company=company,
+      user__dob__month=today.month,
+      user__dob__day=today.day
+    )
 
-    # Filter the staffs associated with the company and check if their date of birth is today
-    today = datetime.date.today()
-    staffs = Staff.objects.filter(company=company)
     todays_events = []
-
+    
     for staff in staffs:
-      if staff.user.dob.month == today.month and staff.user.dob.day == today.day:
-        todays_events.append(staff)  # Append the staff to the staff_birthdays list if their date of birth is today
+      # Calculate age
+      age = today.year - staff.user.dob.year
+      # Adjust age if birthday hasn't occurred this year
+      if today < datetime.date(today.year, staff.user.dob.month, staff.user.dob.day):
+        age -= 1
 
-    return Response({"events": todays_events}, status=status.HTTP_200_OK) # Return the event list
+      todays_events.append({
+        'name': staff.user.get_full_name(),
+      })
+
+    return Response({
+      "events": todays_events,
+    }, status=status.HTTP_200_OK)
           
-  except Company.DoesNotExist:  # Return an error message if the user is not associated with a company
+  except Company.DoesNotExist:
     return Response({"error": "This user is unassigned to a company"}, status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-@admin_required
-def get_unavailable_employees(request):
-    """ This method is designed to retrieve the employees who are not available for work or on leave """
-
-    try:
-        # Get the company associated with the request user
-        if request.user.is_owner:
-            company = get_object_or_404(Company, owner=request.user)
-        elif request.user.is_employee or request.user.is_admin:
-            company = get_object_or_404(Staff, user=request.user).company
-
-        # Get the employees associated with the company
-        employees = Staff.objects.filter(company=company)
-        
-        # Get current date and time
-        current_date = datetime.date.today()
-        current_time = datetime.datetime.now().time()
-        
-        unavailable_employees = []
-        
-        # Check each employee's availability and leave status
-        for employee in employees:
-            # Check if employee is on leave or approved for leave
-            leave_status = Leave.objects.filter(
-                staff=employee,
-                start_date__lte=current_date,
-                end_date__gte=current_date
-            ).exclude(status=['available', 'pending']).first()
-            
-            # Check if employee is unavailable based on availability schedule
-            unavailable = Availability.objects.filter(
-                staff=employee,
-                start_date__lte=current_date,
-                end_date__gte=current_date,
-                start_time__lte=current_time,
-                end_time__gte=current_time
-            ).exists()
-            
-            if leave_status or unavailable:
-                status = leave_status.status if leave_status else 'Unavailable'
-                unavailable_employees.append({
-                    'id': employee.id,
-                    'name': employee.user.get_full_name(),
-                    'status': status
-                })
-        
-        return Response({
-            'unavailable_employees': unavailable_employees
-        }, status=status.HTTP_200_OK)
-        
-    except Staff.DoesNotExist:
-        return Response({
-            "error": "Staff not found"
-        }, status=status.HTTP_404_NOT_FOUND)
-    except Exception as e:
-        return Response({
-            "error": str(e)
-        }, status=status.HTTP_400_BAD_REQUEST)
+  except Exception as e:
+    return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['GET'])
@@ -167,7 +123,7 @@ def get_contract_statistics(request):
 
         # Get the year from query params or use current year
         try:
-            year = int(request.GET.get('year', datetime.datetime.now().year))
+            year = int(request.GET.get('year'))
         except ValueError:
             return Response({
                 'error': 'Invalid year parameter'
@@ -214,7 +170,7 @@ def get_contract_statistics(request):
             # Add client data
             statistics.append({
                 'value': counts['clients'],
-                'label': months[month_num] if month_num % 2 != 0 else '',
+                'label': months[month_num],
                 'spacing': 2,
                 'labelWidth': 30 if months[month_num] in ['Mar', 'Apr', 'Sept', 'Oct'] else 20,
                 'frontColor': '#177AD5'
@@ -238,4 +194,205 @@ def get_contract_statistics(request):
         return Response({
             'error': str(e)
         }, status=status.HTTP_400_BAD_REQUEST)
+    
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@admin_required
+def get_employees_on_leave(request):
+   """ Get the list of employees who are on leave or currently unavailable for whatever reason.
+   Returns details including when they started their leave/unavailability and when they will return.
+   """
+
+   try:
+      # Get the company based on the user's role
+      try:
+         if request.user.is_owner:
+            company = get_object_or_404(Company, owner=request.user)
+         elif request.user.is_employee:
+            staff = get_object_or_404(Staff, user=request.user)
+            company = staff.company
+         else:
+            return Response({
+               "error": "You are not authorized to access this resource"
+            }, status=status.HTTP_403_FORBIDDEN)
+      except Staff.DoesNotExist or Company.DoesNotExist:
+         return Response({
+            "error": "Staff or Company not found"
+         }, status=status.HTTP_404_NOT_FOUND)
+
+      # Parse the date parameter correctly
+      date_str = request.GET.get('date')
+      if not date_str:
+         return Response({
+            "error": "Date parameter is required"
+         }, status=status.HTTP_400_BAD_REQUEST)
+      
+      current_date = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
+      
+      unavailable_employees = []
+
+      # Get the employees associated with the company
+      employees = Staff.objects.filter(company=company)
+      for employee in employees:
+         # Check for approved leaves
+         leave_status = Leave.objects.filter(
+            staff=employee,
+            end_date__gte=current_date,
+            status__in=['approved', 'on_leave']
+         ).first()
+         # Check for unavailability periods
+         unavailability = Availability.objects.filter(
+            staff=employee,
+            end_date__gte=current_date
+         ).first()
+
+         if leave_status:
+            if leave_status:
+               employee_status = leave_status.status if leave_status else 'unavailable'
+            unavailable_employees.append({
+               'employee_id': employee.id,
+               'name': employee.user.get_full_name(),
+               'email': employee.user.email,
+               'type': 'leave',
+               'status': employee_status,
+               'start_date': leave_status.start_date,
+               'end_date': leave_status.end_date,
+            })
+         
+         if unavailability:
+            unavailable_employees.append({
+               'employee_id': employee.id,
+               'name': employee.user.get_full_name(),
+               'email': employee.user.email,
+               'type': 'unavailability',
+               'status': 'unavailable',
+               'start_date': unavailability.start_date,
+               'end_date': unavailability.end_date,
+            })
+
+      # Return response after processing all employees
+      return Response({"unavailable_employees": unavailable_employees}, status=status.HTTP_200_OK)
+
+   except ValueError as e:
+      return Response({"error": "Invalid date format. Use YYYY-MM-DD"}, status=status.HTTP_400_BAD_REQUEST)
+   except Exception as e:
+      return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+   
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@admin_required
+def get_task_statistics(request):
+    """Get task statistics for the company dashboard"""
+    try:
+        # Get the company based on the user's role
+        if request.user.is_owner:
+            company = get_object_or_404(Company, owner=request.user)
+        elif request.user.is_employee:
+            company = get_object_or_404(Staff, user=request.user).company
+        else:
+            return Response({
+               "error": "You are not authorized to access this resource"
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        # Get all tasks through staff shifts for the company
+        tasks = Shift.objects.filter(
+            task__contract__client__company=company
+        )
+        
+        # Calculate statistics
+        total_tasks = tasks.count()
+        completed_tasks = tasks.filter(status='completed').count()
+        ongoing_tasks = tasks.filter(status='started').count()
+        pending_tasks = tasks.filter(status='pending').count()
+        assigned_tasks = tasks.filter(status='assigned').count()
+        
+        # Return the statistics
+        statistics = {
+            'total': total_tasks,
+            'completed': completed_tasks,
+            'ongoing': ongoing_tasks,
+            'pending': pending_tasks,
+            'assigned': assigned_tasks
+        }
+
+        return Response({'statistics': statistics}, status=status.HTTP_200_OK)
+    except Staff.DoesNotExist:
+        return Response({'error': 'User is not associated with any company'}, status=400)
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
+    
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@admin_required
+def get_top_performers(request):
+    """
+    Get top performing staff members based on completed shifts.
+    Staff are ranked by their completed shifts count.
+    
+    Returns:
+        Response: JSON containing list of top 10 performers with their details
+        
+    Format:
+        {
+            'top_performers': [
+                {
+                    'id': str,
+                    'name': str,
+                    'email': str,
+                    'phone': str,
+                    'role': str,
+                    'taskCompleted': int,
+                    'rank': int
+                },
+                ...
+            ]
+        }
+    """
+    try:
+        # Get the company based on the user's role
+        if request.user.is_owner:
+            company = get_object_or_404(Company, owner=request.user)
+        elif request.user.is_employee:
+            company = get_object_or_404(Staff, user=request.user).company
+
+        # Get all shifts through tasks that belong to the company
+        shifts = Shift.objects.filter(
+            task__contract__client__company=company
+        )
+
+        # Get the top 10 performers based on the number of tasks completed
+        # and the number of task not cancelled  
+        top_performers = shifts.values('staff').annotate(
+            task_completed=Count('id')
+        ).order_by('-task_completed' )[:10]
+
+        # Get the data for the top performers
+        performers_data = []
+        for rank, performer in enumerate(top_performers, 1):
+            staff = Staff.objects.get(id=performer['staff'])
+            role = "Admin" if staff.user.is_admin else "Employee"
+            performers_data.append({
+                'id': str(staff.id),
+                'name': staff.user.get_full_name(), 
+                'email': staff.user.email,
+                'phone': staff.user.phone,
+                'role': role,
+                'taskCompleted': performer['task_completed'],
+                'rank': rank
+            })
+        # Return the data to the client
+        return Response({
+            'top_performers': performers_data
+        }, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        return Response({
+            'error': str(e)
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
 

@@ -5,7 +5,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "timetracker",
+    "scheme": "time-trackr",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -20,11 +20,26 @@
     },
     "web": {
       "bundler": "metro",
-      "output": "static",
+      "output": "server",
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
       "expo-router",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#ffffff",
+          "sounds": ["./assets/notification-sound.wav"]
+        }
+      ],
+      [
+        "@stripe/stripe-react-native",
+        {
+          "merchantIdentifier": "merchant.com.time-tracker",
+          "publishableKey": "pk_test_51NK8SeKs3nf7cE2WBk18TrdJPOLqvJzYyxmlHFFmGNUmk78TsVVimg3YnGSVLkMhYoQWr1yBR21cbdoKfrb8zmmP00QauAcvF1"
+        }
+      ],
       [
         "expo-splash-screen",
         {
@@ -35,10 +50,9 @@
         }
       ],
       [
-        "@stripe/stripe-react-native",
+        "expo-location",
         {
-          "merchantIdentifier": "merchant.com.your.app",
-          "enableGooglePay": true
+          "locationWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location."
         }
       ]
     ],

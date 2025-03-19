@@ -1,10 +1,11 @@
 import {
+  ActivityIndicator,
   KeyboardAvoidingView,
   Modal,
-  ScrollView,
   StyleSheet,
   Text,
   View,
+  Pressable,
 } from "react-native";
 import React, { useState } from "react";
 import {
@@ -18,7 +19,7 @@ import EventDetailsComponent from "@/app/component/staff/events/eventDetails";
 import {
   EventDisplayInterface,
   EventDetailsInterface,
-} from "@/app/types/staff/eventType";
+} from "@/app/types/staff/event";
 import CustomModal from "@/app/component/helper/customModal";
 
 import { useEventContext } from "@/app/context/staff/staffEventProvider";
@@ -26,49 +27,45 @@ import { useAuth } from "@/app/context/authentication";
 import CalendarAgendaComponent from "@/app/component/staff/events/calendarAgenda";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { ca } from "react-native-paper-dates";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 const MainEventComponent = () => {
-  const { isModalOpen, handleModal, retrieveShiftDetails } = useEventContext();
-
-  // Save the selected event details in state
-  const [shiftDetails, setShiftDetails] = useState<
-    EventDetailsInterface | undefined
-  >(undefined);
-  const [isLoading, setIsLoading] = useState(false);
+  const { isModalOpen, shiftDetails, isLoading, setIsModalOpen } =
+    useEventContext();
 
   /**
    * Method is used to handle the event click and does a few things.
    * First, it retrieves the shift details from the server.
    * Second, it opens the modal to display the event details.
    */
-  const handleEventClicked = async (id: string) => {
-    try {
-      setIsLoading(true);
-      const details = await retrieveShiftDetails(id);
-      setShiftDetails(details);
-      handleModal();
-    } catch (error: any) {
-      console.log(error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   return (
     <SafeAreaProvider style={{ flex: 1 }}>
-      <GestureHandlerRootView>
+      <GestureHandlerRootView style={{ flex: 1 }}>
         <KeyboardAvoidingView style={{ flex: 1 }}>
-          <CalendarAgendaComponent onPress={handleEventClicked} />
+          <CalendarAgendaComponent />
 
-          {/* Display the event details using a modal which will be open when the item is clicked.
-           */}
           <Modal visible={isModalOpen} animationType="slide">
-            {/* Display the event details using the EventDetailsComponent */}
-            <View style={{ flex: 1 }}>
-              <TouchableOpacity onPressIn={handleModal} style={{ padding: 10 }}>
-                <Text>Close</Text>
-              </TouchableOpacity>
-              <EventDetailsComponent props={shiftDetails} />
+            <View style={{ flex: 1, }}>
+              <Pressable
+                onPress={() => setIsModalOpen(false)}
+                style={({ pressed }) => [
+                  {
+                    padding: 10,
+                    opacity: pressed ? 0.5 : 1,
+                  },
+                ]}
+              >
+                <MaterialCommunityIcons name="close" size={24} color="black" />
+              </Pressable>
+
+              {isLoading ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="large" color="#0000ff" />
+                </View>
+              ) : (
+                shiftDetails && <EventDetailsComponent props={shiftDetails} />
+              )}
             </View>
           </Modal>
         </KeyboardAvoidingView>
@@ -77,6 +74,12 @@ const MainEventComponent = () => {
   );
 };
 
-export default MainEventComponent;
+const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+});
 
-const styles = StyleSheet.create({});
+export default MainEventComponent;

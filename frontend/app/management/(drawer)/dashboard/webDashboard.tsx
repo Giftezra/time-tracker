@@ -9,7 +9,6 @@ import {
 import React, { useEffect, useState } from "react";
 import { useDashboardContext } from "@/app/context/management/dashboard/dashboardContext";
 import DashboardWelcomeHeader from "@/app/component/management/dashboard/welcomeHeader";
-import BillingComponent from "@/app/component/management/dashboard/billlingComponent";
 import ExpenseComponent from "@/app/component/management/dashboard/expense";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import TaskChartComponent from "@/app/component/management/dashboard/taskChart";
@@ -21,42 +20,14 @@ import LeaderBoardComponent from "@/app/component/management/dashboard/leaderBoa
 import { id } from "react-native-paper-dates";
 import SideComponent from "@/app/component/helper/sideComponent";
 import { useAuth } from "@/app/context/authentication";
-
-const employeeData = [
-  {
-    id: "1",
-    name: "john doe",
-    email: "johndoe@example.com",
-    dateFrom: "2021-08-01",
-    dateTo: "2021-08-01",
-  },
-  {
-    id: "2",
-    name: "jane doe",
-    email: "johndoe@example.com",
-    dateFrom: "2021-08-01",
-    dateTo: "2021-08-01",
-  },
-  {
-    id: "3",
-    name: "john doe",
-    email: "johndoe@example.com",
-    dateFrom: "2021-08-01",
-    dateTo: "2021-08-01",
-  },
-  {
-    id: "4",
-    name: "jane doe",
-    email: "johndoe@example.com",
-    dateFrom: "2021-08-01",
-    dateTo: "2021-08-01",
-  },
-];
+import { EmployeeOnLeaveInterface } from "@/app/types/management/dashboard";
 
 const event = ["johns birthday", "mary resumption"];
 
 const WebDashboard = () => {
   const { screenWidth, windowWidth } = useAuth();
+  const { unavailableEmployees } = useDashboardContext();
+
   const [taskChartWidth, setTaskChartWidth] = useState(0);
   const [contractChartWidth, setContractChartWidth] = useState(0);
   const screen = Dimensions.get("screen");
@@ -132,15 +103,17 @@ const WebDashboard = () => {
               </Text>
 
               <FlatList
-                data={employeeData}
-                keyExtractor={(item) => item.id.toString()}
+                data={unavailableEmployees}
+                keyExtractor={(item) => item.employee_id.toString()}
                 renderItem={({ item }) => (
                   <EmployeeOnLeaveComponent
-                    id={item.id}
+                    employee_id={item.employee_id}
                     name={item.name}
                     email={item.email}
-                    dateFrom={item.dateFrom}
-                    dateTo={item.dateTo}
+                    type={item.type}
+                    status={item.status}
+                    start_date={item.start_date}
+                    end_date={item.end_date}
                   />
                 )}
                 showsHorizontalScrollIndicator={false}

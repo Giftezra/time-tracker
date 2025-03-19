@@ -1,26 +1,43 @@
 import {
   ActivityIndicator,
   Image,
+  Modal,
   Pressable,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
-import React from "react";
+import React, { useState } from "react";
 import { AntDesign, MaterialIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useThemeColor } from "@/hooks/useThemeColor";
 
 import { user_image } from "@/app/utils/images";
 import { EmployeeDetailsType } from "@/app/types/management/employee";
+import { useEmployeeContext } from "@/app/context/management/employee/employeeContext";
+import EmployeeAnalyticsComponent from "./employeeAnalytics";
 
-const EmployeeContainerComponent: React.FC<EmployeeDetailsType> = (props) => {
+const EmployeeDisplayComponent: React.FC<EmployeeDetailsType> = (props) => {
+  // Import the context methods
+  const { setEmployeeId, setIsModalVisible } = useEmployeeContext();
+
+
   const primary = useThemeColor({}, "primaryColor");
   const highlight = useThemeColor({}, "highlight");
   const innerbackground = useThemeColor({}, "innerBackground");
   const inactivebtn = useThemeColor({}, "inactivebtn");
   const text = useThemeColor({}, "text");
+  const otherText = useThemeColor({}, "otherText");
+
+  /* Handle the employee id when the employee is clicked and set the modal to visible, to open the modal.
+  Which contains the user analytics, task details and work log.
+   * Set the employee id to the employee id state.
+   */
+  const handleEmployeeClick = () => {
+    setEmployeeId(props.id);
+    setIsModalVisible(true);
+  };
 
   return (
     /* Route the admin to the employees analytics page when clicked. 
@@ -30,7 +47,7 @@ const EmployeeContainerComponent: React.FC<EmployeeDetailsType> = (props) => {
       {/* Constains the staffs name and details */}
       <View style={styles.nameContainer}>
         <Text style={[styles.nameText, { color: text }]}>{props.name}</Text>
-        <Text style={[styles.detailsText, { color: highlight }]}>
+        <Text style={[styles.detailsText, { color: otherText }]}>
           {props.role}
         </Text>
       </View>
@@ -45,12 +62,7 @@ const EmployeeContainerComponent: React.FC<EmployeeDetailsType> = (props) => {
             borderWidth: 0.5,
           },
         ]}
-        onPress={() =>
-          router.push({
-            pathname: "/management/(drawer)/employee/analytics",
-            params: { id: props.id },
-          })
-        }
+        onPress={handleEmployeeClick}
       >
         <View style={styles.employmentDetailsContainer}>
           <View>
@@ -94,7 +106,7 @@ const EmployeeContainerComponent: React.FC<EmployeeDetailsType> = (props) => {
   );
 };
 
-export default EmployeeContainerComponent;
+export default EmployeeDisplayComponent;
 
 const styles = StyleSheet.create({
   container: {

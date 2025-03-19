@@ -52,6 +52,7 @@ const CreateTaskComponent = () => {
     end_time,
     collectNewTaskData,
     taskData,
+    getAvailableEmployees: get_available_employees,
   } = useManagementTask();
 
   const primary = useThemeColor({}, "primaryColor");
@@ -463,7 +464,7 @@ const styles = StyleSheet.create({
     textTransform: "capitalize",
   },
 
-  inputContainer:{
+  inputContainer: {
     marginVertical: 4,
     borderRadius: 5,
     borderWidth: 1,

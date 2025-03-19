@@ -1,8 +1,13 @@
 import { useContext, createContext, useState, ReactNode, useMemo } from "react";
-import { TaskDetailsType, TaskProps, TaskProviderInterface } from "@/app/types/staff/task";
+import {
+  TaskDetailsInterface,
+  TaskInterface,
+  TaskProviderInterface,
+} from "@/app/types/staff/task";
 import { BASE_URL } from "@/app/utils/urls";
 import { Alert } from "react-native";
-import {TaskDetailsProps} from "@/app/types/management/task";
+import { TaskDetailsProps } from "@/app/types/management/task";
+import { useAuth } from "../authentication";
 
 /**
  * Creata  new context for the task.
@@ -13,70 +18,41 @@ const TaskContext = createContext<TaskProviderInterface | undefined>(undefined);
  * Create the provider to serve the context.
  */
 const StaffTaskProvider = ({ children }: { children: ReactNode }) => {
-  const tasks: TaskProps[] = [
-    {
-      task_id: "1",
-      site_name: "site 1",
-      site_address: "address 1",
-      start_time: "10:00",
-      end_time: "11:00",
-      start_date: "2025-01-09",
-    },
-    {
-      task_id: "2",
-      site_name: "site 2",
-      site_address: "address 2",
-      start_time: "11:00",
-      end_time: "12:00",
-      start_date: "2025-01-10",
-    },
-    {
-      task_id: "3",
-      site_name: "site 3",
-      site_address: "address 3",
-      start_time: "12:00",
-      end_time: "13:00",
-      start_date: "2025-01-13",
-    },
-  ];
-
-  const taskDetials: TaskDetailsType = {
-    id: "1",
-    site_serial: "sd-123",
-    site_name: "sky dunfermline",
-    site_address: "31 high street",
-    site_postcode: "KY12 7DL",
-    site_city: "Dunfermline",
-    start_time: "10:00",
-    end_time: "18:00",
-    information: "The task is to clean the site doors and windows, Please ensure to clean the windows and doors properly",
-    pay: "20",
-    department: "cleaning",
-    start_date: "2025-01-09",
-  };
+  // Import the axiosInstance from the AuthProvider
+  const { axiosInstance } = useAuth();
 
   const [isModalVisible, setIsModalVisible] = useState(false);
-
-  const initDate = "2024-01-01";
-  const [selected, setSelected] = useState(initDate);
-
-  const setSelectedDate = (date: string) => {
-    setSelected(date);
-    console.log(date);
-  };
+  const [taskDates, setTaskDates] = useState<any[]>([]);
+  const [tasks, setTasks] = useState<TaskInterface[]>([]);
+  const [taskDetials, setTaskDetials] = useState<TaskDetailsInterface>({
+    id: "",
+    task_serial: "",
+    site_name: "",
+    site_address: "",
+    site_postcode: "",
+    site_city: "",
+    start_time: "",
+    end_time: "",
+    start_date: "",
+    description: "",
+    pay: "",
+    department: "",
+  });
 
   /**
    * This is the marked dates object that is used to mark the days returned from the server as occupied days where there is an active task.
    * The selected date is marked with a red color to indicate that the user has a task on that day.
    */
   const markedDates = useMemo(() => {
-    return {
-      [selected]: {
-        selected: true,
-        selectedColor: "red",
-      },
-    };
-  }, [selected]);
+    // Convert taskDates array into an object for react-native-calendars
+    return taskDates.reduce((acc: { [key: string]: any }, date) => {
+      acc[date] = {
+        marked: true, // Show a dot
+        dotColor: "blue", // Customize dot color
+      };
+      return acc;
+    }, {});
+  }, [taskDates]); // Only depend on taskDates
 
   /**
    * Manage the state of the selected date
@@ -91,39 +67,109 @@ const StaffTaskProvider = ({ children }: { children: ReactNode }) => {
   };
 
   /**
-   *
-   * @param id
-   * @returns
+   * Toggle the modal display
    */
-  const handleTaskDetails = (id: string | null) => {
-    if (!id) {
-      return;
+  const handleModalDisplay = () => {
+    setIsModalVisible(false);
+  };
+
+  /**
+   * The method is used to handle the events that happens when the user triggers the month change event.
+   * When the user moves to the next month, the method will send a server request to get all dates within that month, where the staffs associated company has unassigned tasks.
+   * The unassigned tasks will then be marked on the calendar with a different color to indicate that the user can apply for the task.
+   * @param month: The month selected by the user
+   */
+  const handleMonthChangeEvent = async (month: any): Promise<any[]> => {
+    try {
+      const response = await axiosInstance.get("/api/get/task/dates/", {
+        params: { year: month.year, month: month.month },
+      });
+
+      if (response.data.task_dates) {
+        setTaskDates(response.data.task_dates); // Update taskDates state
+      } else {
+        alert(response.data.message);
+        setTaskDates([]); // Clear if no dates
+      }
+
+      return response.data.task_dates || [];
+    } catch (error) {
+      console.log(error);
+      setTaskDates([]); // Clear on error
+      return [];
     }
-    setIsModalVisible(true);
-    console.log("isModalVisible");
-    console.log(id);
+  };
+
+  /**
+   * This method is used to get all available tasks for the selected day.
+   * The method will be triggered when the user clicks on a day in the calendar.
+   * The method will then send a request to the server to get all tasks available for the selected day.
+   * @param day is the selected day by the user
+   */
+  const handleDaySelectedEvent = async (day: any) => {
+    try {
+      // Create the response object to get the available tasks for the selected day
+      const response = await axiosInstance.get("/api/get/available/tasks/", {
+        params: {
+          // Pass the day params
+          day: day.day,
+        },
+      });
+      if (response.data.tasks) {
+        setTasks(response.data.tasks);
+      } else {
+        alert(response.data.message);
+        setTasks([]);
+      }
+    } catch (error) {
+      console.log(error);
+      setTasks([]);
+    }
+  };
+
+  /**
+   * This method is designed to get the task details of the selected task.
+   * When the user clicks on the view more button, the method will be triggered to
+   * fetch the task details from the server and display the task details to the user.
+   * @param id is the task id assigned to the user
+   */
+  const handleTaskDetails = async (id: string) => {
+    console.log("id", id);
+    try {
+      const response = await axiosInstance.get("/api/get/task/details", {
+        params: {
+          task_id: id,
+        },
+      });
+      if (response.data.task_details) {
+        setTaskDetials(response.data.task_details);
+        setIsModalVisible(true);
+      } else {
+      }
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   /**
    * This method is used to calculate the time difference between the start time and the end time of the task assigned to the user.
    * It returns the time difference in hours and minutes.
    */
-const calculateTimeDifference = () => {
-  const [startHour, startMinute] = taskDetials.start_time
-    .split(":")
-    .map(Number);
-  const [endHour, endMinute] = taskDetials.end_time.split(":").map(Number);
+  const calculateTimeDifference = () => {
+    const [startHour, startMinute] = taskDetials.start_time
+      .split(":")
+      .map(Number);
+    const [endHour, endMinute] = taskDetials.end_time.split(":").map(Number);
 
-  const startTimeInMinutes = startHour * 60 + startMinute;
-  const endTimeInMinutes = endHour * 60 + endMinute;
+    const startTimeInMinutes = startHour * 60 + startMinute;
+    const endTimeInMinutes = endHour * 60 + endMinute;
 
-  const timeDifferenceInMinutes = endTimeInMinutes - startTimeInMinutes;
-  const hours = Math.floor(timeDifferenceInMinutes / 60);
-  const minutes = timeDifferenceInMinutes % 60;
+    const timeDifferenceInMinutes = endTimeInMinutes - startTimeInMinutes;
+    const hours = Math.floor(timeDifferenceInMinutes / 60);
+    const minutes = timeDifferenceInMinutes % 60;
 
-  return `${hours} hours ${minutes} minutes`;
+    return `${hours} hours ${minutes} minutes`;
   };
-
 
   /***
    * This methood is used to calculate when the shift is bound to start, given the current date and time.
@@ -153,165 +199,35 @@ const calculateTimeDifference = () => {
     }
   };
 
-
   /**
    * This method is used to send a post request to the server to apply for the task with the given id.
    * The method only returns a confirmaion message from the server.
    */
   const applyForTask = async (id: string) => {
-    const token = ''
-    const response = await fetch(`${BASE_URL}/api/apply/task`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ task_id: id }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Error: ${response.status}, ${response.statusText}`);
+    try {
+      const response = await axiosInstance.patch(
+        `/api/apply/task/?task_id=${id}`
+      );
+      alert(response.data.message);
+    } catch (error:any) {
+      console.log(error);
+      // Add better error handling
+      alert(error.response?.data?.error || "Failed to apply for task");
     }
-
-    const data = await response.json();
-    Alert.alert(data.message);
-    return data;
-  }
-
-
-  // /**
-  //  * This method is designed to get the task details of the selected task.
-  //  * When the user clicks on the view more button, the method will be triggered to
-  //  * fetch the task details from the server and display the task details to the user.
-  //  * @param id is the task id assigned to the user
-  //  */
-  // const handleTaskDetails = async (id: string | null) => {
-  //   const token = loadToken();
-  //   if (!id) {
-  //     // Check if the id is not null
-  //     return;
-  //   }
-  //   const response = await fetch(`BASE_URL/api/task/details`, {
-  //     method: "GET",
-  //     headers: {
-  //       "Content-Type": "application/json",
-  //       Authorization: `Bearer ${token}`,
-  //     },
-  //     body: JSON.stringify({ task_id: id }),
-  //   });
-
-  //   // Check if the response is not ok and throw an error with the status and status text
-  //   if (!response.ok) {
-  //     throw new Error(`Error: ${response.status}, ${response.statusText}`);
-  //   }
-
-  //   const data: TaskDetailsType = await response.json();
-  //   // Complete this method to display the task details to the user
-  // setIsModalVisible(true);
-  // };
-
-  /**
-   * Toggle the modal display
-   */
-  const handleModalDisplay = () => {
-    setIsModalVisible(false);
   };
 
-  /**
-   * This method is used to start the task assigned to the user
-   * @param id is the task id assigned to the user
-   * @returns void
-   */
-  const handleStartTask = async (id: string) => {
-    const token = '';
-    const response = await fetch(`BASE_URL/api/task/start`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ shift_id: id }),
-    });
-
-    // Throw an error if the response is not ok with the status and status text
-    if (!response.ok) {
-      throw new Error(`Error: ${response.status}, ${response.statusText}`);
-    }
-
-    // Return the response message if the response is ok
-    /**
-     * This method will be modified so that when the response is ok, the task time will be started
-     */
-    const data = await response.json();
-    Alert.alert(data.message); // Alert the user with the response message
-    return data;
-  };
-
-  /**
-   * The method is used to cancel the task assigned to the user by sending the shift id to the server.
-   * The method returns the data from the server for further processing
-   * @param id is the shift id assigned to the user
-   */
-  const handleEndTask = async (id: string) => {
-    const token = ''
-    const response = await fetch(`BASE_URL/api/task/cancel`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ shift_id: id }),
-    });
-
-    // Throw an error if the response is not ok with the status and status text
-    if (!response.ok) {
-      throw new Error(`Error: ${response.status}, ${response.statusText}`);
-    }
-    const data = await response.json();
-    Alert.alert(data.message);
-    return data;
-  };
-
-  /**
-   * This method is used to handle the users break time
-   * When clicked the user will be able to take a break from the task assigned to them.
-   * If the data returns true, the break time will be triggered notifying the user that the break time has started and the shift time will be paused given the kind of task assigned to the user.
-   */
-  const handleBreakTime = async (id: string) => {
-    const token = '';
-    const response = await fetch(`BASE_URL/api/task/break`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ shift_id: id }),
-    });
-
-    // Throw an error if the response is not ok with the status and status text
-    if (!response.ok) {
-      throw new Error(`Error: ${response.status}, ${response.statusText}`);
-    }
-    const data = await response.json();
-    Alert.alert(data.message);
-    return data;
-  };
-
-  const value = {
+  const value: TaskProviderInterface = {
     isModalVisible,
     handleTaskDetails,
     handleModalDisplay,
-    handleDayPressEvent,
     markedDates,
-    setSelectedDate,
-    handleStartTask,
-    handleEndTask,
-    handleBreakTime,
     tasks,
     taskDetials,
     calculateTimeDifference,
     calculateTaskStartTime,
     applyForTask,
+    handleMonthChangeEvent,
+    handleDaySelectedEvent,
   };
 
   return <TaskContext.Provider value={value}>{children}</TaskContext.Provider>;

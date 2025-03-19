@@ -1,6 +1,8 @@
 import {
   KeyboardAvoidingView,
+  Modal,
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -16,11 +18,12 @@ import CalendarContextProvider, {
   useCalendar,
 } from "@/app/context/management/calendar/calendarContext";
 import CalendarShiftComponent from "@/app/component/management/calendar/shifts";
-import MyTasksComponent from "@/app/component/management/calendar/myTask";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import SideComponent from "@/app/component/helper/sideComponent";
 import { useAuth } from "@/app/context/authentication";
+import EditShiftComponent from "@/app/component/management/calendar/editshift";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 const MainManagementCalendarComponent = () => {
   const {
@@ -30,6 +33,9 @@ const MainManagementCalendarComponent = () => {
     setSearch,
     handleSchedule,
     handleWeekSeleced,
+    showEditShiftModal,
+    setShowEditShiftModal,
+    activeShift,
   } = useCalendar();
 
   const { screenWidth, windowWidth } = useAuth();
@@ -54,41 +60,46 @@ const MainManagementCalendarComponent = () => {
               }
             >
               <View style={styles.calendarContainer}>
-                <CalendarHeader onPress={() => console.log("pressed")} />
+                <CalendarHeader />
               </View>
-              {schedule === "shifts" ? (
+              {schedule === "shifts" &&
                 /* Render the view in a scrollview horizontally for mobile */
-                Platform.OS === "web" ? (
+                (Platform.OS === "web" ? (
                   <View style={{ flexGrow: 1, marginEnd: 5 }}>
                     <CalendarShiftComponent />
                   </View>
                 ) : (
                   <ScrollView
-                    style={{ flexGrow: 1 }}
+                    style={{ flex: 1 }}
                     horizontal={true}
                     showsHorizontalScrollIndicator={false}
                   >
                     <CalendarShiftComponent />
                   </ScrollView>
-                )
-              ) : Platform.OS === "web" ? (
-                <View style={{ flexGrow: 1, marginEnd: 5 }}>
-                  <MyTasksComponent />
-                </View>
-              ) : (
-                <ScrollView
-                  style={{ flexGrow: 1 }}
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                >
-                  <MyTasksComponent />
-                </ScrollView>
-              )}
+                ))}
             </View>
           </View>
+
+          <Modal
+            visible={showEditShiftModal}
+            onDismiss={() => setShowEditShiftModal(false)}
+          >
+            <Pressable
+              style={{ padding: 10 }}
+              onPress={() => setShowEditShiftModal(false)}
+            >
+              <MaterialCommunityIcons name="close" size={24} color="black" />
+            </Pressable>
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              style={styles.scrollView}
+            >
+              <EditShiftComponent shift={activeShift} />
+            </ScrollView>
+          </Modal>
         </GestureHandlerRootView>
       </KeyboardAvoidingView>
-    </SafeAreaProvider>
+    </SafeAreaProvider>   
   );
 };
 
@@ -104,4 +115,17 @@ const styles = StyleSheet.create({
       flexDirection: "column",
     },
   }),
+
+  modalContainer: {
+    padding: 10,
+  },
+
+  closeButton: {
+    padding: 10,
+  },
+
+  scrollView: {
+    flex: 1,
+    padding: 5,
+  },
 });

@@ -1,16 +1,35 @@
-import { LiveEventInterface } from "./eventType";
+import { Colleague } from "./event";
 
-export type SideComponentContextType = {
+export interface SideComponentContextType {
   active: string;
   handleActivity: (activity: string) => void;
-  events: LiveEventInterface;
+  event: LiveEventInterface;
   handlePhoneCall(phone?: string): void;
   handleWebsiteCall(url?: string): void;
-  allowPushNotification: boolean;
-  allowMarketingEmails: boolean;
-  allowEmailNotification: boolean;
-  savePreferences(): void;
-  setAllowPushNotification(allow: boolean): void;
-  setAllowEmailNotification(allow: boolean): void;
-  setAllowMarketingEmails(allow: boolean): void;
-};
+  currentDate: CurrentDate;
+  daysShift: LiveEventInterface[];
+  fetchUpcomingShifts(): Promise<void>;
+  handleNextShift(): void;
+  handlePreviousShift(): void;
+  currentShiftIndex: number;
+  handleStartShift(shiftId: string): Promise<void>;
+  handleEndShift(shiftId: string): Promise<void>;
+}
+
+export interface LiveEventInterface {
+  shift_id?: string;
+  task_serial?: string;
+  start_time?: string;
+  end_time?: string;
+  contract_name?: string;
+  team_member: Array<{
+    staff_id: string;
+    name: string;
+  }>;
+  status?: string;
+}
+
+export interface CurrentDate {
+  month: string;
+  day: string;
+}

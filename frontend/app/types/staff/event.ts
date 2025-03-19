@@ -19,7 +19,8 @@ export interface EventDetailsInterface {
   end_time: string;
   information: string;
   pay: string;
-  colleague: Colleague[];
+  colleagues?: Array<{ name: string; id: string }>;
+  status?: string;
 }
 
 export interface Colleague {
@@ -27,30 +28,20 @@ export interface Colleague {
   staff_id: string;
 }
 
-/**
- * Type defines the methods and states manages in the event provider
- */
 export interface EventProviderInterface {
   handlePress: (id: string, name: string) => void;
   handleMessageNavigation: () => void;
-  handleModal: () => void;
   isClicked: boolean;
-  isModalOpen: boolean;
-  retrieveShiftDetails: (id: string) => Promise<EventDetailsInterface | undefined>;
+  retrieveShiftDetails: (id: string) => Promise<void>;
   assignedShifts: EventDisplayInterface[];
+  shiftDetails: EventDetailsInterface | undefined;
+  isLoading: boolean;
+  isModalOpen: boolean;
+  setIsModalOpen: (isModalOpen: boolean) => void;
+  acceptShift: (id: string) => Promise<void>;
+  declineShift: (id: string) => Promise<void>;
 }
 
-export interface LiveEventInterface {
-  event_serial: string | undefined;
-  month: string | undefined;
-  date: string | undefined;
-  start_time: string | undefined;
-  end_time: string | undefined;
-  event: string | undefined;
-  team_member: TeamMemberInterface[];
-}
-
-export interface TeamMemberInterface {
-  id: string;
-  name: string;
+export interface AgendaItem {
+  [key: string]: EventDisplayInterface[];
 }

@@ -9,48 +9,59 @@
 
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import React from "react";
-import { EventDisplayInterface } from "@/app/types/staff/eventType";
+import { EventDisplayInterface } from "@/app/types/staff/event";
 import { useThemeColor } from "@/hooks/useThemeColor";
 
-const EventDisplay = ({ props }: { props: EventDisplayInterface }) => {
-  /**
-   * Use the hook to get the current theme , setting the colors based on the theme.
-   */
-  const text = useThemeColor({}, "text");
-  const highlight = useThemeColor({}, "highlight");
-  const otherText = useThemeColor({}, "otherText");
-  const innerBackground = useThemeColor({}, "innerBackground");
+// Wrap the component with React.memo for performance optimization
+const EventDisplay = React.memo(
+  ({ props }: { props: EventDisplayInterface }) => {
+    /**
+     * Use the hook to get the current theme , setting the colors based on the theme.
+     */
+    const text = useThemeColor({}, "text");
+    const highlight = useThemeColor({}, "highlight");
+    const otherText = useThemeColor({}, "otherText");
+    const innerBackground = useThemeColor({}, "innerBackground");
 
-  return (
-    <View style={[styles.mainContainer, { backgroundColor: innerBackground }]}>
-      <Text style={[styles.siteName, { color: text }]}>{props.site_name}</Text>
-      {/* Start details */}
-      <View style={styles.timeContainer}>
-        <View style={styles.innertimeContainer}>
-          <Text style={[styles.text, { color: highlight }]}>start time</Text>
-          <Text style={[styles.text, { color: otherText }]}>
-            {props.start_time}
-          </Text>
-        </View>
-        <View style={styles.innertimeContainer}>
-          <Text style={[styles.text, { color: highlight }]}>end time</Text>
-          <Text style={[styles.text, { color: otherText }]}>
-            {props.end_time}
-          </Text>
-        </View>
-      </View>
-      <View style={styles.container}>
-        <Text style={[styles.text, { color: text }]}>{props.information}</Text>
-      </View>
-      <View style={styles.container}>
-        <Text style={[styles.text, { color: text }]}>{props.site_address}</Text>
-        <Text style={[styles.text, { color: text }]}>
-          {props.site_postcode}
+    return (
+      <View
+        style={[styles.mainContainer, { backgroundColor: innerBackground }]}
+      >
+        <Text style={[styles.siteName, { color: text }]}>
+          {props.site_name}
         </Text>
+        {/* Start details */}
+        <View style={styles.timeContainer}>
+          <View style={styles.innertimeContainer}>
+            <Text style={[styles.text, { color: highlight }]}>start time</Text>
+            <Text style={[styles.text, { color: otherText }]}>
+              {props.start_time}
+            </Text>
+          </View>
+          <View style={styles.innertimeContainer}>
+            <Text style={[styles.text, { color: highlight }]}>end time</Text>
+            <Text style={[styles.text, { color: otherText }]}>
+              {props.end_time}
+            </Text>
+          </View>
+        </View>
+        <View style={styles.container}>
+          <Text style={[styles.text, { color: text }]}>
+            {props.information}
+          </Text>
+        </View>
+        <View style={styles.container}>
+          <Text style={[styles.text, { color: text }]}>
+            {props.site_address}
+          </Text>
+          <Text style={[styles.text, { color: text, textTransform: "uppercase" }]}>
+            {props.site_postcode}
+          </Text>
+        </View>
       </View>
-    </View>
-  );
-};
+    );
+  }
+);
 
 export default EventDisplay;
 

@@ -13,12 +13,15 @@ const CalendarComponent = ({ onSelectDate }: { onSelectDate: (date:string) => vo
     <View style={styles.maincontainer}>
       <View style={styles.container}>
         <Calendar
-          onDayPress={(day:any)=> onSelectDate(day.dateString)}
+          onDayPress={(day: any) => {
+            const { day: selectedDay, month, year } = day;
+            onSelectDate(`${year}-${month}-${selectedDay}`);
+          }}
           markingType={"period"}
           markedDates={{
-            "2024-12-15": { marked: true, dotColor: "#50cebb" },
-            "2024-12-16": { marked: true, dotColor: "#50cebb" },
-            "2024-12-21": {
+            "2025-02-15": { marked: true, dotColor: "#50cebb" },
+            "2025-02-16": { marked: true, dotColor: "#50cebb" },
+            "2025-02-21": {
               startingDay: true,
               color: "#50cebb",
               textColor: "white",

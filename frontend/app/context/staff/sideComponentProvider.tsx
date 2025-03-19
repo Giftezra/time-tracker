@@ -1,48 +1,80 @@
 import { router } from "expo-router";
-import { useContext, createContext, ReactNode, useState } from "react";
+import {
+  useContext,
+  createContext,
+  ReactNode,
+  useState,
+  useEffect,
+} from "react";
 
 import { SideComponentContextType } from "@/app/types/staff/sideComponent";
-import { LiveEventInterface } from "@/app/types/staff/eventType";
+import {
+  CurrentDate,
+  LiveEventInterface,
+} from "@/app/types/staff/sideComponent";
 import { Alert, Linking } from "react-native";
-import { loadToken, userData } from "@/app/utils/loadData";
-import { BASE_URL } from "@/app/utils/urls";
+import { userData } from "@/app/utils/loadData";
+import { useAuth } from "../authentication";
 
 const SideComponentContext = createContext<
   SideComponentContextType | undefined
 >(undefined);
 
 const SideComponentProvider = ({ children }: { children: ReactNode }) => {
+  const currentDate: CurrentDate = {
+    month: new Date().toLocaleString("default", { month: "short" }),
+    day: new Date().getDate().toString(),
+  };
+
   const user = userData();
+  const { axiosInstance } = useAuth();
 
   const events: LiveEventInterface = {
-    event_serial: "1",
-    month: new Date().toLocaleString("default", { month: "short" }),
-    date: new Date().getDate().toString(),
-    start_time: "12:00",
-    end_time: "13:00",
-    event: "New Year",
-    team_member: [
-      {
-        id: "1",
-        name: "John",
-      },
-      {
-        id: "2",
-        name: "Doe",
-      },
-    ],
+    shift_id: "",
+    task_serial: "",
+    start_time: "",
+    end_time: "",
+    contract_name: "No shifts scheduled",
+    team_member: [],
   };
 
   const [active, setActive] = useState<string>("events");
-  const [allowPushNotification, setAllowPushNotification] = useState<boolean>(
-    user?.allow_push_notification || false
-  );
-  const [allowEmailNotification, setAllowEmailNotification] = useState<boolean>(
-    user?.allow_email_notification || false
-  );
-  const [allowMarketingEmails, setAllowMarketingEmails] = useState<boolean>(
-    user?.allow_marketing_emails || false
-  );
+
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  // Create the shift state
+  const [daysShift, setDaysShift] = useState<LiveEventInterface[]>([]);
+  const [event, setEvent] = useState<LiveEventInterface>(events);
+  const [currentShiftIndex, setCurrentShiftIndex] = useState<number>(0);
+
+  /**
+   * Method is used to handle the users ability to move to the next shift if there is anyone available.
+   * It uses the currentShiftIndex to determine the current shift and then moves to the next shift.
+   */
+  const handleNextShift = () => {
+    setCurrentShiftIndex((prev) => (prev + 1) % daysShift.length);
+  };
+
+  /**
+   * Method is used to handle the users ability to move to the previous shift if there is anyone available.
+   * It uses the currentShiftIndex to determine the current shift and then moves to the previous shift.
+   */
+  const handlePreviousShift = () => {
+    setCurrentShiftIndex(
+      (prev) => (prev - 1 + daysShift.length) % daysShift.length
+    );
+  };
+
+  useEffect(() => {
+    const currentEvent =
+      daysShift.length > 0 ? daysShift[currentShiftIndex] : events;
+
+    setEvent(currentEvent);
+
+    // Reset index when shifts change
+    if (daysShift.length > 0) {
+      setCurrentShiftIndex(0);
+    }
+  }, [daysShift, currentShiftIndex]); // Add currentShiftIndex to dependencies
 
   /**
    * Handle the activity of the user in the side component.
@@ -52,11 +84,7 @@ const SideComponentProvider = ({ children }: { children: ReactNode }) => {
    */
   const handleActivity = (activity: string) => {
     if (!activity) return;
-    /**
-     * Set the active activity in the state.
-     */
     setActive(activity);
-
     /**
      * Switch the activity and navigate to the route based on the activity.
      */
@@ -116,6 +144,48 @@ const SideComponentProvider = ({ children }: { children: ReactNode }) => {
   };
 
   /**
+   * This method is used to handle the users ability to start the shift.
+   * It uses the axiosInstance to send a patch request to the server to start the shift.
+   * @param shiftId is the id of the shift to start.
+   * @returns void
+   */
+  const handleStartShift = async (shiftId: string) => {
+    try {
+      const response = await axiosInstance.patch("/api/begin/shift/", {
+        shift_id: shiftId,
+      });
+      if (response.data.message) {
+        Alert.alert(response.data.message);
+      } else {
+        Alert.alert(response.data.error);
+      }
+    } catch (error) {
+      console.error("Error starting the shift", error);
+    }
+  };
+
+  /**
+   * This method is used to handle the users ability to end the shift.
+   * It uses the axiosInstance to send a patch request to the server to end the shift.
+   * @param shiftId is the id of the shift to end.
+   * @returns void
+   */
+  const handleEndShift = async (shiftId: string) => {
+    try {
+      const response = await axiosInstance.patch("/api/terminate/current/shift/", {
+        shift_id: shiftId,
+      });
+      if (response.data.message) {
+        Alert.alert(response.data.message);
+      } else {
+        Alert.alert(response.data.error);
+      }
+    } catch (error) {
+      console.error("Error ending the shift", error);
+    }
+  };  
+
+  /**
    * This method is used to  handle the users ability to send call the phone number provided by the company.
    * It uses linking to open the phone number provided by the company but first asks for confirmation before proceeding to place the call
    */
@@ -140,54 +210,51 @@ const SideComponentProvider = ({ children }: { children: ReactNode }) => {
   };
 
   /**
-   * This method is used to update the users notification choices to the server whren the page unmounts.
-   * It uses
+   * This method is used to get the shifts that assigned to the user given the current date.
+   * It uses the currentDate to ensure only the shifts for the current date are returned.
+   * It sets the state of the daysShift to the shifts for the current date.
+   * @returns void
    */
-  const savePreferences = async () => {
-    const token = await loadToken();
+  const fetchUpcomingShifts = async () => {
+    console.log("Fetching the shifts for the current day", currentDate.day);
     try {
-      const response = await fetch(`${BASE_URL}/api/staff/update-preferences`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+      const response = await axiosInstance.get("/api/get/current/day/shifts/", {
+        params: {
+          day: currentDate.day,
         },
-        body: JSON.stringify({
-          allowEmailNotification,
-          allowMarketingEmails,
-          allowPushNotification,
-        }),
       });
-
-      // Check response status
-      if (!response.ok) {
-        throw new Error("Error updating preferences");
-      }
-
-      const data = await response.json();
-      if (data.success) {
-        Alert.alert("Preferences updated successfully");
+      // Check if the response has the shifts
+      // If it doesm, set the state of the daysShift to the shifts
+      if (response.data.shifts) {
+        setDaysShift(response.data.shifts);
+        console.log("Shifts", response.data.shifts);
       } else {
-        Alert.alert("Error updating preferences");
+        setDaysShift([]);
       }
     } catch (error) {
-      console.error("Error updating preferences", error);
+      console.error("Error fetching the shifts", error);
     }
   };
 
-  const value = {
+  /**
+   * This method is used to update the users notification choices to the server whren the page unmounts.
+   * It uses
+   */
+
+  const value: SideComponentContextType = {
     active,
     handleActivity,
-    events,
+    event,
     handleWebsiteCall,
     handlePhoneCall,
-    savePreferences,
-    allowPushNotification,
-    allowEmailNotification,
-    allowMarketingEmails,
-    setAllowEmailNotification,
-    setAllowPushNotification,
-    setAllowMarketingEmails,
+    currentDate,
+    fetchUpcomingShifts,
+    daysShift,
+    handleNextShift,
+    handlePreviousShift,
+    currentShiftIndex,
+    handleStartShift,
+    handleEndShift,
   };
 
   return (

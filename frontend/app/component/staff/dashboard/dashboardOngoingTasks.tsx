@@ -12,50 +12,72 @@ import { useThemeColor } from "@/hooks/useThemeColor";
  */
 const DashboardOngoingTask = () => {
   const user = userData();
-  const { ongoing } = useStaffDashboard();
-
-  const [progress, setProgress] = useState(0);
-  const taskEndTime = new Date(ongoing.taskEndTime).getTime();
-  const taskStartTime = new Date(ongoing.taskStartTime).getTime();
-
-  useEffect(() => {
-    const totalDuration = taskEndTime - taskStartTime;
-    const elapsedTime = new Date().getTime() - taskStartTime;
-    const newProgress = Math.min(elapsedTime / totalDuration, 1);
-    setProgress(newProgress);
-  }, [taskStartTime, taskEndTime]);
+  const { ongoingTask, progress } = useStaffDashboard();
+  const innerbackground = useThemeColor({}, "innerBackground");
+  const text = useThemeColor({}, "text");
+  
+  if (!ongoingTask) {
+    return (
+      <View
+        style={[styles.mainContainer, { backgroundColor: innerbackground }]}
+      >
+        <Text style={[styles.companyNameText, { color: text }]}>
+          No Ongoing Shift
+        </Text>
+        <Text style={[styles.shiftText, { color: text }]}>
+          You currently have no active shifts
+        </Text>
+      </View>
+    );
+  }
 
   /**
    * This method is used to calculate the color of the progress bar based on the progress of the task.
    * @param progress of the task
-   * @returns 
+   * @returns
    */
   const getProgressBarColor = (progress: number) => {
-    if (progress < 0.33) return "white";
-    if (progress < 0.66) return "yellow";
-    return "yellowgreen";
+    if (progress < 0.33) return "#4CAF50"; // Green for early
+    if (progress < 0.66) return "#FFC107"; // Yellow for middle
+    return "#FF5722"; // Orange-red for late
   };
 
-
-  const innerbackground = useThemeColor({}, "innerBackground");
-  const text = useThemeColor({}, "text");
+  // Format times for display
+  const startTime = new Date(
+    ongoingTask?.shift_start_time || ""
+  ).toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  const endTime = new Date(ongoingTask?.task_end_time || "").toLocaleTimeString(
+    [],
+    {
+      hour: "2-digit",
+      minute: "2-digit",
+    }
+  );
 
   return (
     <View style={[styles.mainContainer, { backgroundColor: innerbackground }]}>
       <Text
         style={[styles.companyNameText, { color: text }]}
-      >{`your ongoing shift with ${user?.company_name}`}</Text>
+      >{`Your ongoing shift with ${user?.company_name}`}</Text>
       <View style={styles.container}>
-        <Text
-          style={[styles.shiftText, { color: text }]}
-        >{`your shift with ${ongoing.contractName} is currently ongoing`}</Text>
+        <Text style={[styles.shiftText, { color: text }]}>
+          {`Current shift: ${ongoingTask?.contract_name || ""}`}
+        </Text>
+        <Text style={[styles.timeText, { color: text }]}>
+          {`${startTime} - ${endTime}`}
+        </Text>
         <Progress.Bar
-          progress={progress}
-          style={[
-            styles.progressBar,
-            { backgroundColor: getProgressBarColor(progress) },
-          ]}
+          progress={progress || 0}
+          width={null}
+          color={getProgressBarColor(progress || 0)}
+          style={styles.progressBar}
         />
+        <Text style={[styles.progressText, { color: text }]}>
+          {`${Number.isFinite(progress) ? Math.round(progress * 100) : 0}% Complete`}
+        </Text>
       </View>
     </View>
   );
@@ -65,16 +87,16 @@ export default DashboardOngoingTask;
 
 const styles = StyleSheet.create({
   mainContainer: {
-    padding: 10,
-    rowGap: 10,
-    borderRadius: 3,
+    padding: 5,
+    rowGap: 5,
+    borderRadius: 5,
     borderWidth: 0.5,
     marginHorizontal: 5,
   },
 
   container: {
-    padding: 10,
-    rowGap: 10,
+    padding: 5,
+    rowGap: 5,
   },
 
   companyNameText: {
@@ -91,9 +113,23 @@ const styles = StyleSheet.create({
     textTransform: "capitalize",
   },
 
+  timeText: {
+    fontSize: 14,
+    fontFamily: "BarlowRegular",
+    fontWeight: "400",
+    marginBottom: 5,
+  },
+
+  progressText: {
+    fontSize: 12,
+    fontFamily: "BarlowLight",
+    textAlign: "right",
+    marginTop: 5,
+  },
+
   progressBar: {
-    padding: 5,
     width: "100%",
-    color: "#FF6347",
+    height: 6,
+    borderRadius: 3,
   },
 });

@@ -14,47 +14,50 @@ const DashboardWelcomeHeader = () => {
       setRole(user.is_owner ? "Owner" : "Staff");
     }
   }, [user]);
+
   return (
     <View style={styles.maincontainer}>
-      <View
-        style={{
-          flexDirection: "row",
-          justifyContent: "space-between",
-          padding: 2,
-        }}
-      >
+      <View style={styles.headerRow}>
         <View style={styles.welcometextContainer}>
-          <Text
-            style={styles.welcometext}
-          >{`welcome ${user?.first_name}`}</Text>
-          <Text style={styles.otherText}>lets finish our task for the day</Text>
+          <Text style={styles.welcometext}>
+            Welcome back, {user?.first_name}
+          </Text>
+          <Text style={styles.otherText}>
+            {role === "Owner"
+              ? "Monitor your business performance and daily activities"
+              : "Track your tasks and daily activities"}
+          </Text>
         </View>
 
-        {/* Display this only when the user is the owner of the company.
-        When clicked the button takes the owner to the sunscription and payment page */}
         {role === "Owner" && (
           <Pressable
-            style={styles.button}
-            onPress={() => router.navigate('/management/(drawer)/checkout/main')}
+            style={({ pressed }) => [
+              styles.subscriptionButton,
+              pressed && styles.buttonPressed,
+            ]}
+            onPress={() => router.push("/management/(drawer)/checkout/main")}
           >
-            <Text style={styles.buttonText}>go to payment page</Text>
+            <Text style={styles.buttonText}>Manage Subscription</Text>
           </Pressable>
         )}
       </View>
 
       <View style={styles.todaysTaskContainer}>
-        <Text style={styles.todaystaskText}>today's task</Text>
+        <Text style={styles.todaystaskText}>Daily Overview</Text>
         <Text style={styles.otherText}>
           {role === "Owner"
-            ? "check your companies growth and scheduels for the day"
-            : "check your daily schedule"}
+            ? "View company performance metrics and scheduled activities"
+            : "Review your schedule and assigned tasks"}
         </Text>
 
         <Pressable
-          style={styles.calendarButton}
+          style={({ pressed }) => [
+            styles.calendarButton,
+            pressed && styles.buttonPressed,
+          ]}
           onPress={() => router.navigate("/management/calendar/main")}
         >
-          <Text style={styles.buttonText}>today's calender</Text>
+          <Text style={styles.calendarButtonText}>View Calendar</Text>
         </Pressable>
       </View>
     </View>
@@ -65,76 +68,89 @@ export default DashboardWelcomeHeader;
 
 const styles = StyleSheet.create({
   maincontainer: {
-    width: "100%",
+    flex: 1,
     flexDirection: "column",
+    backgroundColor: "#FFFFFF",
+    padding: 10,
+  },
+
+  headerRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10,
   },
 
   welcometextContainer: {
     flexGrow: 1,
     flexDirection: "column",
-    padding: 2,
   },
 
   welcometext: {
     fontFamily: "RobotoRegular",
-    fontSize: 15,
-    fontWeight: "bold",
-    textTransform: "capitalize",
+    fontSize: 24,
+    fontWeight: "600",
+    color: "#1A1A1A",
+    marginBottom: 4,
   },
 
   otherText: {
-    fontSize: 12,
+    fontSize: 14,
     fontFamily: "BarlowRegular",
-    fontWeight: "500",
-    textTransform: "capitalize",
+    color: "#666666",
+    lineHeight: 20,
   },
 
   todaysTaskContainer: {
     flexGrow: 1,
-    padding: 5,
-    flexWrap: "wrap",
-    borderRadius: 10,
-    marginTop: 10,
-    width: "100%",
+    padding: 16,
+    borderRadius: 8,
+    backgroundColor: "#F8F9FA",
+    marginTop: 8,
   },
 
   todaystaskText: {
-    fontSize: 20,
+    fontSize: 18,
     fontFamily: "BarlowRegular",
-    fontWeight: "500",
-    textTransform: "capitalize",
+    fontWeight: "600",
+    color: "#1A1A1A",
+    marginBottom: 8,
   },
 
-  button: {
-    padding: 5,
-    borderRadius: 5,
-    borderWidth: 0.3,
-    alignItems: "center",
-    marginTop: 10,
-    elevation: 5,
-    shadowRadius: 5,
-    shadowOpacity: 0.7,
-    shadowColor: "grey",
+  subscriptionButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    backgroundColor: "#F8F9FA",
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+  },
+
+  buttonPressed: {
+    opacity: 0.8,
+    transform: [{ scale: 0.98 }],
   },
 
   buttonText: {
-    fontSize: 12,
+    fontSize: 14,
     fontFamily: "BarlowRegular",
     fontWeight: "500",
-    textTransform: "capitalize",
+    color: "#4A4A4A",
   },
 
   calendarButton: {
-    padding: 10,
-    borderRadius: 5,
-    borderWidth: 0.3,
+    padding: 12,
+    borderRadius: 6,
     alignItems: "center",
-    marginTop: 10,
-    elevation: 5,
-    shadowRadius: 5,
-    shadowOpacity: 0.7,
-    shadowColor: "grey",
-    width: "100%",
-    backgroundColor: "white",
+    marginTop: 16,
+    backgroundColor: "#2563EB",
+  },
+
+  calendarButtonText: {
+    fontSize: 14,
+    fontFamily: "BarlowRegular",
+    fontWeight: "500",
+    color: "#FFFFFF",
   },
 });

@@ -1,9 +1,9 @@
 /**
  * The props defines the properties of the TaskDetails component. the type will also be used in other parts of the application especially in cases that handles the calender day clieck for shifts, task, and previous tasks.
  */
-export type TaskDetailsType = {
+export interface TaskDetailsInterface {
   id: string;
-  site_serial: string | undefined;
+  task_serial: string | undefined;
   site_name: string | undefined;
   site_address: string | undefined;
   site_postcode: string | undefined;
@@ -11,37 +11,35 @@ export type TaskDetailsType = {
   start_time: string;
   end_time: string;
   start_date: string;
-  information: string | undefined;
+  description: string | undefined;
   pay: string | undefined;
-  department: string | undefined;
-};
+  department?: string | undefined;
+}
 
-export type TaskProps = {
-  task_id: string;
+export interface TaskInterface {
+  id: string;
   site_name: string;
   site_address: string;
-  start_time: string;
-  end_time: string;
-  start_date: string;
-};
+  site_postcode?: string;
+  start_time?: string;
+  end_time?: string;
+  start_date?: string;
+}
 
-type Response = {
+interface Response {
   message: string;
-};
+}
 
 export interface TaskProviderInterface {
   isModalVisible: boolean;
-  handleTaskDetails: (id: string | null) => void;
+  handleTaskDetails: (id: string) => Promise<void>;
   handleModalDisplay: () => void;
-  handleDayPressEvent: (day: Date) => { date: Date; tasks: TaskProps[] };
   markedDates: any;
-  setSelectedDate: (date: string) => void;
-  handleStartTask: (id: string) => Promise<Response>;
-  handleEndTask: (id: string) => Promise<Response>;
-  handleBreakTime: (id: string) => Promise<Response>;
-  tasks: TaskProps[];
-  taskDetials: TaskDetailsType;
+  tasks: TaskInterface[];
+  taskDetials: TaskDetailsInterface;
   calculateTimeDifference: () => string;
   calculateTaskStartTime: () => string;
-  applyForTask: (id: string) => Promise<Response>;
+  applyForTask: (id: string) => Promise<void>;
+  handleMonthChangeEvent: (month: Date) => Promise<any[]>;
+  handleDaySelectedEvent: (day: any) => Promise<void>;
 }

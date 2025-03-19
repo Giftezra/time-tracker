@@ -1,6 +1,7 @@
 import { Dimensions, Platform, StyleSheet, Text, View } from "react-native";
 import React, { useEffect, useState } from "react";
 import {
+  FlatList,
   GestureHandlerRootView,
   ScrollView,
 } from "react-native-gesture-handler";
@@ -10,11 +11,9 @@ import ClientDetailsComponent from "@/app/component/management/client/clients";
 import JobDetailsComponent from "@/app/component/management/client/jobDetails";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import CustomModal from "@/app/component/helper/customModal";
-import AddContractComponent from "@/app/component/management/client/add-contract";
 import SideComponent from "@/app/component/helper/sideComponent";
 import { useAuth } from "@/app/context/authentication";
-import { JobDetailsType } from "@/app/types/management/client";
-import { ContractListType } from "@/app/types/management/task";
+import AddContractComponent from "@/app/component/management/client/addcontract";
 
 const WebClientComponent = () => {
   const { windowWidth } = useAuth();
@@ -39,41 +38,23 @@ const WebClientComponent = () => {
           <View style={{ padding: 5 }}>
             <SearchInputContainer />
           </View>
-          <ScrollView
-            style={{
-              flexGrow: 1,
-            }}
-            nestedScrollEnabled={true}
-            showsHorizontalScrollIndicator={true}
-          >
-            <View>
-              {clientDetailsData.map((client, index) => (
-                <View key={index} style={styles.client}>
-                  <ClientDetailsComponent
-                    props={client}
-                    onModalVisible={onModalVisible}
-                  />
-                </View>
-              ))}
-            </View>
-          </ScrollView>
+
+          <FlatList
+            data={clientDetailsData}
+            keyExtractor={(item, index) => `client-${item.client_id}-${index}`}
+            renderItem={({ item }) => <ClientDetailsComponent props={item} />}
+          />
         </View>
 
         {/* This view contains the component that displays the employee and the site they are meant to be. It also contains an option to assign employee a task. */}
         <View style={[styles.taskContainer, { width: "60%" }]}>
           <SearchInputContainer />
           {/* View for the list ofassigned tasks */}
-          <ScrollView
-            style={{ flex: 1 }}
-            nestedScrollEnabled={true}
-            showsHorizontalScrollIndicator={false}
-          >
-            <View style={{ flex: 1 }}>
-              {jobDetailsData.map((job, index) => (
-                <JobDetailsComponent {...job} key={index} />
-              ))}
-            </View>
-          </ScrollView>
+          <FlatList
+            data={jobDetailsData}
+            keyExtractor={(item, index) => `job-${item.client_id}-${index}`}
+            renderItem={({ item }) => <JobDetailsComponent {...item} />}
+          />
         </View>
       </View>
 

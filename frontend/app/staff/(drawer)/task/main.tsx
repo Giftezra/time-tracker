@@ -4,6 +4,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from "react-native";
 import React from "react";
@@ -13,51 +14,50 @@ import TasksComponent from "@/app/component/staff/task/tasksComponent";
 import CustomModal from "@/app/component/helper/customModal";
 import CalenderComponent from "@/app/component/staff/helper/calender";
 
-import { TaskDetailsType, TaskProps } from "@/app/types/staff/task";
+import { TaskDetailsInterface, TaskInterface } from "@/app/types/staff/task";
 import { useTask } from "@/app/context/staff/staffTaskProvider";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 const MainStaffTaskManager = () => {
   const { tasks, taskDetials } = useTask();
 
-  const {
-    isModalVisible,
-    handleTaskDetails,
-    handleModalDisplay,
-    setSelectedDate,
-    markedDates,
-  } = useTask();
+  const { isModalVisible, handleTaskDetails, handleModalDisplay, markedDates } =
+    useTask();
 
   return (
     <SafeAreaProvider style={styles.maincontainer}>
       <View style={{ flex: 1 }}>
         <View style={styles.calendarContainer}>
           {/* Display the calendar component which when clicked, fires the method to get the tasks available for the selected day. */}
-          <CalenderComponent
-            setSelectedDate={setSelectedDate}
-            markedDates={markedDates}
-          />
+          <CalenderComponent markedDates={markedDates} />
         </View>
         <View style={styles.container}>
           <FlatList
             data={tasks}
-            keyExtractor={(item, index) => index.toString()}  
+            keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
-              <TasksComponent props={item} onPress={handleTaskDetails} />
+              <TasksComponent
+                props={item}
+                onPress={() => handleTaskDetails(item.id)}
+              />
             )}
             showsHorizontalScrollIndicator={false}
           />
         </View>
 
-        <CustomModal
-          isModalOpen={isModalVisible}
-          closeModal={handleModalDisplay}
-        >
-          <TaskDetailsComponent
-            onModalClose={handleModalDisplay}
-            props={taskDetials}
-          />
-        </CustomModal>
+        <Modal visible={isModalVisible} animationType="slide">
+          <View style={styles.modalContainer}>
+            <TouchableOpacity onPress={handleModalDisplay}>
+              <MaterialCommunityIcons name="close" size={30} color="black" />
+            </TouchableOpacity>
+
+            <TaskDetailsComponent
+              onModalClose={handleModalDisplay}
+              props={taskDetials}
+            />
+          </View>
+        </Modal>
       </View>
     </SafeAreaProvider>
   );
@@ -85,7 +85,7 @@ const styles = StyleSheet.create({
   },
 
   container: {
-    flex:1,
+    flex: 1,
     padding: 2,
     marginTop: 5,
   },

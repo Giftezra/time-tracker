@@ -1,7 +1,7 @@
 import { FlatList, StyleSheet, Text, View } from "react-native";
 import React from "react";
 import NotificationDetailsComponent from "@/app/component/staff/notification/notification";
-import { useNotificationContext } from "@/app/context/staff/notificationProvider";
+import { useNotificationContext } from "@/app/context/management/notificationProvider";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import {
   GestureHandlerRootView,
@@ -14,27 +14,28 @@ import {
  */
 
 const MainStaffNotificationComponent = () => {
-  const { notifications, clearAllNotifications, handleReadPress, handleUnreadPress, handleAllPress } = useNotificationContext();
+  const { notifications, handleReadPress, handleUnreadPress, handleAllPress } =
+    useNotificationContext();
 
   return (
-    <SafeAreaProvider style={{ flex: 1 }}>
+    <SafeAreaProvider style={styles.container}>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <View style={styles.headerContainer}>
           <Text style={styles.headerText}>Notifications</Text>
-          <Pressable onPress={clearAllNotifications}>
-            <Text style={styles.clearText}>clear all</Text>
+          <Pressable style={styles.clearButton} onPress={handleAllPress}>
+            <Text style={styles.clearText}>Clear all</Text>
           </Pressable>
         </View>
 
-        <View style={styles.rowContainer}>
-          <Pressable style={styles.pressableButtons} onPress={handleAllPress}>
-            <Text style={styles.pressableButtonsText}>all</Text>
+        <View style={styles.filterContainer}>
+          <Pressable style={styles.filterButton} onPress={handleAllPress}>
+            <Text style={styles.filterButtonText}>All</Text>
           </Pressable>
-          <Pressable style={styles.pressableButtons} onPress={handleReadPress}>
-            <Text style={styles.pressableButtonsText}>read</Text>
+          <Pressable style={styles.filterButton} onPress={handleReadPress}>
+            <Text style={styles.filterButtonText}>Read</Text>
           </Pressable>
-          <Pressable style={styles.pressableButtons} onPress={handleUnreadPress}>
-            <Text style={styles.pressableButtonsText}>unread</Text>
+          <Pressable style={styles.filterButton} onPress={handleUnreadPress}>
+            <Text style={styles.filterButtonText}>Unread</Text>
           </Pressable>
         </View>
 
@@ -42,6 +43,7 @@ const MainStaffNotificationComponent = () => {
           data={notifications}
           renderItem={({ item }) => <NotificationDetailsComponent {...item} />}
           keyExtractor={(item) => item.id.toString()}
+          contentContainerStyle={styles.listContainer}
         />
       </GestureHandlerRootView>
     </SafeAreaProvider>
@@ -51,52 +53,60 @@ const MainStaffNotificationComponent = () => {
 export default MainStaffNotificationComponent;
 
 const styles = StyleSheet.create({
-  maincontainer: {
+  container: {
     flex: 1,
-    padding: 5,
+    backgroundColor: "#f8f9fa",
   },
-
   headerContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: 10,
-    marginVertical: 10,
+    padding: 16,
+    backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#e9ecef",
   },
-
   headerText: {
     fontSize: 20,
     fontWeight: "700",
     fontFamily: "RobotoRegular",
-    textTransform: "capitalize",
+    color: "#1a1a1a",
   },
-
+  clearButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    backgroundColor: "#f8f9fa",
+  },
   clearText: {
     fontSize: 13,
     fontWeight: "500",
     fontFamily: "BarlowLight",
-    textTransform: "capitalize",
+    color: "#dc3545",
   },
-
-  rowContainer: {
+  filterContainer: {
     flexDirection: "row",
-    columnGap: 10,
-    alignItems: "center",
-    padding: 10,
+    gap: 8,
+    padding: 12,
+    backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#e9ecef",
   },
-
-  pressableButtons: {
-    padding: 10,
-    borderRadius: 5,
-    borderWidth: 0.3,
-    width: 100,
-    alignItems: "center",
+  filterButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    backgroundColor: "#f8f9fa",
+    borderWidth: 1,
+    borderColor: "#e9ecef",
   },
-
-  pressableButtonsText: {
-    fontSize: 15,
+  filterButtonText: {
+    fontSize: 14,
     fontWeight: "500",
     fontFamily: "BarlowLight",
-    textTransform: "capitalize",
-  }
+    color: "#4a4a4a",
+  },
+  listContainer: {
+    paddingVertical: 8,
+  },
 });

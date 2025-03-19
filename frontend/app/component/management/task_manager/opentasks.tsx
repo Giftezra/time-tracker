@@ -3,29 +3,22 @@
  */
 
 import {
-  Alert,
-  Modal,
   Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
+  ScrollView,
+  Pressable,
 } from "react-native";
-import React, { useEffect, useState } from "react";
-import { ScrollView } from "react-native-gesture-handler";
-import AssignTaskModal from "./assignTask";
-import { AntDesign } from "@expo/vector-icons";
-
-import CustomModal from "../../helper/customModal";
-
-import { OpenTaskProps } from "@/app/types/management/task";
+import { MaterialIcons } from "@expo/vector-icons";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import SearchInputContainer from "../../helper/searchInput";
 import { useManagementTask } from "@/app/context/management/task manager/managementTaskProvider";
 
 const OpenTaskComponents = () => {
   // Get the methods from the context
-  const { unassignedTask } = useManagementTask();
+  const { unassignedTask, openAssignTaskModal, setEditTask, setIsEditTaskModalVisible } = useManagementTask();
 
   const inactivebtn = useThemeColor({}, "inactivebtn");
   const innerBackground = useThemeColor({}, "innerBackground");
@@ -34,29 +27,12 @@ const OpenTaskComponents = () => {
   const highlight = useThemeColor({}, "otherText");
   const background = useThemeColor({}, "background");
 
-  const [modalVisible, setModalVisible] = useState(false);
-  const [selectedTask, setSelectedTask] = useState<OpenTaskProps | null>(null);
-  const [selectedDates, setSelectedDates] = useState<Date[]>([]);
-  const [selectedTime, setSelectedTime] = useState({ hours: 0, minutes: 0 });
-
-  /**
-   * Method opens the modal and sets the task selected
-   */
-  const openAssignTaskModal = (task: OpenTaskProps) => {
-    setSelectedTask(task);
-    setModalVisible(true);
-  };
-
-  const closeAssignTaskModal = () => {
-    setModalVisible(false);
-    alert("Task Assigne");
-  };
-
   return (
     <View style={styles.maincontainer}>
-      <Text style={[styles.headerText]}>Open Tasks</Text>
-      {/* View for the search params of task based on the id or status */}
-      <SearchInputContainer placeholder="enter task serial" />
+      <View style={styles.header}>
+        <SearchInputContainer placeholder="Search by task ID or status" />
+      </View>
+
       <ScrollView
         style={styles.scrollContainer}
         nestedScrollEnabled={true}
@@ -65,93 +41,81 @@ const OpenTaskComponents = () => {
         <View style={styles.container}>
           {/* Map the data
               The mapped data represents a task that will be clickable to open a modal. which will enable the admin assign the task to a user.*/}
-          {unassignedTask?.map((task, Index) => (
+          {unassignedTask?.map((task, index) => (
             /**
              * Main dropdown container for the task component which contains the task details
              */
             <View
-              key={Index}
-              style={[
-                styles.dropdownContainer,
-                { backgroundColor: innerBackground },
-              ]}
+              key={index}
+              style={[styles.taskCard, { backgroundColor: innerBackground }]}
             >
-              <View style={styles.headerContainer}>
-                <Text style={[styles.headerText, { color: text }]}>
-                  {task.contract_name}
+              <View style={styles.taskHeader}>
+                <View style={styles.taskTitleContainer}>
+                  <Text style={[styles.taskTitle, { color: text }]}>
+                    {task.contract_name}
+                  </Text>
+                  <Pressable
+                    style={[styles.priorityBadge]}
+                    onPress={() => {
+                      setEditTask(task);
+                      setIsEditTaskModalVisible(true);
+                    }}
+                  >
+                    <MaterialIcons name="edit" size={16} color={highlight} />
+                  </Pressable>
+                </View>
+                <Text style={[styles.dateText, { color: highlight }]}>
+                  Created: {task.task_created_at}
                 </Text>
-                <View
-                  style={[
-                    styles.priority,
-                    /**
-                     * The priority of the task is represented by the color of the circle
-                     */
-                    task.task_priority === "High"
-                      ? { backgroundColor: "red" }
-                      : task.task_priority === "Medium"
-                      ? { backgroundColor: "yellow" }
-                      : { backgroundColor: "green" },
-                  ]}
-                ></View>
               </View>
 
-              <Text style={[styles.text, { color: text, alignSelf: "center" }]}>
-                {task.task_created_at}
-              </Text>
-              <View style={styles.containers}>
-                <Text style={[styles.text, { color: highlight }]}>
-                  {task.contract_address}
-                </Text>
-                <Text style={[styles.text, { color: highlight, textTransform: "uppercase" }]}>
-                  {task.contract_postcode}
-                </Text>
-                <View style={{ flexWrap: "wrap" }}>
-                  <Text style={[styles.text, { color: highlight }]}>
-                    {task.created_by}
+              <View style={styles.taskDetails}>
+                <View style={styles.detailRow}>
+                  <MaterialIcons
+                    name="location-on"
+                    size={16}
+                    color={highlight}
+                  />
+                  <Text style={[styles.detailText, { color: highlight }]}>
+                    {task.contract_address}, {task.contract_postcode}
                   </Text>
                 </View>
-              </View>
-              <View style={styles.containers}>
-                <Text style={[styles.text, { color: highlight }]}>
-                  {task.task_start_date}
-                </Text>
-                <Text style={[styles.text, { color: highlight }]}>
-                  {task.task_end_date}
-                </Text>
+
+                <View style={styles.detailRow}>
+                  <MaterialIcons name="person" size={16} color={highlight} />
+                  <Text style={[styles.detailText, { color: highlight }]}>
+                    Created by: {task.created_by}
+                  </Text>
+                </View>
+
+                <View style={styles.dateContainer}>
+                  <View style={styles.detailRow}>
+                    <MaterialIcons name="event" size={16} color={highlight} />
+                    <Text style={[styles.detailText, { color: highlight }]}>
+                      Start: {task.task_start_date}
+                    </Text>
+                  </View>
+                  <View style={styles.detailRow}>
+                    <MaterialIcons name="event" size={16} color={highlight} />
+                    <Text style={[styles.detailText, { color: highlight }]}>
+                      End: {task.task_end_date}
+                    </Text>
+                  </View>
+                </View>
               </View>
 
+              {/* Open the assign task modal to display the task details and assign the task to a user or list of users */}
               <TouchableOpacity
-                style={[styles.assignButton, { backgroundColor: inactivebtn }]}
+                style={styles.assignButton}
                 onPress={() => openAssignTaskModal(task)}
               >
-                <Text style={styles.buttonText}>assign task</Text>
+                <MaterialIcons name="assignment-ind" size={20} color="white" />
+                <Text style={styles.buttonText}>Assign Task</Text>
               </TouchableOpacity>
             </View>
           ))}
         </View>
       </ScrollView>
-
-      <CustomModal
-        isModalOpen={modalVisible}
-        closeModal={() => setModalVisible(!modalVisible)}
-      >
-        <View
-          style={[styles.centeredmodalView, { backgroundColor: background }]}
-        >
-          <View style={styles.modalView}>
-            {selectedTask && (
-              <AssignTaskModal
-                task={selectedTask}
-                dates={selectedDates}
-                setDates={setSelectedDates}
-                time={selectedTime}
-                setTime={setSelectedTime}
-                onClose={closeAssignTaskModal}
-              />
-            )}
-          </View>
-        </View>
-      </CustomModal>
     </View>
   );
 };
@@ -160,133 +124,109 @@ export default OpenTaskComponents;
 
 const styles = StyleSheet.create({
   maincontainer: {
-    flexDirection: "column",
-    width: "100%",
     flex: 1,
+    padding: 16,
   },
-
+  header: {
+    marginBottom: 10,
+  },
+  headerTitle: {
+    fontSize: Platform.OS === "web" ? 24 : 28,
+    fontWeight: "bold",
+    fontFamily: "BarlowRegular",
+    marginBottom: 16,
+  },
+  searchWrapper: {
+    marginBottom: 16,
+  },
   scrollContainer: {
-    flexGrow: 1,
-  },
-
-  container: {
-    flexDirection: "row",
-    flexWrap: "wrap",
     flex: 1,
-    alignItems: "center",
-    width: "100%",
   },
-
-  headerContainer: {
+  container: {
+    flex: 1,
+    gap: 16,
+  },
+  taskCard: {
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  taskHeader: {
+    marginBottom: 12,
+  },
+  taskTitleContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    marginBottom: 4,
   },
-
-  priority: {
-    width: 15,
-    height: 15,
-    backgroundColor: "red",
-    borderRadius: 120,
-  },
-
-  headerText: {
-    fontSize: Platform.OS === "web" ? 13 : 20,
-    fontWeight: "bold",
+  taskTitle: {
+    fontSize: Platform.OS === "web" ? 16 : 18,
+    fontWeight: "600",
     fontFamily: "BarlowRegular",
-    textTransform: "capitalize",
-    alignSelf: "center",
-    marginVertical: 2,
+  },
+  priorityBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  highPriority: {
+    backgroundColor: "rgba(255, 59, 48, 0.15)",
+  },
+  mediumPriority: {
+    backgroundColor: "rgba(255, 204, 0, 0.15)",
+  },
+  lowPriority: {
+    backgroundColor: "rgba(52, 199, 89, 0.15)",
+  },
+  priorityText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#666",
+  },
+  dateText: {
+    fontSize: 12,
+    opacity: 0.8,
+  },
+  taskDetails: {
+    gap: 12,
   },
 
-  text: {
-    fontSize: Platform.OS === "web" ? 10 : 14,
-    fontWeight: "700",
-    fontFamily: "BarlowRegular",
-    textTransform: "lowercase",
-    padding: 2,
+  detailRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
 
-  containers: {
-    flexDirection: "column",
-    padding: 5,
-    borderWidth: 0.5,
-    marginVertical: 2,
-    borderRadius: 5,
+  detailText: {
+    fontSize: 14,
+    flex: 1,
   },
 
-  dropdownContainer: {
-    flexGrow: 1,
-    flexDirection: "column",
-    padding: 5,
-    borderRadius: 5,
-    borderWidth: 1,
-    width: 150,
-    maxWidth: 200,
-    marginHorizontal: 5,
-    marginVertical: 5,
+  dateContainer: {
+    gap: 8,
   },
 
   assignButton: {
-    width: "100%",
-    padding: 10,
+    flexDirection: "row",
     alignItems: "center",
-    borderRadius: 5,
-    borderWidth: 0.3,
-    marginVertical: 5,
-    shadowRadius: 10,
-    elevation: 10,
-    shadowOpacity: 0.4,
+    justifyContent: "center",
+    backgroundColor: "#007AFF",
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 16,
+    gap: 8,
   },
 
   buttonText: {
     color: "white",
-    fontSize: Platform.OS === "web" ? 12 : 16,
+    fontSize: Platform.OS === "web" ? 14 : 16,
     fontWeight: "600",
     fontFamily: "OswaldVariable",
-    textTransform: "capitalize",
-  },
-
-  centeredmodalView: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 2,
-  },
-
-  modalView: {
-    flexGrow: 1,
-  },
-
-  searchContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginHorizontal: 2,
-    borderWidth: 0.5,
-    borderRadius: 5,
-    elevation: 10,
-    shadowRadius: 10,
-    shadowOpacity: 0.5,
-  },
-
-  input: {
-    flex: 1,
-    padding: Platform.OS === "web" ? 5 : 8,
-    fontSize: Platform.OS === "web" ? 12 : 16,
-    fontWeight: "600",
-    fontFamily: "BarlowRegular",
-  },
-
-  searchIcon: {
-    padding: Platform.OS === "web" ? 5 : 10,
-    alignItems: "center",
-    backgroundColor: "gray",
-    borderRadius: 20,
-    elevation: 10,
-    shadowRadius: 10,
-    shadowOpacity: 0.5,
-    marginVertical: 1,
-    marginHorizontal: 5,
   },
 });

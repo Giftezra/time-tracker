@@ -12,16 +12,10 @@ export type ResponseType = {
 export interface ActiveTaskType {
   shift_id: string;
   task_serial: string;
-  client_name: string;
+  contract_name: string;
   employee_id: string;
   employee_name: string;
   start_time: string;
-}
-
-export interface OpenTaskContextType {
-  getUnassignedTask: () => Promise<OpenTaskProps[] | undefined>;
-  filteredTask: OpenTaskProps[] | undefined;
-  unassignedTask: OpenTaskProps[] | undefined;
 }
 
 export interface OpenTaskProps {
@@ -36,7 +30,6 @@ export interface OpenTaskProps {
   task_start_time?: string;
   task_end_time?: string;
   created_by?: string;
-  task_priority?: string;
   task_created_at?: string;
 }
 
@@ -114,7 +107,7 @@ export interface ActiveTaskContextType {
   }) => void;
   handle_date_display: () => void;
   handle_time_display: () => void;
-  get_available_employees: () => Promise<EmployeeType[] | undefined>;
+  getAvailableEmployees: () => Promise<EmployeeType[] | undefined>;
   dateVisible: boolean;
   start_time_visible: boolean;
   endTimeVisible: boolean;
@@ -126,4 +119,14 @@ export interface ActiveTaskContextType {
   collectNewTaskData: (key: keyof CreateTaskInterface, value: string) => void;
   taskData: CreateTaskInterface | undefined;
   terminateTask: (task: ActiveTaskType | undefined) => void;
+  assignTaskModalVisible: boolean;
+  openAssignTaskModal: (task: OpenTaskProps) => void;
+  selectedTask: OpenTaskProps | null;
+  closeAssignTaskModal: () => void;
+  setAssignTaskModalVisible: (visible: boolean) => void;
+  editTask: OpenTaskProps | null;
+  isEditTaskModalVisible: boolean;
+  setIsEditTaskModalVisible: (visible: boolean) => void;
+  setEditTask: (task: OpenTaskProps | null) => void;
+  updateTask: (task: OpenTaskProps) => Promise<ResponseType>;
 }

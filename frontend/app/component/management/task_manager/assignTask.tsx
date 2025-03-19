@@ -9,50 +9,29 @@ import {
   Text,
   TouchableOpacity,
   View,
+  Alert,
 } from "react-native";
 ("react-native-paper-dates");
 
 import { EmployeeType } from "@/app/types/management/employee";
 import { OpenTaskProps } from "@/app/types/management/task";
+import { FlatList } from "react-native-gesture-handler";
+import { useManagementTask } from "@/app/context/management/task manager/managementTaskProvider";
+import { useAuth } from "@/app/context/authentication";
 
-const allEmployees: EmployeeType[] = [
-  {
-    employee_name: "John Doe",
-    employee_id: "123",
-  },
-  {
-    employee_name: "Jane Smith",
-    employee_id: "456",
-  },
-  {
-    employee_name: "Alice Johnson",
-    employee_id: "789",
-  },
-  {
-    employee_name: "Alice Johnson",
-    employee_id: "789",
-  },
-];
-
-
-type AssignTaskModalProps = {
-  task: OpenTaskProps;
-  dates: Date[];
-  setDates: (dates: Date[]) => void;
-  time: { hours: number; minutes: number };
-  setTime: (time: { hours: number; minutes: number }) => void;
-  onClose: () => void;
-};
-
-const AssignTaskModal: React.FC<AssignTaskModalProps> = ({
+const AssignTaskModal = ({
   task,
-  dates,
-  setDates,
-  time,
-  setTime,
   onClose,
+}: {
+  task: OpenTaskProps;
+  onClose: () => void;
 }) => {
-  const [employeeSelected, setEmployeeSelected] = useState<EmployeeType>();
+  const { axiosInstance } = useAuth();
+  const { employeeList } = useManagementTask();
+
+  const [selectedEmployees, setSelectedEmployees] = useState<EmployeeType[]>(
+    []
+  );
   const [employeeToggle, setEmployeeToggle] = useState(false);
 
   const handleEmployeeDisplay = () => setEmployeeToggle(!employeeToggle);
@@ -62,79 +41,169 @@ const AssignTaskModal: React.FC<AssignTaskModalProps> = ({
   const inactivebtn = useThemeColor({}, "inactivebtn");
   const highlight = useThemeColor({}, "highlight");
 
+  const handleEmployeeSelection = (employee: EmployeeType) => {
+    setSelectedEmployees((prev) => {
+      const isSelected = prev.some(
+        (emp) => emp.employee_id === employee.employee_id
+      );
+      if (isSelected) {
+        return prev.filter((emp) => emp.employee_id !== employee.employee_id);
+      } else {
+        return [...prev, employee];
+      }
+    });
+  };
+
+
+  /**
+   * Used to assigned the selected task to a list of employees
+   * Return the response from the server and show the alert to the user based on the response
+   * If the response is success, show the alert to the user and close the modal
+   * If the response is error, show the alert to the user and close the modal
+   */
+  const handleAssignTask = async () => {
+    if (selectedEmployees.length === 0) {
+      Alert.alert("Error", "Please select at least one employee");
+      return;
+    }
+
+    try {
+      // Get array of employee IDs
+      const employeeIds = selectedEmployees.map((emp)=>(emp.employee_id))
+      // Call the context method to assign task
+      const response = await axiosInstance.post('/api/assign/task/', {
+        task_id: task.task_id,
+        staff_ids: employeeIds
+      })
+      if (response.status === 200) {
+        Alert.alert("Task Assignment", response.data);
+        onClose();
+      } else {
+        Alert.alert("Error", "Failed to assign task. Please try again.");
+      }
+      
+    } catch (error) {
+      Alert.alert("Error", "Failed to assign task. Please try again.");
+      console.error("Error assigning task:", error);
+    }
+  };
+
   return (
-    /**
-     * Used to assigned the selected task to a list of employees
-     */
     <View style={[styles.mainContainer, { backgroundColor: innerBackground }]}>
       <Text style={styles.headerText}>
         Assigning task: {task.contract_name}
       </Text>
       <Text style={[styles.text, { color: text }]}>{task.contract_name}</Text>
       <Text style={[styles.text, { color: text }]}>{task.task_serial}</Text>
-      <Text style={[styles.text, { color: text }]}>
-        {task.task_description}
-      </Text>
+      <View style={styles.dateContainer}>
+        <Text style={[styles.text, { color: text }]}>Start Date:</Text>
+        <Text style={[styles.text, { color: text }]}>
+          {task.task_start_date}
+        </Text>
+      </View>
+      <View style={styles.dateContainer}>
+        <Text style={[styles.text, { color: text }]}>End Date:</Text>
+        <Text style={[styles.text, { color: text }]}>{task.task_end_date}</Text>
+      </View>
       {/* Contains the details of the selected task */}
       <View
-        style={[styles.selectEmployeeButton, { backgroundColor: primaryColor }]}
+        style={[
+          styles.selectEmployeeContainer,
+          { backgroundColor: innerBackground },
+        ]}
       >
         {/* Button to trigger the dropdown of all employees */}
         <TouchableOpacity
           onPress={handleEmployeeDisplay}
           style={styles.selectEmployeeButton}
         >
-          <Text style={styles.buttonText}>Select Employee</Text>
+          <Text style={styles.buttonText}>
+            {selectedEmployees.length > 0
+              ? `${selectedEmployees.length} Employee(s) Selected`
+              : "Select Employees"}
+          </Text>
         </TouchableOpacity>
 
-        {/* Conditionally render the employee list when toggled */}
+        {/* Show selected employees */}
+        {selectedEmployees.length > 0 && (
+          <View style={styles.selectedEmployeesContainer}>
+            {selectedEmployees.map((emp) => (
+              <View
+                key={emp.employee_id}
+                style={[
+                  styles.selectedEmployeeChip,
+                  { backgroundColor: primaryColor },
+                ]}
+              >
+                <Text style={[styles.chipText, { color: "white" }]}>
+                  {emp.employee_name}
+                </Text>
+                <TouchableOpacity onPress={() => handleEmployeeSelection(emp)}>
+                  <Text
+                    style={[styles.chipText, { color: "white", marginLeft: 5 }]}
+                  >
+                    ×
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+          </View>
+        )}
+
         {employeeToggle && (
-          <ScrollView
+          <FlatList
+            data={employeeList}
             style={[styles.scrollview]}
             showsVerticalScrollIndicator={false}
-          >
-            {/* Displays a drop down of the employees
-            This is pressable to allow selection */}
-            {allEmployees.map((employee, index) => (
-              <Pressable
-                key={index}
-                onPress={() => setEmployeeSelected(employee)}
-                style={[styles.pressables, { backgroundColor: inactivebtn }]}
-              >
-                <Text style={[styles.pressableText, { color: text }]}>
-                  {employee.employee_name}
-                </Text>
-                <Text style={[styles.pressableText, { color: text }]}>
-                  {employee.employee_id}
-                </Text>
-              </Pressable>
-            ))}
-          </ScrollView>
+            renderItem={({ item, index }) => {
+              const isSelected = selectedEmployees.some(
+                (emp) => emp.employee_id === item.employee_id
+              );
+              return (
+                <Pressable
+                  key={index}
+                  onPress={() => handleEmployeeSelection(item)}
+                  style={[
+                    styles.pressables,
+                    {
+                      backgroundColor: isSelected ? primaryColor : inactivebtn,
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.pressableText,
+                      { color: isSelected ? "white" : text },
+                    ]}
+                  >
+                    {item.employee_name}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.pressableText,
+                      { color: isSelected ? "white" : text },
+                    ]}
+                  >
+                    {item.employee_id}
+                  </Text>
+                </Pressable>
+              );
+            }}
+          />
         )}
       </View>
-      {/* Selected employee details to ensure the employee was selected ok. */}
-      <Text
+      <TouchableOpacity
+        onPress={handleAssignTask}
         style={[
-          styles.text,
+          styles.assignButton,
           {
-            fontSize: 14,
-            fontWeight: "400",
-            padding: 2,
-            textTransform: "lowercase",
+            backgroundColor:
+              selectedEmployees.length > 0 ? primaryColor : inactivebtn,
+            borderBlockColor: highlight,
           },
         ]}
       >
-        Selected Employee:
-        {employeeSelected ? employeeSelected.employee_name : "None"}
-      </Text>
-      <TouchableOpacity
-        onPress={onClose}
-        style={[
-          styles.assignButton,
-          { backgroundColor: inactivebtn, borderBlockColor: highlight },
-        ]}
-      >
-        <Text style={styles.buttonText}>assign</Text>
+        <Text style={styles.buttonText}>Assign Task</Text>
       </TouchableOpacity>
     </View>
   );
@@ -144,42 +213,51 @@ export default AssignTaskModal;
 
 const styles = StyleSheet.create({
   mainContainer: {
-    flex: 1,
-    flexDirection: "column",
-    padding: 5,
-    borderRadius: 1,
-    marginVertical: 1,
+    width: Platform.OS === "web" ? "50%" : "100%",
+    maxHeight: "90%",
+    backgroundColor: "white",
+    borderRadius: 10,
+    padding: 20,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
   },
 
   headerText: {
-    fontSize: Platform.OS === "web" ? 12 : 15,
+    fontSize: Platform.OS === "web" ? 16 : 20,
     fontWeight: "700",
     fontFamily: "OswaldVariable",
     textTransform: "uppercase",
-    borderRadius: 20,
-    textShadowRadius: 10,
-    padding: 5,
+    marginBottom: 15,
+    textAlign: "center",
   },
 
   text: {
-    fontSize: Platform.OS === "web" ? 10 : 15,
+    fontSize: Platform.OS === "web" ? 14 : 16,
     fontWeight: "600",
     fontFamily: "BarlowRegular",
-    textTransform: "lowercase",
+    marginBottom: 10,
+    textTransform: "capitalize",
+  },
+
+  selectEmployeeContainer: {
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 5,
+    borderWidth: 0.5,
+    marginVertical: 10,
   },
 
   selectEmployeeButton: {
-    padding: 3,
-    width: "100%",
+    padding: 10,
     alignItems: "center",
-    borderRadius: 5,
-    marginVertical: 5,
-    shadowRadius: 10,
-    elevation: 10,
-    shadowOpacity: 0.5,
-    borderWidth: 0.1,
-    marginTop: 5,
-    maxHeight: 500,
+    width: "100%",
   },
 
   buttonText: {
@@ -208,9 +286,8 @@ const styles = StyleSheet.create({
   },
 
   scrollview: {
-    flexGrow: 1,
     width: "100%",
-    marginVertical: 5,
+    marginTop: 10,
   },
 
   pressables: {
@@ -240,5 +317,31 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     borderWidth: 1,
     marginVertical: 5,
+  },
+
+  dateContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+
+  selectedEmployeesContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    padding: 5,
+    gap: 5,
+  },
+
+  selectedEmployeeChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 5,
+    borderRadius: 5,
+    marginRight: 5,
+  },
+
+  chipText: {
+    fontSize: Platform.OS === "web" ? 10 : 14,
+    fontFamily: "BarlowRegular",
   },
 });

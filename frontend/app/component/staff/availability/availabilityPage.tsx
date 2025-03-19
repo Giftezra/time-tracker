@@ -1,4 +1,5 @@
 import {
+  Alert,
   Modal,
   Pressable,
   StyleSheet,
@@ -16,19 +17,28 @@ import RegistrationTextInputComponent from "../../helper/registrationTextinput";
 import { useAvailability } from "@/app/context/staff/availabilityProvider";
 import SubmitButtonComponent from "../../helper/submitButton";
 import { useThemeColor } from "@/hooks/useThemeColor";
+import { ErrorInterface } from "@/app/types/staff/availability";
 
 const renderOverlay = ({ onPress }: { onPress: (id: string) => void }) => {
   return (
     <View style={styles.overlayContainer}>
       <Text style={styles.overlayHeaderText}>Choose frequency</Text>
 
+      <Pressable onPress={() => onPress("daily")} style={styles.overlayButtons}>
+        <Text style={styles.otherHeaderText}>daily</Text>
+      </Pressable>
       <Pressable
-        onPress={() => onPress("repeat")}
+        onPress={() => onPress("weekly")}
         style={styles.overlayButtons}
       >
-        <Text style={styles.otherHeaderText}>repeat</Text>
+        <Text style={styles.otherHeaderText}>weekly</Text>
       </Pressable>
-
+      <Pressable
+        onPress={() => onPress("monthly")}
+        style={styles.overlayButtons}
+      >
+        <Text style={styles.otherHeaderText}>monthly</Text>
+      </Pressable>
       <Pressable onPress={() => onPress("never")} style={styles.overlayButtons}>
         <Text style={styles.otherHeaderText}>never</Text>
       </Pressable>
@@ -43,7 +53,6 @@ const AvailabilityPageComponent = ({ onPress }: { onPress: () => void }) => {
     onDismiss,
     onEndTimeConfirm,
     onStartTimeConfirm,
-    onTimeDimiss,
     handleRepeatStatus,
     startDateOpen,
     setStartDateOpen,
@@ -56,9 +65,7 @@ const AvailabilityPageComponent = ({ onPress }: { onPress: () => void }) => {
     overlayVisible,
     setOverlayVisible,
     startTime,
-    setStartTime,
     startDate,
-    setStartDate,
     allDay,
     setAllDay,
     note,
@@ -67,11 +74,82 @@ const AvailabilityPageComponent = ({ onPress }: { onPress: () => void }) => {
     setNoteText,
     repeatStatus,
     endDate,
-    setEndDate,
     endTime,
+    createAvailability,
   } = useAvailability();
 
   const textInput = useThemeColor({}, "textinput");
+  const inActiveBtn = useThemeColor({}, "inactivebtn");
+
+  const [error, setError] = useState<ErrorInterface>({
+    start_date: "",
+    end_date: "",
+    start_time: "",
+    end_time: "",
+    repeat: "",
+    note: "",
+  });
+
+  /* Check that all field are filled before creating the availability */
+  const handleAvailabilityCreation = () => {
+    // If all day, set the error state accordingly to ensure the user provides the start and end time.
+    if (!allDay) {
+      // Check if the user provides the start_time and end_time
+      if (!startTime || !endTime || !startDate || !endDate) {
+        setError({
+          start_date: "Start date is required",
+          end_date: "End date is required",
+          start_time: "Start time is required",
+          end_time: "End time is required",
+          repeat: "",
+          note: "",
+        });
+
+        return;
+      }
+    } else {
+      // Check if the user provides the start_date and end_date
+      if (!startDate || !endDate) {
+        setError({
+          start_date: "Start date is required",
+          end_date: "End date is required",
+          start_time: "",
+          end_time: "",
+          repeat: "",
+          note: "",
+        });
+        return;
+      }
+    }
+    // Check if the start date is after the end date
+    // Alert the user if it is
+    if (startDate >= endDate) {
+      Alert.alert("Start date cannot be after end date");
+      return;
+    }
+
+    // Check if the start date ot end date is less than the current date
+    // Alert the user if it is
+    if (startDate < new Date() || endDate < new Date()) {
+      Alert.alert("Start date or end date cannot be in the past");
+      return;
+    }
+
+    // Check if start time is after end time - only check when dates are the same
+    if (
+      !allDay &&
+      startDate &&
+      endDate &&
+      startDate.toDateString() === endDate.toDateString() &&
+      startTime >= endTime
+    ) {
+      Alert.alert("Start time cannot be after end time on the same day");
+      return;
+    }
+
+    // If all fields are filled, create the availability
+    createAvailability();
+  };
 
   return (
     <View style={styles.maincontainer}>
@@ -111,15 +189,25 @@ const AvailabilityPageComponent = ({ onPress }: { onPress: () => void }) => {
         <Text style={styles.otherHeaderText}>starts</Text>
         <View style={styles.innerContainer}>
           <Pressable onPress={() => setStartDateOpen(!startDateOpen)}>
-            <Text style={styles.otherText}>
-              {startDate ? startDate.toLocaleDateString() : "Select Date"}
+            <Text
+              style={[
+                styles.otherText,
+                { color: error.start_date ? "red" : "black" },
+              ]}
+            >
+              {startDate ? startDate.toLocaleDateString() : "select start date"}
             </Text>
           </Pressable>
           {/* Conditionally render the button only when the user does not chose to be off all day */}
           {!allDay && (
             <Pressable onPress={() => setStartTimeOpen(true)}>
-              <Text style={styles.otherText}>
-                {startTime || "Select start time"}
+              <Text
+                style={[
+                  styles.otherText,
+                  { color: error.start_time ? "red" : "black" },
+                ]}
+              >
+                {startTime || "select start time"}
               </Text>
             </Pressable>
           )}
@@ -131,15 +219,25 @@ const AvailabilityPageComponent = ({ onPress }: { onPress: () => void }) => {
         <Text style={styles.otherHeaderText}>ends</Text>
         <View style={styles.innerContainer}>
           <Pressable onPress={() => setEndDateOpen(!endDateOpen)}>
-            <Text style={styles.otherText}>
-              {endDate ? endDate.toLocaleDateString() : "Select Date"}
+            <Text
+              style={[
+                styles.otherText,
+                { color: error.end_date ? "red" : "black" },
+              ]}
+            >
+              {endDate ? endDate.toLocaleDateString() : "select end date"}
             </Text>
           </Pressable>
           {/* Conditionally render the time modal if the user does not chose all day */}
           {!allDay && (
             <Pressable onPress={() => setEndTimeOpen(true)}>
-              <Text style={styles.otherText}>
-                {endTime || "Select end time"}
+              <Text
+                style={[
+                  styles.otherText,
+                  { color: error.end_time ? "red" : "black" },
+                ]}
+              >
+                {endTime || "select end time"}
               </Text>
             </Pressable>
           )}
@@ -150,7 +248,14 @@ const AvailabilityPageComponent = ({ onPress }: { onPress: () => void }) => {
       <View style={styles.rowContainer}>
         <Text style={styles.otherHeaderText}>repeat</Text>
         <Pressable onPress={() => setOverlayVisible(!overlayVisible)}>
-          <Text style={styles.otherText}>{repeatStatus}</Text>
+          <Text
+            style={[
+              styles.otherText,
+              { color: error.repeat ? "red" : "black" },
+            ]}
+          >
+            {repeatStatus}
+          </Text>
         </Pressable>
       </View>
 
@@ -158,7 +263,11 @@ const AvailabilityPageComponent = ({ onPress }: { onPress: () => void }) => {
       <View style={styles.rowContainer}>
         <Text style={styles.otherHeaderText}>note</Text>
         <Pressable onPress={() => setNote(!note)}>
-          <Text style={styles.otherText}>add a note</Text>
+          <Text
+            style={[styles.otherText, { color: error.note ? "red" : "black" }]}
+          >
+            add a note
+          </Text>
         </Pressable>
       </View>
 
@@ -179,12 +288,15 @@ const AvailabilityPageComponent = ({ onPress }: { onPress: () => void }) => {
       )}
 
       {/* Call the submit button */}
-      <View style={{ flex: 0.2 }}>
-        <SubmitButtonComponent
-          title="create availability"
-          onPress={onDismiss}
-        />
-      </View>
+
+      <Pressable
+        onPress={handleAvailabilityCreation}
+        style={[styles.submitButton, { backgroundColor: inActiveBtn }]}
+      >
+        <Text style={[styles.submitButtonText, { color: textInput }]}>
+          create unavailiability
+        </Text>
+      </Pressable>
 
       {/* Time */}
       {/* Conditionally render the overlay when the user select clicks the repeaty button */}
@@ -197,7 +309,7 @@ const AvailabilityPageComponent = ({ onPress }: { onPress: () => void }) => {
         onDismiss={() => setStartDateOpen(false)}
         date={startDate || new Date()}
         onConfirm={onConfirmStartDate}
-        saveLabel="Save date"
+        saveLabel="Save Start Date"
         animationType="slide"
       />
 
@@ -208,7 +320,7 @@ const AvailabilityPageComponent = ({ onPress }: { onPress: () => void }) => {
         onDismiss={() => setEndDateOpen(false)} // Close the end date modal
         date={endDate || new Date()} // Default to current date if no date selected
         onConfirm={onConfirmEndDate} // Use external method for end date confirmation
-        saveLabel="Save date"
+        saveLabel="Save End Date"
         animationType="slide"
       />
 
@@ -246,97 +358,105 @@ export default AvailabilityPageComponent;
 const styles = StyleSheet.create({
   maincontainer: {
     flex: 1,
-    padding: 5,
+    padding: 16,
+    backgroundColor: "#f8f9fa",
   },
 
   rowContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginVertical: 5,
-    marginHorizontal: 5,
-    padding: 5,
+    marginVertical: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: "white",
+    borderRadius: 10,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.18,
+    shadowRadius: 1.0,
+    elevation: 1,
   },
 
   innerContainer: {
-    padding: 5,
+    padding: 8,
     alignItems: "center",
-    marginVertical: 5,
-    rowGap: 10,
+    marginVertical: 4,
+    rowGap: 8,
   },
 
   headerText: {
-    fontSize: 18,
+    fontSize: 24,
     fontWeight: "600",
     fontFamily: "BarlowRegular",
     textTransform: "capitalize",
-    textAlign: "center",
-    padding: 5,
+    color: "#1a1a1a",
+    marginBottom: 16,
   },
 
   informationText: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: "400",
     fontFamily: "BarlowLight",
-    textTransform: "capitalize",
-    padding: 1,
+    color: "#666",
+    marginBottom: 24,
   },
 
   otherHeaderText: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: "500",
     fontFamily: "BarlowRegular",
+    color: "#333",
     textTransform: "capitalize",
-    textAlign: "center",
-    padding: 1,
   },
 
   otherText: {
-    fontSize: 13,
-    fontWeight: "600",
+    fontSize: 15,
+    fontWeight: "400",
     fontFamily: "BarlowLight",
-    textTransform: "capitalize",
-    textAlign: "center",
-    padding: 1,
+    color: "#666",
+    padding: 4,
   },
 
   input: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "400",
     fontFamily: "BarlowRegular",
-    textTransform: "capitalize",
-    padding: 5,
+    padding: 12,
+    borderRadius: 8,
     flex: 1,
+    minHeight: 100,
+    textAlignVertical: "top",
   },
 
   viewAvailabilityContainer: {
-    padding: 5,
-    margin: 5,
-    borderRadius: 5,
+    padding: 8,
+    marginBottom: 24,
   },
 
   viewAvailabilityBtn: {
-    padding: 5,
-    borderRadius: 5,
-    backgroundColor: "gray",
+    padding: 12,
+    borderRadius: 8,
+    backgroundColor: "#007AFF",
   },
 
   viewAvailabilityText: {
     fontSize: 16,
     fontWeight: "600",
     fontFamily: "BarlowRegular",
-    textTransform: "capitalize",
-    padding: 5,
+    color: "white",
+    textAlign: "center",
   },
-  // These styles are for the overlay
 
   overlayHeaderText: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "600",
     fontFamily: "BarlowRegular",
-    textTransform: "capitalize",
-    textAlign: "center",
-    padding: 5,
+    color: "#333",
+    marginBottom: 16,
   },
 
   overlayContainer: {
@@ -344,14 +464,41 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: "rgba(5,0,0.5)",
-    justifyContent: "center",
-    alignItems: "center",
+    backgroundColor: "white",
+    padding: 24,
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: -2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
 
   overlayButtons: {
-    padding: 10,
-    marginVertical: 10,
+    padding: 8,
+    marginVertical: 2,
     borderRadius: 5,
+    borderBottomWidth: 1,
+    width: "100%",
+  },
+
+  submitButton: {
+    padding: 15,
+    borderRadius: 10,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#007AFF",
+    marginTop: 10,
+  },
+
+  submitButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    fontFamily: "BarlowRegular",
+    textTransform: "capitalize",
   },
 });

@@ -13,7 +13,6 @@ class Staff(models.Model):
   company = models.ForeignKey('management.Company', on_delete=models.SET_NULL, related_name='staff_members', null=True)
   date_hired = models.DateField(auto_now_add=True)
   updated_at = models.DateTimeField(auto_now=True)
-  trial_end_date = models.DateField(null=True, blank=True)
   
   def __str__(self):
     return f'{self.user} - {self.company}'
@@ -47,11 +46,21 @@ class Availability(models.Model):
   end_date = models.DateField(blank=True, null=True)
   start_time = models.TimeField(blank=True, null=True)
   end_time = models.TimeField(blank=True, null=True)
+  note = models.TextField(blank=True, null=True)
   updated_at = models.DateTimeField(auto_now_add=True)
+  availability_status = models.CharField(max_length=20, choices=[('available', 'Available'), ('unavailable', 'Unavailable')], default='available')
   
   def __str__(self):
     return f'{self.staff} - {self.start_date} - {self.end_time}'
-
+  
+  def save(self, *args, **kwargs):
+    if self.availability_status == 'available':
+      self.start_date = None
+      self.end_date = None
+      self.start_time = None
+      self.end_time = None
+      
+    super().save(*args, **kwargs)
 
 class Leave(models.Model):
     LEAVE_STATUS_CHOICES = [
@@ -64,6 +73,8 @@ class Leave(models.Model):
     staff = models.ForeignKey(Staff, on_delete=models.CASCADE, related_name='staff_leave')
     start_date = models.DateField(blank=True, null=True)
     end_date = models.DateField(blank=True, null=True)
+    start_time = models.TimeField(blank=True, null=True)
+    end_time = models.TimeField(blank=True, null=True)
     reason = models.TextField(blank=True, null=True)
     status = models.CharField(
         max_length=100,
@@ -73,4 +84,26 @@ class Leave(models.Model):
         null=True
     )
     updated_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f'{self.staff} - {self.start_date} - {self.end_time}'
+    
+    def save(self, *args, **kwargs):
+        if self.status == 'available':
+            self.start_date = None
+            self.end_date = None
+            self.start_time = None
+            self.end_time = None 
+
+        super().save(*args, **kwargs)
+  
+class TimeSheet(models.Model):
+   shift = models.ForeignKey('management.Shift', on_delete=models.CASCADE, related_name='shift_time_sheet')
+   staff = models.ForeignKey(Staff, on_delete=models.CASCADE, related_name='staff_time_sheet')
+   status = models.CharField(max_length=20, choices=[('pending', 'Pending'), ('approved', 'Approved')])
+   created_at = models.DateTimeField(auto_now_add=True)
+   updated_at = models.DateTimeField(auto_now=True)
+
+   def __str__(self):
+      return f'{self.shift} - {self.staff} - {self.status}'
 

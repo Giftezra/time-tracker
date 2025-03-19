@@ -13,17 +13,22 @@ import { useTask } from "@/app/context/staff/staffTaskProvider";
 
 const TimeSheetContainerComponent = () => {
   // Use the timesheet context to get the data and group the data by week
-  const { groupByWeek, data } = useTimeSheetContext();
-  /**
-   * The method and the constant is used to filter the time sheet data, check the task start data to display data accordingly
-   * : */
-  const sections = groupByWeek(data);
+  const { groupByWeek, filteredData, timesheets, handleStatusChange, selectedStatus } =
+    useTimeSheetContext();
+
+  // Declare sections variable before using it
+  let sections;
+  if (selectedStatus === "all") {
+    sections = groupByWeek(timesheets);
+  } else {
+    sections = groupByWeek(filteredData);
+  }
 
   return (
     <GestureHandlerRootView style={styles.maincontainer}>
       {/* This part of the component contains the option to allow the user download their timesheet in pdf format */}
       <View style={styles.headerOutlineforDownload}>
-        <Text style={styles.timesheetText}>timesheet</Text>
+        <Text style={styles.timesheetText}>Timesheet</Text>
 
         <Pressable style={styles.downloadbutton}>
           <AntDesign name="clouddownloado" size={15} color="black" />
@@ -33,18 +38,46 @@ const TimeSheetContainerComponent = () => {
       {/* This contains the options that would be used to enable the user search filter */}
       <View style={styles.groupbycontainer}>
         <View style={styles.innerContainer}>
-          <Text style={styles.groupbyText}>group by</Text>
-          <AntDesign name="right" size={10} color="black" />
+          <Text style={styles.groupbyText}>filter by</Text>
         </View>
         <View style={styles.filtercontainer}>
-          <Pressable style={styles.buttons}>
-            <Text style={styles.buttonText}>approved</Text>
+          <Pressable
+            style={[
+              styles.buttons,
+              selectedStatus === "approved" && {
+                backgroundColor: "#E8F5E9",
+                borderColor: "#81C784",
+              },
+            ]}
+            onPress={() => handleStatusChange("approved")}
+          >
+            <Text style={[styles.buttonText, { color: "#2E7D32" }]}>
+              approved
+            </Text>
           </Pressable>
-          <Pressable style={styles.buttons}>
+          <Pressable
+            style={[
+              styles.buttons,
+              selectedStatus === "pending" && {
+                backgroundColor: "#E8F5E9",
+                borderColor: "#81C784",
+              },
+            ]}
+            onPress={() => handleStatusChange("pending")}
+          >
             <Text style={styles.buttonText}>pending</Text>
           </Pressable>
-          <Pressable style={styles.buttons}>
-            <Text style={styles.buttonText}>canceled</Text>
+          <Pressable
+            style={[
+              styles.buttons,
+              selectedStatus === "all" && {
+                backgroundColor: "#E8F5E9",
+                borderColor: "#81C784",
+              },
+            ]}
+            onPress={() => handleStatusChange("all")}
+          >
+            <Text style={styles.buttonText}>all</Text>
           </Pressable>
         </View>
       </View>
@@ -52,13 +85,26 @@ const TimeSheetContainerComponent = () => {
       <View style={{ flex: 1 }}>
         <SectionList
           sections={sections}
-          keyExtractor={(item, index) => item.taskSerial + index}
+          keyExtractor={(item, index) => item.task_serial + index}
           renderSectionHeader={({ section: { title } }) => (
             <Text style={styles.sectionHeader}>{title}</Text>
           )}
           renderItem={({ item }) => <TimeSheetComponent {...item} />}
-          contentContainerStyle={{ paddingBottom: 5 }}
-          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{
+            paddingBottom: 20,
+            paddingHorizontal: 5,
+          }}
+          showsVerticalScrollIndicator={false}
+          stickySectionHeadersEnabled={true}
+          ItemSeparatorComponent={() => (
+            <View
+              style={{
+                height: 1,
+                backgroundColor: "#F0F0F0",
+                marginVertical: 8,
+              }}
+            />
+          )}
         />
       </View>
     </GestureHandlerRootView>
@@ -73,79 +119,91 @@ const styles = StyleSheet.create({
     padding: 5,
   },
 
+  headerOutlineforDownload: {
+    flexDirection: "row",
+    padding: 10,
+    justifyContent: "space-between",
+    alignItems: "center",
+    borderBottomWidth: 0.5,
+    borderBottomColor: "#E0E0E0",
+    marginBottom: 5,
+  },
+
   groupbycontainer: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 1,
-    columnGap: 10,
+    padding: 10,
+    columnGap: 5,
+    borderRadius: 8,
+    marginBottom: 5,
   },
 
   innerContainer: {
     flexDirection: "row",
-    padding: 2,
     alignItems: "center",
-    columnGap: 5,
-    justifyContent: "center",
+    columnGap: 8,
   },
 
   filtercontainer: {
     flexDirection: "row",
     alignItems: "center",
     columnGap: 10,
+    flex: 1,
+    justifyContent: "flex-end",
   },
 
   buttons: {
-    padding: 3,
-    borderRadius: 5,
-    borderWidth: 0.2,
+    padding: 5,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+    minWidth: 50,
+    alignItems: "center",
   },
 
   buttonText: {
-    fontSize: 12,
-    padding: 2,
-    fontWeight: "400",
-    fontFamily: "BarlowLight",
+    fontSize: 13,
+    fontWeight: "500",
+    fontFamily: "BarlowRegular",
     textTransform: "capitalize",
+    color: "#4A4A4A",
   },
 
   groupbyText: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: "600",
     fontFamily: "BarlowRegular",
     textTransform: "capitalize",
+    color: "#2C2C2C",
   },
 
   sectionHeader: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: "600",
-    backgroundColor: "#f4f4f4",
-    padding: 2,
-    marginTop: 10,
-    borderWidth: 0.2,
-    borderRadius: 5,
-  },
-
-  headerOutlineforDownload: {
-    flexDirection: "row",
-    padding: 5,
-    justifyContent: "space-between",
-    alignItems: "center",
-    borderBottomWidth: 1,
+    backgroundColor: "#DFF9FA",
+    padding: 10,
+    marginTop: 5,
     marginBottom: 5,
+    borderRadius: 5,
+    color: "#2CC2C",
+    letterSpacing: 0.3,
   },
 
   downloadbutton: {
-    padding: 5,
-    borderRadius: 5,
-    borderWidth: 0.5,
+    padding: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+    backgroundColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
   },
 
   timesheetText: {
-    fontSize: 15,
+    fontSize: 18,
     fontWeight: "700",
     fontFamily: "BarlowRegular",
-    textTransform: "capitalize",
+    color: "#1A1A1A",
+    letterSpacing: 0.5,
   },
 });

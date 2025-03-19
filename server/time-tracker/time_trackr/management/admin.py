@@ -30,7 +30,6 @@ class UserAdmin(BaseUserAdmin):
 
     readonly_fields = ('last_login', 'created_at')
 
-
 admin.site.register(User, UserAdmin)
 admin.site.register(Client)
 admin.site.register(Company)
@@ -44,4 +43,3 @@ admin.site.register(Identity)
 admin.site.register(Subscription)
 admin.site.register(SubscriptionInvoice)
 admin.site.register(BillingAddress)
-

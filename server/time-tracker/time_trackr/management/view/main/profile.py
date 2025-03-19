@@ -53,4 +53,27 @@ def create_company(request):
         return Response({'message': 'Company created successfully'}, status=status.HTTP_201_CREATED)
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    
+
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
+def update_user_preferences(request):
+    try:
+        if not request.data:
+            return Response({'error': 'No data provided'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        user = request.user
+        user.allow_email_notification = request.data.get('allow_email_notification')
+        user.allow_push_notification = request.data.get('allow_push_notification')
+        user.allow_marketing_emails = request.data.get('allow_marketing_emails')
+        user.save()
+        new_user_notification = {
+            'allow_email_notification': user.allow_email_notification,
+            'allow_push_notification': user.allow_push_notification,
+            'allow_marketing_emails': user.allow_marketing_emails
+        }
+        return Response({'new_data': new_user_notification}, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
 

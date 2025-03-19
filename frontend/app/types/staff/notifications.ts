@@ -1,4 +1,4 @@
-export type NotificationType = {
+export interface NotificationType {
     id: number
     title: string
     description: string
@@ -6,10 +6,9 @@ export type NotificationType = {
     isRead: boolean
 }
 
-export type NotificationProviderType={
+export interface NotificationProviderType{
     notifications: NotificationType[];
     toggleReadStatus: (id: number) => void;
-    clearAllNotifications: () => void;
     handleReadPress: () => void;
     handleUnreadPress: () => void;
     handleAllPress: () => void;

@@ -11,6 +11,7 @@
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   StyleSheet,
   Text,
@@ -26,12 +27,34 @@ import { useThemeColor } from "@/hooks/useThemeColor";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { useAuth } from "@/app/context/authentication";
 import SideComponent from "@/app/component/helper/sideComponent";
+import AssignTaskModal from "@/app/component/management/task_manager/assignTask";
+import { AntDesign } from "@expo/vector-icons";
+import { useManagementTask } from "@/app/context/management/task manager/managementTaskProvider";
+import EditTaskComponent from "@/app/component/management/task_manager/editTask";
 
 /** Variable for the sub header representing views to display */
 const subHeader = ["open tasks", "active tasks", "create task"];
 
 const MainEmployeeTaskManager = () => {
+  const {
+    assignTaskModalVisible,
+    selectedTask,
+    closeAssignTaskModal,
+    setAssignTaskModalVisible,
+    editTask,
+    isEditTaskModalVisible,
+    setIsEditTaskModalVisible,
+    updateTask,
+  } = useManagementTask();
+  
   const { screenWidth, windowWidth } = useAuth();
+
+  const background = useThemeColor({}, "background");
+  const text = useThemeColor({}, "text");
+  const secondaryColor = useThemeColor({}, "secondaryColor");
+  const highlight = useThemeColor({}, "highlight");
+  const innerBackground = useThemeColor({}, "innerBackground");
+
 
   const [toggleView, setToggleView] = useState<string>("open tasks");
 
@@ -43,13 +66,6 @@ const MainEmployeeTaskManager = () => {
   const handleToggleView = (view: string) => {
     setToggleView(view);
   };
-
-  const background = useThemeColor({}, "background");
-  const primaryColor = useThemeColor({}, "primaryColor");
-  const text = useThemeColor({}, "text");
-  const secondaryColor = useThemeColor({}, "secondaryColor");
-  const highlight = useThemeColor({}, "highlight");
-  const innerBackground = useThemeColor({}, "innerBackground");
 
   return (
     <SafeAreaProvider style={{ flex: 1 }}>
@@ -128,7 +144,7 @@ const MainEmployeeTaskManager = () => {
                       styles.mobileViewButtons,
                       toggleView === header &&
                         (styles.mobileSelectedView,
-                        { borderBottomWidth: 2, borderBottomColor: highlight }),
+                        { borderBottomWidth: 1, borderBottomColor: highlight }),
                     ]}
                   >
                     <Text style={styles.mobileButtonText}>{header}</Text>
@@ -169,6 +185,52 @@ const MainEmployeeTaskManager = () => {
               </View>
             )}
           </View>
+        )}
+
+        {/* Display the assign task modal */}
+        <Modal
+          visible={assignTaskModalVisible}
+          animationType="slide"
+          transparent={true}
+        >
+          <View style={[styles.modalContent]}>
+            <TouchableOpacity
+              style={styles.modalCloseButton}
+              onPress={() => setAssignTaskModalVisible(false)}
+            >
+              <AntDesign name="close" size={24} color={text} />
+            </TouchableOpacity>
+            {selectedTask && (
+              <AssignTaskModal
+                task={selectedTask}
+                onClose={closeAssignTaskModal}
+              />
+            )}
+          </View>
+        </Modal>
+
+        {/* Display the edit task modal */}
+        {editTask && (
+          <Modal
+            visible={isEditTaskModalVisible}
+            animationType="slide"
+            transparent={true}
+            style={styles.modalOverlay}
+          >
+            <View style={[styles.modalContent]}>
+              <TouchableOpacity
+                style={styles.modalCloseButton}
+                onPress={() => setIsEditTaskModalVisible(false)}
+              >
+                <AntDesign name="close" size={24} color={text} />
+              </TouchableOpacity>
+            </View>
+
+            <EditTaskComponent
+              props={editTask}
+              onPress={() => setIsEditTaskModalVisible(false)}
+            />
+          </Modal>
         )}
       </KeyboardAvoidingView>
     </SafeAreaProvider>
@@ -242,10 +304,9 @@ const styles = StyleSheet.create({
 
   mobileViewButtons: {
     flex: 1,
-    padding: 10,
+    padding: 5,
     alignItems: "center",
     marginHorizontal: 5,
-    marginVertical: 10,
     borderRadius: 5,
   },
 
@@ -266,5 +327,26 @@ const styles = StyleSheet.create({
   mobileSelectedView: {
     elevation: 5,
     shadowRadius: 5,
+  },
+
+  modalContent: {
+    borderRadius: 10,
+    padding: 5,
+  },
+
+  modalCloseButton: {
+    alignSelf: "flex-end",
+    padding: 10,
+  },
+
+  modalOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
   },
 });

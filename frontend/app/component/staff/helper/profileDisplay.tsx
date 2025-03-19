@@ -15,8 +15,9 @@ import {
   Switch,
 } from "react-native-gesture-handler";
 import { all } from "axios";
-import { useSideComponentContext } from "@/app/context/staff/sideComponentProvider";
 import { useThemeColor } from "@/hooks/useThemeColor";
+import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
+import { useProfileContext } from "@/app/context/management/profile/profileContext";
 
 const image = require("@/assets/images/user image.jpg");
 
@@ -28,28 +29,34 @@ const ProfileDisplayComponent = ({
   onPress: () => void;
 }) => {
   const {
-    handlePhoneCall,
-    handleWebsiteCall,
-    savePreferences,
     allowEmailNotification,
     allowMarketingEmails,
     allowPushNotification,
+    savePreferences,
     setAllowEmailNotification,
     setAllowMarketingEmails,
     setAllowPushNotification,
-  } = useSideComponentContext();
+    handlePhone,
+    handleWebsiteCall,
+  } = useProfileContext();
 
   //Call the hooke when the page unmouts to save the user preferences
   // In the server
   useEffect(() => {
-    return () => {
-      savePreferences();
-    };
+    try{
+      const fetchData = async () => {
+        savePreferences();
+      }
+      fetchData();
+    } catch (error) {
+      console.error(error);
+    }
   }, [allowEmailNotification, allowMarketingEmails, allowPushNotification]);
 
   /* Import colors */
   const innerBackgroundColor = useThemeColor({}, "innerBackground");
   const text = useThemeColor({}, "text");
+  const borderColor = useThemeColor({}, "highlight");
 
   if (!user) {
     return <ActivityIndicator size="small" color="#0000ff" />;
@@ -59,58 +66,59 @@ const ProfileDisplayComponent = ({
     <SafeAreaProvider style={{ flex: 1 }}>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <ScrollView
-          style={styles.maincontainer}
+          style={[
+            styles.maincontainer,
+            { backgroundColor: innerBackgroundColor },
+          ]}
           showsVerticalScrollIndicator={false}
         >
-          <View style={styles.container}>
-            <Image source={image} style={styles.image} />
-            <Pressable onPress={onPress}>
-              <Text style={styles.close}>close</Text>
+          <View style={styles.header}>
+            <View style={styles.profileSection}>
+              <Image source={image} style={styles.image} />
+              <View style={styles.nameSection}>
+                <Text style={[styles.name, { color: text }]}>
+                  {user.first_name + " " + user.last_name}
+                </Text>
+                <Text style={[styles.email, { color: text }]}>
+                  {user.email}
+                </Text>
+              </View>
+            </View>
+            <Pressable onPress={onPress} style={styles.closeButton}>
+              <MaterialCommunityIcons name="close" size={24} color={'black'} />
             </Pressable>
           </View>
 
           <View style={styles.container}>
-            <Text style={styles.headerText}>full name</Text>
-            <Text style={styles.text}>
-              {user.first_name + " " + user.last_name}
-            </Text>
-          </View>
-
-          <View style={styles.container}>
-            <Text style={styles.headerText}>email</Text>
-            <Text style={styles.text}>{user.email}</Text>
-          </View>
-
-          <View style={styles.container}>
             <Text style={styles.headerText}>mobile number</Text>
-            <Text style={styles.text}>{user.phone}</Text>
+            <Text style={styles.text}>{user.phone || 'N/A'}</Text>
           </View>
 
           <View style={styles.container}>
             <Text style={styles.headerText}>full address</Text>
-            <View style={styles.text}>
+            <View>
               <View style={styles.paddedContainer}>
                 <Text style={styles.innerHeaderText}>address</Text>
-                <Text style={styles.text}>{user.address}</Text>
+                <Text style={styles.text}>{user.address || 'N/A'}</Text>
               </View>
               <View style={styles.paddedContainer}>
                 <Text style={styles.innerHeaderText}>postcode</Text>
-                <Text style={styles.text}>{user.postcode}</Text>
+                <Text style={styles.text}>{user.postcode || 'N/A'}</Text>
               </View>
               <View style={styles.paddedContainer}>
                 <Text style={styles.innerHeaderText}>city</Text>
-                <Text style={styles.text}>{user.city}</Text>
+                <Text style={styles.text}>{user.city || 'N/A'}</Text>
               </View>
               <View style={styles.paddedContainer}>
                 <Text style={styles.innerHeaderText}>country</Text>
-                <Text style={styles.text}>{user.country}</Text>
+                <Text style={styles.text}>{user.country || 'N/A'}</Text>
               </View>
             </View>
           </View>
 
           <View style={styles.container}>
             <Text style={styles.headerText}>date of birth</Text>
-            <Text style={styles.text}>{user.dob}</Text>
+            <Text style={styles.text}>{user.dob || 'N/A'}</Text>
           </View>
 
           <View style={styles.container}>
@@ -118,35 +126,35 @@ const ProfileDisplayComponent = ({
             <View style={styles.innerContainer}>
               <View style={styles.paddedContainer}>
                 <Text style={styles.innerHeaderText}>company name</Text>
-                <Text style={styles.text}>{user.company_name}</Text>
+                <Text style={styles.text}>{user.company_name || 'N/A'}</Text>
               </View>
               <View style={styles.paddedContainer}>
                 <Text style={styles.innerHeaderText}>company services</Text>
-                <Text style={styles.text}>{user.company_services}</Text>
+                <Text style={styles.text}>{user.company_services || 'N/A'}</Text>
               </View>
               <View style={styles.paddedContainer}>
                 <Text style={styles.innerHeaderText}>company address</Text>
-                <Text style={styles.text}>{user.company_address}</Text>
+                <Text style={styles.text}>{user.company_address || 'N/A'}</Text>
               </View>
               <View style={styles.paddedContainer}>
                 <Text style={styles.innerHeaderText}>company postcode</Text>
-                <Text style={styles.text}>{user.company_postcode}</Text>
+                <Text style={styles.text}>{user.company_postcode || 'N/A'}</Text>
               </View>
 
               <View style={styles.paddedContainer}>
                 <Text style={styles.innerHeaderText}>company helpline</Text>
                 <Pressable
-                  onPress={() => handlePhoneCall(user.company_helpline)}
+                  onPress={() => handlePhone(user.company_helpline)}
                   style={styles.pressables}
                 >
-                  <Text style={styles.text}>{user.company_helpline}</Text>
+                  <Text style={styles.text}>{user.company_helpline || 'N/A'}</Text>
                 </Pressable>
               </View>
 
               <View style={styles.paddedContainer}>
                 <Text style={styles.innerHeaderText}>company website</Text>
                 <Pressable
-                  onPress={() => handleWebsiteCall(user.company_website)}
+                  onPress={() => handleWebsiteCall(user.company_website || '')}
                   style={styles.pressables}
                 >
                   <Text style={styles.text}>{user.company_website}</Text>
@@ -156,7 +164,10 @@ const ProfileDisplayComponent = ({
           </View>
 
           {/* This part contains the toggle for user to select their  */}
-          <View style={styles.allowNotificationContainer}>
+          <View style={[styles.allowNotificationContainer, { borderColor }]}>
+            <Text style={[styles.sectionTitle, { color: text }]}>
+              Notification Preferences
+            </Text>
             <View
               style={[
                 styles.notificationButton,
@@ -219,86 +230,127 @@ export default ProfileDisplayComponent;
 const styles = StyleSheet.create({
   maincontainer: {
     flex: 1,
-    padding: 5,
+    padding: 10,
+    marginBottom: 2,
   },
-
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E5E5E5",
+    marginBottom: 24,
+  },
+  profileSection: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 16,
+  },
+  nameSection: {
+    gap: 4,
+  },
   image: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    borderWidth: 2,
+    borderColor: "#E5E5E5",
   },
-
+  name: {
+    fontSize: 20,
+    fontWeight: "600",
+    fontFamily: "BarlowRegular",
+  },
+  email: {
+    fontSize: 14,
+    color: "#666",
+    fontFamily: "BarlowLight",
+  },
+  closeButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "#F5F5F5",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  closeText: {
+    fontSize: 16,
+    fontWeight: "500",
+  },
   container: {
     flexDirection: "row",
     justifyContent: "space-between",
-    padding: 5,
-    alignItems: "center",
-    marginVertical: 5,
+    padding: 16,
+    alignItems: "flex-start",
+    marginVertical: 8,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
   },
-
   innerContainer: {
     flexDirection: "column",
-    padding: 2,
-    rowGap: 5,
+    padding: 8,
+    gap: 12,
+    flex: 1,
   },
-
   paddedContainer: {
-    padding: 2,
-    columnGap: 5,
+    padding: 8,
+    gap: 4,
   },
-
   pressables: {
-    padding: 5,
+    padding: 8,
+    backgroundColor: "#F5F5F5",
+    borderRadius: 8,
   },
-
   allowNotificationContainer: {
-    flexDirection: "column",
-    padding: 5,
-    borderRadius: 2,
+    padding: 16,
+    borderRadius: 12,
     borderWidth: 1,
-    marginHorizontal: 2,
-    marginVertical: 5,
+    marginVertical: 16,
+    backgroundColor: "#FFFFFF",
   },
-
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    marginBottom: 16,
+    fontFamily: "BarlowRegular",
+  },
   notificationButton: {
-    padding: 10,
-    borderRadius: 5,
-    marginVertical: 5,
-    marginHorizontal: 5,
+    padding: 16,
+    borderRadius: 8,
+    marginVertical: 8,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    backgroundColor: "#F5F5F5",
   },
-
   headerText: {
     fontSize: 16,
-    fontWeight: "400",
+    fontWeight: "500",
     fontFamily: "BarlowRegular",
-    padding: 1,
+    color: "#666",
     textTransform: "capitalize",
   },
-
   innerHeaderText: {
     fontSize: 15,
     fontWeight: "500",
     fontFamily: "BarlowRegular",
-    padding: 1,
+    color: "#333",
     textTransform: "capitalize",
   },
-
   text: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: "400",
     fontFamily: "BarlowLight",
-    padding: 1,
-    textTransform: "capitalize",
-  },
-
-  close: {
-    padding: 5,
-    fontFamily: "BarlowRegular",
-    textTransform: "uppercase",
-    fontSize: 15,
-    fontWeight: "600",
+    color: "#333",
   },
 });

@@ -116,22 +116,12 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
    */
   useEffect(() => {
     let refreshTimeout: NodeJS.Timeout;
-
     // Request interceptor
     const requestIntercept = axiosInstance.interceptors.request.use(
       (config) => {
-        console.log(
-          "Current axios headers:",
-          axiosInstance.defaults.headers.common
-        );
-
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
-          console.log(
-            "Authorization header set:",
-            config.headers.Authorization
-          );
-        } 
+        }
         return config;
       },
       (error) => {
@@ -143,11 +133,9 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Response interceptor
     const responseIntercept = axiosInstance.interceptors.response.use(
       (response) => {
-        console.log("Response received:", response.status);
         return response;
       },
       async (error: AxiosError) => {
-        console.log("Response error intercepted:", error.response?.status);
         const originalRequest = error.config as any;
 
         // Check if error is 401 and we haven't tried refreshing yet
@@ -163,7 +151,6 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             // Retry the original request with new token
             if (originalRequest.headers) {
               originalRequest.headers.Authorization = `Bearer ${newToken}`;
-              console.log("Retrying request with new token");
             }
             return axiosInstance(originalRequest);
           } catch (refreshError) {
@@ -217,9 +204,15 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const storedUser = await loadUserData();
 
         if (storedToken && storedUser && storedRefreshToken) {
-          console.log(" Token retrieved ok", storedToken);
-          setToken(token);
+          console.log("Token retrieved ok", storedToken);
+          setToken(storedToken);
           setRefreshToken(storedRefreshToken);
+
+          // Set the authorization header immediately
+          axiosInstance.defaults.headers.common[
+            "Authorization"
+          ] = `Bearer ${storedToken}`;
+
           setUser(storedUser);
           setIsAuthenticated(true);
           setRole(
@@ -237,11 +230,12 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             router.replace("/management/(drawer)/dashboard/main");
           } else if (storedUser.is_employee) {
             router.replace("/staff/(drawer)/dashboard/main");
+          } else if (storedUser.is_superuser) {
+            Alert.alert("Error", "Superuser Not Allowed ");
           }
         }
       } catch (error) {
         console.error("Error initializing auth:", error);
-        // If there's an error, clear all stored data
         await signOut();
       }
     };
@@ -260,7 +254,6 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
    * @param {string} password - User's password
    */
   const login = async (email: string, password: string): Promise<void> => {
-    console.log(`Attempting login at ${BASE_URL}`);
     email = email.toLowerCase();
     const loginData = { email, password };
     try {
@@ -269,6 +262,14 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const data = response.data;
       if (!data) {
         throw new Error("No data returned");
+      }
+
+      const user: UserResponseType = data.user;
+
+      // Prevent superuser login
+      if (user.is_superuser) {
+        Alert.alert("Error", "Superuser login is not allowed");
+        return;
       }
 
       console.log("Login successful, access token received:", data.access);
@@ -280,7 +281,7 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       axiosInstance.defaults.headers.common[
         "Authorization"
       ] = `Bearer ${data.access}`;
-      const user: UserResponseType = data.user;
+
       setIsAuthenticated(true);
       setRole(
         user.is_owner
@@ -292,19 +293,11 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           : ""
       );
 
-      // Log the current state of the axios instance before navigation
-      console.log(
-        "Current axios headers before navigation:",
-        axiosInstance.defaults.headers.common
-      );
-
       /* Check the role and replace the screen based on the users role */
       if (user.is_owner || user.is_admin) {
         router.replace("/management/(drawer)/dashboard/main");
       } else if (user.is_employee) {
         router.replace("/staff/(drawer)/dashboard/main");
-      } else {
-        Alert.alert("Error", "User not found");
       }
     } catch (error) {
       console.error("Login error:", error);

@@ -6,8 +6,9 @@ import {
   Text,
   View,
 } from "react-native";
-import { AntDesign } from "@expo/vector-icons";
+import { AntDesign, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useThemeColor } from "@/hooks/useThemeColor";
+import { useDashboardContext } from "@/app/context/management/dashboard/dashboardContext";
 
 const image = require("@/assets/images/user image.jpg");
 
@@ -18,7 +19,7 @@ const OtherEmployeeOnLeaderboard = ({
   phone,
   role,
   taskCompleted,
-  onPress,
+  setIsModalVisible,
 }: {
   id: string;
   name: string;
@@ -26,12 +27,19 @@ const OtherEmployeeOnLeaderboard = ({
   phone: string;
   role: string;
   taskCompleted: number;
-  onPress: () => void;
+  setIsModalVisible: (value: boolean) => void;
 }) => {
+  const { setEmployeeId } = useDashboardContext();
+
   const background = useThemeColor({}, "innerBackground");
   const text = useThemeColor({}, "text");
   const otherText = useThemeColor({}, "otherText");
   const icon = useThemeColor({}, "icon");
+
+  const handleProfilePress = (id: string) => {
+    setEmployeeId(id);
+    setIsModalVisible(true);
+  };
 
   return (
     <View style={[styles.maincontainer, { backgroundColor: background }]}>
@@ -60,8 +68,8 @@ const OtherEmployeeOnLeaderboard = ({
           </Text>
         </View>
 
-        <Pressable onPress={onPress}>
-          <AntDesign name="profile" size={15} color={icon} />
+        <Pressable onPress={() => handleProfilePress(id)}>
+          <MaterialCommunityIcons name='account' size={15} color={icon} />
         </Pressable>
       </View>
     </View>

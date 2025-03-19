@@ -1,10 +1,9 @@
 import {
   ClientContextType,
-  ClientDetail,
-  ClientDetailsResponseType,
   ClientDetailsType,
   ContractDetailsType,
   JobDetailsType,
+  NewClientDetailsInterface,
 } from "@/app/types/management/client";
 import { BASE_URL } from "@/app/utils/urls";
 
@@ -24,166 +23,83 @@ const ClientContext = createContext<ClientContextType | undefined>(undefined);
 
 const ClientProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
-}) => {
-  const clientDetailsData: ClientDetailsType[] = [
-    {
-      clients: {
-        client_id: "1",
-        name: "John Doe",
-        address: "123 Main St",
-        postcode: "12345",
-        email: "john.doe@example.com",
-        phone: "555-1234",
-        city: "Anytown",
-        country: "USA",
-      },
-      contracts: [
-        {
-          contract_id: "101",
-          name: "Contract A",
-          address: "123 Main St",
-          postcode: "12345",
-          city: "Anytown",
-          start_date: "2025-01-20",
-          end_date: "2025-01-21",
-        },
-        {
-          contract_id: "102",
-          name: "Contract B",
-          address: "456 Elm St",
-          postcode: "67890",
-          city: "Othertown",
-          start_date: "2025-01-20",
-          end_date: "2025-01-21",
-        },
-      ],
-    },
-    {
-      clients: {
-        client_id: "2",
-        name: "Jane Smith",
-        address: "456 Elm St",
-        postcode: "67890",
-        email: "jane.smith@example.com",
-        phone: "555-5678",
-        city: "Othertown",
-        country: "USA",
-      },
-      contracts: [
-        {
-          contract_id: "103",
-          name: "Contract C",
-          address: "789 Oak St",
-          postcode: "11223",
-          city: "Sometown",
-          start_date: "2023-03-01",
-          end_date: "2023-10-31",
-        },
-      ],
-    },
-  ];
-
-  const clientJobDetailsData: JobDetailsType[] = [
-    {
-      client: "Acme Corp",
-      task_serial: "TS3456",
-      task_start_time: "09:00",
-      task_end_time: "17:00",
-      task_start_date: "2025-01-20",
-      pay: 15,
-      contract_name: "Acme Corp Contract",
-      contract_address: "123 Acme St, Springfield",
-      contract_postcode: "12345",
-      employee: [
-        {
-          name: "John Doe",
-          id: "E123",
-          email: "johndoe@gmail.com",
-          phone: "1234567890",
-        },
-        {
-          name: "Jane Doe",
-          id: "D123",
-          email: "janedoe@gmail.com",
-          phone: "1234567890",
-        },
-      ],
-    },
-    {
-      client: "Amberstone Corp",
-      task_serial: "TS1256",
-      task_start_time: "09:00",
-      task_end_time: "17:00",
-      task_start_date: "2025-02-20",
-      pay: 15,
-      contract_name: "Acme Corp Contract",
-      contract_address: "123 Acme St, Springfield",
-      contract_postcode: "12345",
-      employee: [
-        {
-          name: "John Doe",
-          id: "E123",
-          email: "johndoe@gmail.com",
-          phone: "1234567890",
-        },
-        {
-          name: "Jane Doe",
-          id: "D123",
-          email: "janedoe@gmail.com",
-          phone: "1234567890",
-        },
-      ],
-    },
-  ];
+}): React.ReactElement => {
+  const { axiosInstance } = useAuth();
 
   const [countDown, setCountdown] = useState<string | null>(null);
   const [timeElapsed, setTimeElapsed] = useState<string>("");
-  const [clients, setClients] = useState<ClientDetail[]>([]);
+  // Loading states
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  // const [clientDetailsData, setClientContractDetails] = useState<
-  //   ClientDetailsType[]
-  // >([]);
-  const [contractJobDetails, setContractJobDetails] = useState<
+  const [isUpdateContractLoading, setIsUpdateContractLoading] =
+    useState<boolean>(false);
+  const [isEditClientLoading, setIsEditClientLoading] =
+    useState<boolean>(false);
+
+  // Modal visibility states
+  const [isCreateContractModalVisible, setIsCreateContractModalVisible] =
+    useState<boolean>(false);
+  const [isCreateClientModalVisible, setIsCreateClientModalVisible] =
+    useState<boolean>(false);
+  const [isEditClientModalVisible, setIsEditClientModalVisible] =
+    useState<boolean>(false);
+  const [isEditContractModalVisible, setIsEditContractModalVisible] =
+    useState<boolean>(false);
+  const [isNewClientLoading, setIsNewClientLoading] = useState<boolean>(false);
+
+  const [clientId, setClientId] = useState<string | undefined>(undefined);
+  const [clientDetailsData, setClientDetailsData] = useState<
+    ClientDetailsType[]
+  >([]);
+  const [clientJobDetailsData, setClientJobDetailsData] = useState<
     JobDetailsType[]
   >([]);
-  // const [jobDetailsData, setJobDetailsData] = useState<JobDetailsType[]>([]);
-  // const [clientDetailsData, setClientDetailsData] = useState<
-  //   ClientDetailsType[]
-  // >([]);
-
-  // Manages the state of the user input for the contract creation
   const [newContract, setNewContract] = useState<
     ContractDetailsType | undefined
   >(undefined);
 
-  // Import the axios instance from the authentication context
-  const { axiosInstance } = useAuth();
+  const [activeContract, setActiveContract] = useState<
+    ContractDetailsType | undefined
+  >(undefined);
+  const [activeClient, setActiveClient] = useState<
+    ClientDetailsType | undefined
+  >(undefined);
+
+  const toggleCreateContractModal = (client_id: string | undefined) => {
+    setIsCreateContractModalVisible(true);
+    setClientId(client_id);
+  };
+
+  /* Set the active contract to the contract details */
+  const editContract = (contract: ContractDetailsType) => {
+    setActiveContract(contract);
+    setIsEditContractModalVisible(true);
+  };
+
+  const editClient = (client: ClientDetailsType) => {
+    setActiveClient(client);
+    setIsEditClientModalVisible(true);
+  };
 
   /**
    * The hook is used to fetch details
    * - Client contract details: would contain the details of all contracts associated with the client
    * - Contract job details: would contain the details of all jobs associated with the contract
-   * After retrieving the data, it sets the data to the appropriate state.
    */
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        console.log("Fetching data");
-        // const shiftDetails = await fetchContractAndJobDetails();
         const clientContractDetails = await fetchClientContractDetails();
-        console.log("clientContractDetails", clientContractDetails);
-
-        if (clientContractDetails.length === 0) {
-          console.log("No client contract details returned from the server");
-        }
-        // setClientContractDetails(clientContractDetails);
+        const contractJobDetails = await fetchContractAndJobDetails();
+        setClientDetailsData(clientContractDetails);
+        setClientJobDetailsData(contractJobDetails);
       } catch (error) {
-        console.error("Error fetching data", error);
+        console.error("Error fetching data:", error);
       } finally {
         setIsLoading(false);
       }
     };
+
     fetchData();
   }, []);
 
@@ -239,19 +155,58 @@ const ClientProvider: React.FC<{ children: React.ReactNode }> = ({
   /**
    * The method is used to create a new contract for the client.
    * Collects the inputed data and sends it to the server.
+   * @param {string} client_id is the id of the client to which the contract is to be created.
+   * Update the client details data if the response from the server is valid.
+   * Call the fetchClientContractDetails method to update the client details data.
    */
   const createContract = async () => {
+    // Ensure the new contract start date is before the end date
+    if (
+      newContract?.start_date &&
+      newContract?.end_date &&
+      new Date(newContract.start_date) > new Date(newContract.end_date)
+    ) {
+      Alert.alert("Error", "Start date must be before end date");
+      return;
+    }
     try {
       const response = await axiosInstance.post("/api/create/contract/", {
-        data: {
-          newContract,
-        },
+        new_contract: newContract,
+        client_id: clientId,
       });
-      const responseData: ClientDetailsResponseType = response.data;
-      console.log("Contract created", responseData);
-      return responseData;
+      if (response.status === 201) {
+        const updatedClientDetails = await fetchClientContractDetails();
+        setClientDetailsData(updatedClientDetails);
+        setIsCreateContractModalVisible(false);
+        Alert.alert("Success", response.data.message);
+      }
     } catch (error) {
       console.error("Error creating contract", error);
+    }
+  };
+
+  /**
+   * Delete the contract from the server given the contract id gotten from the contract details.
+   * @param {ContractDetailsType} contract is the contract details object to be deleted.
+   * Update the client details data if the response from the server is valid.
+   * Call the fetchClientContractDetails method to update the client details data.
+   */
+  const deleteContract = async (contract_id: ContractDetailsType) => {
+    try {
+      setIsLoading(true);
+      const response = await axiosInstance.delete("/api/delete/contract/", {
+        data: { contract_id: contract_id.contract_id },
+      });
+      if (response.status === 200) {
+        const updatedClientDetails = await fetchClientContractDetails();
+        setClientDetailsData(updatedClientDetails);
+        Alert.alert("Success", response.data.message);
+      }
+    } catch (error) {
+      console.error("Error deleting contract:", error);
+      Alert.alert("Error", "Failed to delete contract. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -262,9 +217,9 @@ const ClientProvider: React.FC<{ children: React.ReactNode }> = ({
    */
   const fetchClientContractDetails = async (): Promise<ClientDetailsType[]> => {
     try {
-      console.log("Fetching client contract details...");
       const response = await axiosInstance.get("/api/get/client/contracts/");
-      return response.data.client_details;
+      const clientDetails: ClientDetailsType[] = response.data.client_details;
+      return clientDetails;
     } catch (error) {
       if (axios.isAxiosError(error)) {
         console.error("Axios error:", error.response?.data);
@@ -281,29 +236,120 @@ const ClientProvider: React.FC<{ children: React.ReactNode }> = ({
    */
   const fetchContractAndJobDetails = async (): Promise<JobDetailsType[]> => {
     try {
-      console.log("Fetching contract and job details...");
       const response = await axiosInstance.get(
         "/api/get/contract/shifts/details/"
       );
-      console.log("Response received:", response);
-
-      if (!response.data) {
-        console.log("No valid data returned from the server");
-        return [];
-      }
-
-      console.log(
-        "Contract job details:",
-        response.data.client_contract_details
-      );
-      return response.data.client_contract_details;
+      const contractJobDetails: JobDetailsType[] =
+        response.data.client_job_list;
+      return contractJobDetails;
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        console.error("Axios error:", error.response?.data);
-        console.error("Status:", error.response?.status);
-      }
       console.error("Error fetching job details:", error);
       return [];
+    }
+  };
+
+  /**
+   *  Update the contract details on the server and update the client details data if the response from the server is valid.
+   *  Call the fetchClientContractDetails method to update the client details data.
+   * @param {ContractDetailsType} contract is the contract details object to be updated.
+   */
+  const updateContract = async (contract: ContractDetailsType) => {
+    try {
+      setIsUpdateContractLoading(true);
+      const response = await axiosInstance.patch("/api/update/contract/", {
+        contract: contract,
+      });
+      if (response.status === 200) {
+        // Call the fetchClientContractDetails method to update the client details data.
+        // This will update the client details data in the context and the client details data in the state.
+        // Close the edit contract modal after the update is successful.
+        const updatedClientDetails = await fetchClientContractDetails();
+        setClientDetailsData(updatedClientDetails);
+        setIsEditContractModalVisible(false);
+      }
+      Alert.alert("Contract Update Data", response.data.message);
+    } catch (error) {
+      console.error("Error updating contract:", error);
+    } finally {
+      setIsUpdateContractLoading(false);
+    }
+  };
+
+  /**
+   * Create a new client with the details provided in the component.
+   * @param {NewClientDetailsInterface} newClientDetails is the new client details object to be created.
+   * Update the client details data if the response from the server is valid.
+   * Call the fetchClientContractDetails method to update the client details data.
+   * Close the modal after successfull response
+   */
+  const createClient = async (newClientDetails: NewClientDetailsInterface) => {
+    try {
+      setIsNewClientLoading(true);
+      const response = await axiosInstance.post("/api/create/client/", {
+        new_client: newClientDetails,
+      });
+      if (response.status === 201) {
+        const updatedClientDetails = await fetchClientContractDetails();
+        setClientDetailsData(updatedClientDetails);
+        setIsCreateClientModalVisible(false);
+        Alert.alert("Success", response.data.message);
+      }
+    } catch (error) {
+      console.error("Error creating client", error);
+    } finally {
+      setIsNewClientLoading(false);
+    }
+  };
+
+  /**
+   * Update the client details on the server and update the client details data if the response from the server is valid.
+   * Call the fetchClientContractDetails method to update the client details data.
+   * @param {ClientDetailsType} client is the client details object to be updated.
+   * Call the fetchClientContractDetails method to update the client details data if the response from the server is valid.
+   */
+  const updateClient = async (client: ClientDetailsType) => {
+    try {
+      setIsEditClientLoading(true);
+      const response = await axiosInstance.patch("/api/update/client/", {
+        client: client,
+      });
+      if (response.status === 200) {
+        const updatedClientDetails = await fetchClientContractDetails();
+        setClientDetailsData(updatedClientDetails);
+        setIsEditClientModalVisible(false);
+      }
+      Alert.alert("Client Update Data", response.data.message);
+    } catch (error) {
+      console.error("Error updating client:", error);
+    } finally {
+      setIsEditClientLoading(false);
+    }
+  };
+
+  /**
+   * Delete the client from the server given the client id gotten from the client details.
+   * @param {string} client_id is the client id to be deleted.
+   * Update the client details data if the response from the server is valid.
+   * Call the fetchClientContractDetails method to update the client details data.
+   */
+  const deleteClient = async (client_id: string) => {
+    try {
+      setIsLoading(true);
+      const response = await axiosInstance.delete("/api/delete/client/", {
+        data: { client_id: client_id },
+      });
+      if (response.status === 200) {
+        const updatedClientDetails = await fetchClientContractDetails();
+        setClientDetailsData(updatedClientDetails);
+        const updatedJobDetails = await fetchContractAndJobDetails();
+        setClientJobDetailsData(updatedJobDetails);
+        Alert.alert("Success", response.data.message);
+      }
+    } catch (error) {
+      console.error("Error deleting client:", error);
+      Alert.alert("Error", "Failed to delete client. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -333,9 +379,7 @@ const ClientProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  /** The method is used to navigate to the message component given the user id.
-   * This will create a new conversation with the user id if no conversation exists.
-   */
+  /** Navigate to message component and create new conversation if none exists */
   const handleMessage = (id: string, name: string) => {
     console.log("handle message press", id);
     if (Platform.OS === "web") {
@@ -349,12 +393,9 @@ const ClientProvider: React.FC<{ children: React.ReactNode }> = ({
     });
   };
 
-  /** Method is used to calulate the task task time given the start date and start time.
-   * @param {JobDetailsType} jobDetais which contains the type of the job details
-   * @returns number
-   */
-  const calculateTaskStartTime = (jobDetais: JobDetailsType) => {
-    const { task_start_date, task_start_time } = jobDetais; // Get the type required from the job details
+  /** Calculate time until task starts */
+  const calculateTaskStartTime = (jobDetails: JobDetailsType): number => {
+    const { task_start_date, task_start_time } = jobDetails; // Get the type required from the job details
 
     // Split the task start time into hours and minutes
     const [hours, minutes] = task_start_time
@@ -382,9 +423,29 @@ const ClientProvider: React.FC<{ children: React.ReactNode }> = ({
     newContract,
     handleAddContractInput,
     createContract,
-    clients,
     isLoading,
     clientDetailsData,
+    isCreateContractModalVisible,
+    toggleCreateContractModal,
+    isCreateClientModalVisible,
+    setIsCreateClientModalVisible,
+    activeContract,
+    editContract,
+    isEditContractModalVisible,
+    setIsEditContractModalVisible,
+    deleteContract,
+    updateContract,
+    isUpdateContractLoading,
+    editClient,
+    isEditClientLoading,
+    isEditClientModalVisible,
+    setIsEditClientModalVisible,
+    activeClient,
+    updateClient,
+    deleteClient,
+    setIsCreateContractModalVisible,
+    createClient,
+    isNewClientLoading,
   };
 
   return (

@@ -18,6 +18,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import ProfileProvider from "@/app/context/management/profile/profileContext";
 import ExpandScreenComponent from "@/app/component/helper/expandScreen";
 import { Stack } from "expo-router";
+import { useAuth } from "@/app/context/authentication";
+import { userData } from "@/app/utils/loadData";
 
 const VersionDisplay = ({ color }: { color: string }) => {
   return (
@@ -42,14 +44,9 @@ const RightDisplay = ({ onPress }: { onPress: () => void }) => {
         { backgroundColor: secondaryColor },
       ]}
     >
-      <View style={styles.container}>
-        <Pressable style={styles.leftbuttons} onPress={onPress}>
-          <MaterialIcons name="info" size={20} color={text} />
-        </Pressable>
-        <Pressable style={styles.leftbuttons}>
-          <MaterialIcons name="notification-important" size={20} color={text} />
-        </Pressable>
-      </View>
+      <Pressable style={styles.leftbuttons} onPress={onPress}>
+        <MaterialIcons name="info" size={20} color={text} />
+      </Pressable>
     </View>
   );
 };
@@ -71,6 +68,8 @@ export default function MainManagementLayout() {
     Dimensions.get("window").width
   );
   const [screen, setScreen] = useState(Dimensions.get("screen"));
+
+  const user = userData();
 
   /**
    * The hook is used to manage the window width and screen width of the user.
@@ -95,57 +94,54 @@ export default function MainManagementLayout() {
   }
 
   return (
-    <AuthProvider>
-      <ProfileProvider>
-        <SafeAreaView style={{ flex: 1 }}>
-          <GestureHandlerRootView
-            style={[{ flex: 1 }, { backgroundColor: background }]}
-          >
-            {/* The drawer is only used for mobile displays but a stack has to be returned for the web display */}
-            {Platform.OS !== "web" ? (
-              <Drawer
-                drawerContent={() => <SideComponent />}
-                screenOptions={{
-                  headerShown: true,
-                  headerRight: () => (
-                    /**
-                     * Toggle the version display when the user clicks on the info icon.
-                     */
-                    <RightDisplay onPress={toggleVersion} />
-                  ),
-                  title: "Management",
-                  headerStyle: {
-                    backgroundColor: secondary,
-                  },
-                  headerTitleStyle: {
-                    fontSize: 20,
-                    fontFamily: "BarlowRegular",
-                    fontWeight: "700",
-                    color: background,
-                    textShadowOffset: { width: 0.5, height: 0.5 },
-                    textShadowColor: "black",
-                  },
-                  drawerStyle: {
-                    backgroundColor: secondary,
-                    width: "70%",
-                  },
-                }}
-              ></Drawer>
-            ) : (
-              <Stack screenOptions={{ headerShown: false }} />
-            )}
+    <SafeAreaView style={{ flex: 1 }}>
+      <GestureHandlerRootView
+        style={[{ flex: 1 }, { backgroundColor: background }]}
+      >
+        {/* The drawer is only used for mobile displays but a stack has to be returned for the web display */}
+        {Platform.OS !== "web" ? (
+          <Drawer
+            drawerContent={() => <SideComponent />}
+            screenOptions={{
+              headerShown: true,
+              headerRight: () => (
+                /**
+                 * Toggle the version display when the user clicks on the info icon.
+                 */
+                <RightDisplay onPress={toggleVersion} />
+              ),
+              title: user?.company_name || "Management",
+              headerStyle: {
+                backgroundColor: secondary,
+              },
+              headerTitleStyle: {
+                fontSize: 20,
+                fontFamily: "BarlowRegular",
+                fontWeight: "700",
+                color: background,
+                textShadowOffset: { width: 0.5, height: 0.5 },
+                textShadowColor: "black",
+              },
+              drawerStyle: {
+                backgroundColor: secondary,
+                width: "70%",
+              },
+            }}
+          ></Drawer>
+        ) : (
+          <Stack screenOptions={{ headerShown: false }} />
+        )}
 
-            {showVersion && <VersionDisplay color={secondary} />}
-          </GestureHandlerRootView>
-        </SafeAreaView>
-      </ProfileProvider>
-    </AuthProvider>
+        {showVersion && <VersionDisplay color={secondary} />}
+      </GestureHandlerRootView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   mainrightdisplaycontainer: {
     width: 100,
+    alignItems: "flex-end",
   },
 
   container: {
@@ -155,12 +151,7 @@ const styles = StyleSheet.create({
   },
 
   leftbuttons: {
-    padding: 2,
-    shadowRadius: 10,
-    elevation: 10,
-    shadowOpacity: 0.3,
-    marginEnd: 10,
-    borderRadius: 20,
+    padding: 5,
   },
 
   floatingcontainer: {

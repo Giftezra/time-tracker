@@ -27,19 +27,22 @@ const StaffDashboardHeader = () => {
   return (
     <View style={styles.maincontainer}>
       <View style={styles.topContainer}>
-        <Image source={image} style={styles.imageContainer} />
-        <Pressable style={{ padding: 5 }}>
-          <AntDesign name="setting" size={20} color="black" />
+        <View style={styles.profileSection}>
+          <Image source={image} style={styles.imageContainer} />
+          <View style={styles.onlineIndicator} />
+        </View>
+        <Pressable style={styles.settingsButton}>
+          <AntDesign name="setting" size={24} color="#4A4A4A" />
         </Pressable>
       </View>
 
       <View style={styles.container}>
-        <Text style={styles.welcomeText}>welcome back</Text>
-        <Text style={[styles.nameText]}>{staffData.name}</Text>
+        <Text style={styles.welcomeText}>Welcome back</Text>
+        <Text style={styles.nameText}>{staffData.name}</Text>
 
         <View style={styles.otherTextContainer}>
           <Text style={styles.othertext}>
-            You feeling good enough to complete your task for today?
+            Ready to tackle today's tasks and make an impact?
           </Text>
         </View>
       </View>
@@ -51,58 +54,83 @@ export default StaffDashboardHeader;
 
 const styles = StyleSheet.create({
   maincontainer: {
-    flex: 1,
-    padding: 5,
+    padding: 16,
     flexDirection: "column",
-    columnGap: 10,
+    backgroundColor: "#FFFFFF",
+    borderBottomWidth: 1,
+    borderBottomColor: "#F0F0F0",
   },
 
   topContainer: {
     flexDirection: "row",
-    padding: 2,
     alignItems: "center",
     justifyContent: "space-between",
+    marginBottom: 24,
+  },
+
+  profileSection: {
+    position: "relative",
   },
 
   imageContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    borderWidth: 2,
+    borderColor: "#F0F0F0",
+  },
+
+  onlineIndicator: {
+    position: "absolute",
+    bottom: 2,
+    right: 2,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: "#4CAF50",
+    borderWidth: 2,
+    borderColor: "#FFFFFF",
+  },
+
+  settingsButton: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: "#F8F8F8",
   },
 
   container: {
-    padding: 2,
-    marginVertical: 5,
+    paddingHorizontal: 4,
   },
 
   nameText: {
-    fontSize: 15,
-    fontWeight: "600",
+    fontSize: 24,
+    fontWeight: "700",
     fontFamily: "BarlowRegular",
     textTransform: "capitalize",
-    marginStart: 5,
-    marginBottom: 5,
+    color: "#1A1A1A",
+    marginBottom: 16,
   },
 
   welcomeText: {
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: "400",
     fontFamily: "BarlowRegular",
-    textTransform: "capitalize",
-    marginBottom: 5,
+    color: "#666666",
+    marginBottom: 4,
   },
 
   otherTextContainer: {
-    padding: 5,
-    marginVertical: 5,
-    borderRadius: 5,
-    shadowOpacity: 0.5,
+    padding: 10,
+    borderRadius: 12,
+    backgroundColor: "#F8F8F8",
+    marginTop: 8,
   },
 
   othertext: {
     fontSize: 15,
     fontFamily: "BarlowRegular",
     fontWeight: "400",
-    textTransform: "capitalize",
+    color: "#4A4A4A",
+    lineHeight: 22,
   },
 });

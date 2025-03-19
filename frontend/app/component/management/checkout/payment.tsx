@@ -9,27 +9,23 @@ import React, { useContext, useState } from "react";
 import { FontAwesome, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { CardType } from "@/app/types/management/checkout";
-// import { useCheckout } from "@/app/context/management/checkout/checkoutContext";
-
+import { useCheckout } from "@/app/context/management/checkout/checkoutContext";
 
 const PaymentComponent = () => {
-  // const { selectedCard, setSelectedCard, savedCards } = useCheckout();
-
+  const { selectedCard, setSelectedCard, savedCards, billingDetails } =
+    useCheckout();
   const primary = useThemeColor({}, "primaryColor");
-
 
   const renderCard = (card: CardType) => (
     <TouchableOpacity
       key={card.id}
       style={[
         styles.cardContainer,
-        // selectedCard === card.id && styles.selectedCard,
-
+        selectedCard === card.id && styles.selectedCard,
       ]}
-      // onPress={() => setSelectedCard(card.id)}
+      onPress={() => setSelectedCard(card.id)}
     >
       <View style={styles.cardInfo}>
-
         {card.brand === "visa" ? (
           <FontAwesome name="cc-visa" size={24} color={primary} />
         ) : (
@@ -39,7 +35,7 @@ const PaymentComponent = () => {
         {card.isDefault && <Text style={styles.defaultBadge}>Default</Text>}
       </View>
       <MaterialCommunityIcons
-        //name={selectedCard === card.id ? "radiobox-marked" : "radiobox-blank"}
+        name={selectedCard === card.id ? "radiobox-marked" : "radiobox-blank"}
         size={24}
         color={primary}
       />
@@ -49,33 +45,39 @@ const PaymentComponent = () => {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Payment Method</Text>
-
       <ScrollView style={styles.cardsContainer}>
-        {/* {savedCards.map(renderCard)} */}
+        {savedCards.map(renderCard)}
       </ScrollView>
-
 
       <View style={styles.billingDetailsContainer}>
         <Text style={styles.subtitle}>Billing Summary</Text>
 
         <View style={styles.billingRow}>
           <Text style={styles.billingLabel}>Number of Employees:</Text>
-          <Text style={styles.billingValue}>15</Text>
+          <Text style={styles.billingValue}>
+            {billingDetails.numberOfEmployees}
+          </Text>
         </View>
 
         <View style={styles.billingRow}>
           <Text style={styles.billingLabel}>Billing Period:</Text>
-          <Text style={styles.billingValue}>March 1 - March 31, 2024</Text>
+          <Text style={styles.billingValue}>
+            {billingDetails.billingPeriod}
+          </Text>
         </View>
 
         <View style={styles.billingRow}>
           <Text style={styles.billingLabel}>Rate per Employee:</Text>
-          <Text style={styles.billingValue}>$10.00</Text>
+          <Text style={styles.billingValue}>
+            ${billingDetails.ratePerEmployee.toFixed(2)}
+          </Text>
         </View>
 
         <View style={[styles.billingRow, styles.totalRow]}>
           <Text style={styles.totalLabel}>Total Amount:</Text>
-          <Text style={styles.totalValue}>$150.00</Text>
+          <Text style={styles.totalValue}>
+            ${billingDetails.totalAmount.toFixed(2)}
+          </Text>
         </View>
       </View>
     </View>
@@ -89,7 +91,7 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 15,
   },
-  
+
   title: {
     fontSize: 15,
     fontWeight: "700",

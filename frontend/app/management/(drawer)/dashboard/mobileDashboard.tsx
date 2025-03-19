@@ -2,7 +2,7 @@ import { FlatList, StyleSheet, Text, View } from "react-native";
 import React, { useState } from "react";
 import DashboardWelcomeHeader from "@/app/component/management/dashboard/welcomeHeader";
 import TodayEventsComponent from "@/app/component/management/dashboard/todayEvents";
-import { ScrollView } from "react-native-gesture-handler";
+import { Pressable, ScrollView } from "react-native-gesture-handler";
 import EmployeeAnalyticsComponent from "@/app/component/management/employees/employeeAnalytics";
 import EmployeeOnLeaveComponent from "@/app/component/management/dashboard/employeeOnleave";
 import { useThemeColor } from "@/hooks/useThemeColor";
@@ -10,69 +10,48 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import LeaderBoardComponent from "@/app/component/management/dashboard/leaderBoard";
 import ContractChartComponent from "@/app/component/management/dashboard/contractChart";
 import TaskChartComponent from "@/app/component/management/dashboard/taskChart";
-
-const event = ["johns birthday", "mary resumption"];
-
-const employeeData = [
-  {
-    id: "1",
-    name: "john doe",
-    email: "johndoe@example.com",
-    dateFrom: "2021-08-01",
-    dateTo: "2021-08-01",
-  },
-  {
-    id: "2",
-    name: "jane doe",
-    email: "johndoe@example.com",
-    dateFrom: "2021-08-01",
-    dateTo: "2021-08-01",
-  },
-  {
-    id: "3",
-    name: "john doe",
-    email: "johndoe@example.com",
-    dateFrom: "2021-08-01",
-    dateTo: "2021-08-01",
-  },
-  {
-    id: "4",
-    name: "jane doe",
-    email: "johndoe@example.com",
-    dateFrom: "2021-08-01",
-    dateTo: "2021-08-01",
-  },
-];
+import { EmployeeOnLeaveInterface } from "@/app/types/management/dashboard";
+import { useDashboardContext } from "@/app/context/management/dashboard/dashboardContext";
 
 const MobileDashboard = () => {
+  const { unavailableEmployees, todayEvents } = useDashboardContext();
+
   const white = useThemeColor({}, "white");
   const [width, setWidth] = useState(0);
+  const [isLeaveVisible, setIsLeaveVisible] = useState(false);
 
   return (
     <SafeAreaProvider>
       <ScrollView style={styles.maincontainer}>
         <DashboardWelcomeHeader />
-        <View style={{ padding: 5 }}>
-          <TodayEventsComponent event={event} />
-        </View>
-        <View style={[styles.containers, { maxHeight: 200 }]}>
-          <Text style={styles.headerText}>employees on leave</Text>
-          <ScrollView showsVerticalScrollIndicator={false}>
-            {employeeData.map((item) => (
-              <EmployeeOnLeaveComponent
-                key={item.id}
-                id={item.id}
-                name={item.name}
-                email={item.email}
-                dateFrom={item.dateFrom}
-                dateTo={item.dateTo}
-              />
-            ))}
-          </ScrollView>
+        <View style={styles.sectionContainer}>
+          <TodayEventsComponent event={todayEvents} />
         </View>
 
-        {/* This contains the employee analytics component which would be the chart data. */}
+        <View style={styles.section}>
+          <Pressable
+            onPress={() => setIsLeaveVisible(!isLeaveVisible)}
+            style={styles.pressableDropdown}
+          >
+            <Text style={styles.subheaderText}>Employees on Leave</Text>
+            <Text
+              style={[styles.subheaderText, { color: "red", fontSize: 11 }]}
+            >
+              {isLeaveVisible ? "Hide" : "Show"}
+            </Text>
+          </Pressable>
+
+          {isLeaveVisible && (
+            <ScrollView style={styles.leaveScrollView}>
+              {unavailableEmployees.map((item, index) => (
+                <EmployeeOnLeaveComponent key={index} {...item} />
+              ))}
+            </ScrollView>
+          )}
+        </View>
+
         <View
+          style={styles.section}
           onLayout={(event) => {
             const { width } = event.nativeEvent.layout;
             setWidth(width);
@@ -81,26 +60,14 @@ const MobileDashboard = () => {
           <ContractChartComponent width={width} />
         </View>
 
-        {/* This component is for the task chart. Whichwould be used to display
-        1. total tasks completed
-        2. total tasks pending
-        3. total tasks in progress
-        4. total tasks completed
-        */}
-        <View style={[styles.containers]}>
-          <TaskChartComponent width={width} title="total tasks completed" />
+        <View style={styles.section}>
+          <TaskChartComponent width={width} title="Total Tasks" />
         </View>
 
-        {/* This contains the leaderboard component */}
-        <View style={styles.containers}>
-          <Text
-            style={[styles.headerText, { paddingTop: 5, paddingHorizontal: 5 }]}
-          >
-            leader board
-          </Text>
+        <View style={styles.section}>
+          <Text style={styles.headerText}>Leader Board</Text>
           <LeaderBoardComponent />
         </View>
-        
       </ScrollView>
     </SafeAreaProvider>
   );
@@ -111,19 +78,56 @@ export default MobileDashboard;
 const styles = StyleSheet.create({
   maincontainer: {
     flex: 1,
+    backgroundColor: "#F5F7FA",
+  },
+  sectionContainer: {
+    padding: 5,
   },
 
-  containers: {
-    borderRadius: 2,
-    borderWidth: 0.3,
-    padding: 1,
+  section: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 8,
+    padding: 5,
+    margin: 5,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 3.84,
+    elevation: 5,
+    overflow: "hidden",
+  },
+
+  leaveScrollView: {
+    maxHeight: 150,
+  },
+
+  pressableDropdown: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+
+  subheaderText: {
+    fontSize: 15,
+    fontFamily: "BarlowRegular",
+    fontWeight: "600",
+    textTransform: "capitalize",
+    marginBottom: 10,
+    marginLeft: 5,
+    padding: 2,
   },
 
   headerText: {
-    fontSize: 18,
-    fontFamily: "BarlowBold",
-    fontWeight: "400",
+    fontSize: 15,
+    fontFamily: "BarlowRegular",
+    fontWeight: "600",
+    color: "#1A1A1A",
     textTransform: "capitalize",
-    marginBottom: 10,
+    marginBottom: 16,
+    marginLeft: 5,
+    padding: 5,
   },
 });

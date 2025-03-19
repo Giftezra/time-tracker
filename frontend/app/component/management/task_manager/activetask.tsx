@@ -24,13 +24,37 @@ import SearchInputContainer from "../../helper/searchInput";
 import { AntDesign, MaterialCommunityIcons } from "@expo/vector-icons";
 
 /* Constant value for the sub headers representing each mapped item */
-const subHeaders = [
-  "shift id",
-  "task serial",
-  "employees",
-  "client name",
-  "start time",
-];
+const subHeaders = ["task serial", "employees", "contract", "start time"];
+
+const formatTime = (timeString: string) => {
+  try {
+    // If timeString is already in HH:mm format, just parse it
+    if (timeString.includes(":")) {
+      const [hours, minutes] = timeString.split(":");
+      const date = new Date();
+      date.setHours(parseInt(hours, 10));
+      date.setMinutes(parseInt(minutes, 10));
+      return date.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      });
+    }
+
+    // Otherwise try to parse as full datetime
+    const date = new Date(timeString);
+    if (isNaN(date.getTime())) {
+      return timeString; // Return original if parsing fails
+    }
+    return date.toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+  } catch (error) {
+    return timeString; // Return original string if any error occurs
+  }
+};
 
 const ActiveTaskComponent = () => {
   const {
@@ -43,7 +67,7 @@ const ActiveTaskComponent = () => {
     render_popup_button: renderPopupButton,
     isLoading,
     activeTasks,
-    terminateTask
+    terminateTask,
   } = useManagementTask();
 
   const [search, setSearch] = useState<string>("");
@@ -72,7 +96,7 @@ const ActiveTaskComponent = () => {
     } finally {
       setIsTerminating(false);
     }
-  }
+  };
 
   return (
     <View style={styles.maincontainer}>
@@ -107,9 +131,9 @@ const ActiveTaskComponent = () => {
             onPress={() => handleIsTaskClicked(task)}
             onLongPress={() => setIsPopupVisible(true)}
           >
-            <Text style={[styles.text, { color: text }]}>{task.shift_id}</Text>
-
-            <Text style={[styles.text, { color: text, textTransform: "uppercase" }]}>
+            <Text
+              style={[styles.text, { color: text, textTransform: "uppercase" }]}
+            >
               {task.task_serial}
             </Text>
 
@@ -118,10 +142,10 @@ const ActiveTaskComponent = () => {
             </Text>
 
             <Text style={[styles.text, { color: text }]}>
-              {task.client_name}
+              {task.contract_name}
             </Text>
             <Text style={[styles.text, { color: text }]}>
-              {task.start_time.split("T")[1].split(".")[0]}
+              {formatTime(task.start_time)}
             </Text>
             {isPopupVisible &&
               renderPopupButton(task.shift_id, () => setIsPopupVisible(false))}
@@ -134,11 +158,14 @@ const ActiveTaskComponent = () => {
         <Modal
           visible={isModalVisible}
           animationType="slide"
-          transparent={false}
+          transparent={true}
         >
           <View style={styles.mainModalContainer}>
-            <Pressable onPress={hideModal} style={styles.modalCloseButton}>
-              <Text style = {styles.modalCloseButtonText}>Close</Text>
+            <Pressable
+              onPress={hideModal}
+              style={[styles.modalCloseButton, { backgroundColor: textinput }]}
+            >
+              <Text style={styles.modalCloseButtonText}>Close</Text>
             </Pressable>
             <View
               style={[styles.modalContainer, { backgroundColor: textinput }]}
@@ -166,15 +193,21 @@ const ActiveTaskComponent = () => {
 
                   {/* Navigate to the message screen when clicked to send the staff member a message. */}
                   <View>
-                    <TouchableOpacity style={styles.modalButton} onPress={() => gotoMessageScreen(activeTaskClicked)}>
+                    <TouchableOpacity
+                      style={styles.modalButton}
+                      onPress={() => gotoMessageScreen(activeTaskClicked)}
+                    >
                       <Text style={styles.modalBtnText}>message</Text>
                       <AntDesign name="message1" size={24} color={icon} />
                     </TouchableOpacity>
                   </View>
-                  
-                  {/* Terminate the task when clicked */}                  
-                  <View >
-                    <TouchableOpacity style = {styles.modalButton} onPress={handleTaskTermination}>
+
+                  {/* Terminate the task when clicked */}
+                  <View>
+                    <TouchableOpacity
+                      style={styles.modalButton}
+                      onPress={handleTaskTermination}
+                    >
                       <Text style={styles.modalBtnText}>terminate shift</Text>
                       <MaterialCommunityIcons
                         name="cancel"
@@ -285,16 +318,16 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
 
-  modalCloseButton:{
-    alignSelf:'center',
-    padding:10,
-    marginVertical:10,
-    borderRadius:20,
-    borderWidth:1,
+  modalCloseButton: {
+    alignSelf: "center",
+    padding: 10,
+    marginVertical: 10,
+    borderRadius: 20,
+    borderWidth: 1,
   },
 
-  modalCloseButtonText:{
-    fontSize:15,
+  modalCloseButtonText: {
+    fontSize: 15,
     fontFamily: "RobotoRegular",
     fontWeight: "800",
     textTransform: "uppercase",
@@ -316,7 +349,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     padding: 5,
-    marginVertical: 2
+    marginVertical: 2,
   },
 
   modalText: {
@@ -341,5 +374,5 @@ const styles = StyleSheet.create({
 
   modalInnerContainer: {
     rowGap: 5,
-  }
+  },
 });

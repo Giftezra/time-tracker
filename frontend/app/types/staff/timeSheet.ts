@@ -1,11 +1,11 @@
 export type TimeSheetType = {
-  taskSerial: string;
-  contractName?: string;
-  status?: string;
-  startTime?: string;
-  endTime?: string;
-  loggedTime?: string;
-  startDate: string;
+  task_serial: string;
+  contract_name: string;
+  status: string;
+  start_time: string;
+  end_time: string;
+  task_start_time: string;
+  start_date: string;
 }
 
 type WeekGroupType = {
@@ -13,8 +13,17 @@ type WeekGroupType = {
   data: TimeSheetType[];
 }
 
+export type OngoingShiftType = {
+  shift_start_time: string;
+  task_end_time: string;
+}
+
 
 export type TimesheetContextType = {
   groupByWeek: (data: TimeSheetType[]) => WeekGroupType[];
-  data: TimeSheetType[];
+  timesheets: TimeSheetType[];
+  filteredData: TimeSheetType[];
+  handleStatusChange: (status: string) => void;
+  selectedStatus: string;
+  ongoingShift: OngoingShiftType | null;
 };

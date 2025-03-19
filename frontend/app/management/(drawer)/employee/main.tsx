@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Platform,
   KeyboardAvoidingView,
+  Modal,
 } from "react-native";
 import React, { useState } from "react";
 import {
@@ -17,13 +18,15 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { AntDesign, MaterialIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
 
-import EmployeeContainerComponent from "@/app/component/management/employees/employee_display";
+import EmployeeDisplayComponent from "@/app/component/management/employees/employee_display";
 
 import { EmployeeDetailsType } from "@/app/types/management/employee";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useEmployeeContext } from "@/app/context/management/employee/employeeContext";
 import { useAuth } from "@/app/context/authentication";
 import SideComponent from "@/app/component/helper/sideComponent";
+import AddEmployeeComponent from "@/app/component/management/employees/addemployee";
+import EmployeeAnalyticsComponent from "@/app/component/management/employees/employeeAnalytics";
 
 const MainEmployeePanel = () => {
   // Import and use tbhe context methods
@@ -33,6 +36,13 @@ const MainEmployeePanel = () => {
     setSearch,
     filterEmployeeList,
     filteredEmployeeList,
+    isModalVisible,
+    setIsModalVisible,
+    isLoading,
+    clearData,
+    employeeData,
+    workLog,
+    taskDetails,
   } = useEmployeeContext();
 
   const { windowWidth } = useAuth();
@@ -47,6 +57,7 @@ const MainEmployeePanel = () => {
   const otherText = useThemeColor({}, "otherText");
 
   const [isPressed, setIsPressed] = useState<boolean>(false);
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
   const checkUndefined = () => {
     if (employeelist === undefined) {
@@ -56,6 +67,12 @@ const MainEmployeePanel = () => {
   };
 
   const list = checkUndefined();
+
+  /* Handle the activity modal close. Call the clear data method to clear the data from the state and set the is modal visible to false */
+  const handleModalClose = () => {
+    clearData();
+    setIsModalVisible(false);
+  };
 
   return (
     <SafeAreaView style={[{ flex: 1 }, { backgroundColor: secondarycolor }]}>
@@ -111,9 +128,7 @@ const MainEmployeePanel = () => {
               {/* Route the user to the  add employee page when pressed */}
               <Pressable
                 style={[styles.iconContainer, { backgroundColor: inactivebtn }]}
-                onPress={() =>
-                  router.navigate("/management/(drawer)/employee/addemployee")
-                }
+                onPress={() => setIsModalOpen(true)}
               >
                 <AntDesign name="plus" size={24} color="black" />
               </Pressable>
@@ -128,7 +143,7 @@ const MainEmployeePanel = () => {
                   justifyContent: "space-between",
                 }}
               >
-                <Text style={[styles.employeeText, { color: otherText }]}>
+                <Text style={[styles.employeeText, { color: text }]}>
                   {`you have ${list} employees working with your company`}
                 </Text>
               </View>
@@ -136,13 +151,50 @@ const MainEmployeePanel = () => {
               <View style={styles.employeeContatiner}>
                 {/* Map the number of employes in a row pattern and implements pagination when the view contains more than 25 employees per page */}
                 {employeelist?.map((employee, index) => (
-                  <Pressable key={index} style={styles.employee}>
-                    <EmployeeContainerComponent {...employee} />
-                  </Pressable>
+                  <View key={index} style={styles.employee}>
+                    <EmployeeDisplayComponent {...employee} />
+                  </View>
                 ))}
               </View>
             </ScrollView>
           </View>
+
+          {/* Display the modal for the add employee component */}
+          <Modal
+            visible={isModalOpen}
+            onRequestClose={() => setIsModalOpen(false)}
+          >
+            <View style={{ flex: 1 }}>
+              <Pressable
+                onPress={() => setIsModalOpen(false)}
+                style={styles.modalCloseButton}
+              >
+                <MaterialIcons name="close" size={24} color="black" />
+              </Pressable>
+
+              <AddEmployeeComponent />
+            </View>
+          </Modal>
+
+          {/* Display the modal for the employee analytics component */}
+          {!isLoading && (
+            <Modal visible={isModalVisible} onRequestClose={handleModalClose}>
+              <View style={{ flex: 1 }}>
+                <Pressable
+                  onPress={handleModalClose}
+                  style={styles.modalCloseButton}
+                >
+                  <MaterialIcons name="close" size={30} color="black" />
+                </Pressable>
+
+                <EmployeeAnalyticsComponent
+                  employeeData={employeeData}
+                  workLog={workLog}
+                  taskDetails={taskDetails}
+                />
+              </View>
+            </Modal>
+          )}
         </GestureHandlerRootView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -177,13 +229,12 @@ const styles = StyleSheet.create({
   },
 
   employeeText: {
-    fontSize: 20,
-    fontWeight: "bold",
-    fontFamily: "OswaldVariable",
+    fontSize: 15,
+    fontWeight: "600",
+    fontFamily: "RobotoRegular",
     textTransform: "capitalize",
     marginStart: 20,
     padding: 5,
-    color: "#f28a48",
   },
 
   input: {
@@ -226,5 +277,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 5,
     marginHorizontal: 5,
+  },
+
+  modalCloseButton: {
+    padding: 5,
+    borderRadius: 30,
+    borderWidth: 1,
+    borderColor: "black",
+    alignSelf: "flex-end",
+    margin: 5,
   },
 });

@@ -3,11 +3,16 @@ import React from "react";
 import { Stack } from "expo-router";
 
 import AuthProvider from "../context/authentication";
-
+import ProfileProvider from "../context/management/profile/profileContext";
+import NotificationProvider from "../context/management/notifications/notificationContext";
 const MainManagementLayout = () => {
   return (
     <AuthProvider>
-      <Stack screenOptions={{ headerShown: false }} />
+      <NotificationProvider>
+        <ProfileProvider>
+          <Stack screenOptions={{ headerShown: false }} />
+        </ProfileProvider>
+      </NotificationProvider>
     </AuthProvider>
   );
 };

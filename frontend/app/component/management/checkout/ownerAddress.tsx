@@ -6,47 +6,44 @@ import {
 } from "react-native-gesture-handler";
 // import { useCheckout } from "@/app/context/management/checkout/checkoutContext";
 import { AntDesign } from "@expo/vector-icons";
-import { userData } from "@/app/utils/loadData";
+import { useCheckout } from "@/app/context/management/checkout/checkoutContext";
 
 const OwnerAddressComponent = () => {
-  // const { handleCheckboxPress, isChecked } = useCheckout();
-  const  user  = userData();
+  const { ownerAddress, useOwnerAddress, setUseOwnerAddress } = useCheckout();
 
   return (
     <GestureHandlerRootView style={styles.mainContainer}>
-      <Text style={styles.addressTextBold}>personal</Text>
+      <Text style={styles.addressTextBold}>Personal Address</Text>
       <View style={styles.container}>
-        {user && (
+        {ownerAddress?.address ? (
           <View style={styles.addressContainer}>
-            <Text style={styles.addressText}>
-              {user.address || "No address found"}
-            </Text>
-            <Text style={styles.addressText}>
-              {user.postcode || "No postcode found"}
-            </Text>
-            <Text style={styles.addressText}>
-              {user.city || "No city found"}
-            </Text>
-            <Text style={styles.addressText}>
-              {user.country || "No country found"}
-            </Text>
+            <Text style={styles.addressText}>{ownerAddress.address}</Text>
+            <Text style={[styles.addressText]}>{ownerAddress.postcode}</Text>
+            <Text style={styles.addressText}>{ownerAddress.city}</Text>
+            <Text style={styles.addressText}>{ownerAddress.country}</Text>
+            <Text style={styles.addressText}>{ownerAddress.phone}</Text>
+          </View>
+        ) : (
+          <Text style={styles.addressText}>No address found</Text>
+        )}
+
+        {ownerAddress?.address && (
+          <View style={styles.checkboxContainer}>
+            <Pressable
+              style={styles.checkbox}
+              onPress={() => setUseOwnerAddress(!useOwnerAddress)}
+            >
+              <View
+                style={[
+                  styles.innerCheckbox,
+                  useOwnerAddress && { display: "flex" },
+                ]}
+              >
+                <AntDesign name="check" size={24} color="black" />
+              </View>
+            </Pressable>
           </View>
         )}
-        {/* This view contains the address details and a checkbox to select the address */}
-
-        {/* Checkbox to select the address */}
-        <View style={styles.checkboxContainer}>
-          <Pressable style={styles.checkbox}>
-            <View
-              style={[
-                styles.innerCheckbox,
-                //isChecked ? { display: "flex" } : { display: "none" },
-              ]}
-            >
-              <AntDesign name="check" size={24} color="white" />
-            </View>
-          </Pressable>
-        </View>
       </View>
     </GestureHandlerRootView>
   );
@@ -82,20 +79,17 @@ const styles = StyleSheet.create({
   },
 
   checkbox: {
-    width: 40,
-    height: 40,
+    width:  30,
+    height: 30,
     borderWidth: 2,
-    borderColor: "#000",
-    borderRadius: 4,
+    borderRadius: 30,
     justifyContent: "center",
     alignItems: "center",
   },
 
   innerCheckbox: {
-    width: 40,
-    height: 40,
-    backgroundColor: "#000",
-    borderRadius: 2,
+    width: 30,
+    height: 30,
     justifyContent: "center",
     alignItems: "center",
     display: "none",
@@ -114,5 +108,11 @@ const styles = StyleSheet.create({
     fontFamily: "RobotoRegular",
     textTransform: "capitalize",
     marginVertical: 5,
+  },
+
+  checkboxLabel: {
+    marginLeft: 8,
+    fontSize: 14,
+    fontFamily: "BarlowRegular",
   },
 });

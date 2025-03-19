@@ -56,8 +56,17 @@ export type AvailibityProviderType = {
 
   allDay: boolean;
   setAllDay: (value: boolean) => void;
-
   markedDates: any;
-  setMarkedDates: (date: string) => void;
+  setMarkedDates: (date: string, value: any) => void;
+  fetchAvailabilityDates: () => void;
+  createAvailability: () => void;
 };
 
+export interface ErrorInterface {
+  start_date: string;
+  end_date: string;
+  start_time: string;
+  end_time: string;
+  repeat: string;
+  note: string;
+}

@@ -1,4 +1,5 @@
 import {
+  KeyboardAvoidingView,
   Platform,
   Pressable,
   ScrollView,
@@ -15,16 +16,18 @@ import OwnerAddressComponent from "@/app/component/management/checkout/ownerAddr
 import BillingAddressComponent from "@/app/component/management/checkout/billingAddress";
 import PaymentComponent from "@/app/component/management/checkout/payment";
 import { useThemeColor } from "@/hooks/useThemeColor";
+import { useCheckout } from "@/app/context/management/checkout/checkoutContext";
 
 const MainCheckoutComponent = () => {
   const activeBtn = useThemeColor({}, "activebtn");
 
   /* Export the width from the auth context */
   const { windowWidth } = useAuth();
+  const { useOwnerAddress } = useCheckout();
 
   return (
-    <SafeAreaProvider>
-      <View style={{ flex: 1 }}>
+    <SafeAreaProvider style={{ flex: 1 }}>
+      <KeyboardAvoidingView style={{ flex: 1 }}>
         {Platform.OS === "web" ? (
           <GestureHandlerRootView
             style={[styles.webMainContainer, { width: windowWidth }]}
@@ -43,9 +46,12 @@ const MainCheckoutComponent = () => {
                 <OwnerAddressComponent />
               </View>
 
-              <View style={styles.componentContainer}>
-                <BillingAddressComponent />
-              </View>
+              {/* Conditionally render the billing address component */}
+              {!useOwnerAddress && (
+                <View style={styles.componentContainer}>
+                  <BillingAddressComponent />
+                </View>
+              )}
 
               <View style={styles.componentContainer}>
                 <PaymentComponent />
@@ -60,9 +66,36 @@ const MainCheckoutComponent = () => {
             </ScrollView>
           </GestureHandlerRootView>
         ) : (
-          <View></View>
+          <GestureHandlerRootView style={styles.mobileMainContainer}>
+            <ScrollView
+              style={{ flex: 1, padding: 5 }}
+              showsVerticalScrollIndicator={false}
+            >
+              <View style={styles.componentContainer}>
+                <OwnerAddressComponent />
+              </View>
+
+              {/* Conditionally render the billing address component */}  
+              {!useOwnerAddress && (
+                <View style={styles.componentContainer}>
+                  <BillingAddressComponent />
+                </View>
+              )}
+
+              <View style={styles.componentContainer}>
+                <PaymentComponent />
+              </View>
+
+              {/* Submit button */}
+              <Pressable
+                style={[styles.submitButton, { backgroundColor: activeBtn }]}
+              >
+                <Text style={[styles.submitButtonText]}>Submit</Text>
+              </Pressable>
+            </ScrollView>
+          </GestureHandlerRootView>
         )}
-      </View>
+      </KeyboardAvoidingView>
     </SafeAreaProvider>
   );
 };
@@ -73,6 +106,9 @@ const styles = StyleSheet.create({
   webMainContainer: {
     flex: 1,
     flexDirection: "row",
+  },
+  mobileMainContainer: {
+    flex: 1,
   },
   componentContainer: {
     marginBottom: 20,
@@ -94,6 +130,7 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     borderWidth: 1,
     alignItems: "center",
+    marginBottom: 10,
   },
 
   submitButtonText: {
