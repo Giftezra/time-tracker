@@ -4,9 +4,8 @@ import {
   GestureHandlerRootView,
   Pressable,
 } from "react-native-gesture-handler";
-// import { useCheckout } from "@/app/context/management/checkout/checkoutContext";
 import { AntDesign } from "@expo/vector-icons";
-import { useCheckout } from "@/app/context/management/checkout/checkoutContext";
+import { useCheckout } from "@/app/context/management/payments/paymentContext";
 
 const OwnerAddressComponent = () => {
   const { ownerAddress, useOwnerAddress, setUseOwnerAddress } = useCheckout();
@@ -79,7 +78,7 @@ const styles = StyleSheet.create({
   },
 
   checkbox: {
-    width:  30,
+    width: 30,
     height: 30,
     borderWidth: 2,
     borderRadius: 30,

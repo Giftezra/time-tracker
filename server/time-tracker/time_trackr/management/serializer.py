@@ -1,4 +1,4 @@
-from .models import User, Client, Company, Contracts, Identity, TaskComment, Task, Shift, Message, ChatRoom
+from .models import User, Client, Company, Contracts, Identity, TaskComment, Task, Shift, Message, ChatRoom, SubscriptionTier, SubscriptionPlan, Overage, EmployeeCountHistory, Billing
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework.exceptions import ValidationError
@@ -132,4 +132,36 @@ class MessageSerializer(serializers.ModelSerializer):
   class Meta:
     model = Message
     fields = '__all__'
-  
+
+
+class SubscriptionTierSerializer(serializers.ModelSerializer):
+  class Meta:
+    model = SubscriptionTier
+    fields = '__all__'
+
+
+class SubscriptionPlanSerializer(serializers.ModelSerializer):
+  class Meta:
+    model = SubscriptionPlan
+    fields = '__all__'  
+
+
+class OverageSerializer(serializers.ModelSerializer):
+  class Meta:
+    model = Overage
+    fields = '__all__'  
+
+
+class EmployeeCountHistorySerializer(serializers.ModelSerializer):
+  class Meta:
+    model = EmployeeCountHistory
+    fields = '__all__'  
+
+
+class BillingSerializer(serializers.ModelSerializer):
+  class Meta:
+    model = Billing
+    fields = '__all__'   
+
+
+

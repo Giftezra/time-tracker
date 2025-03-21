@@ -51,7 +51,6 @@ class UserManager(BaseUserManager):
   def create_owner(self, email, password, **extra_fields):
     extra_fields.setdefault('is_employee', True)
     extra_fields.setdefault('is_admin', True)
-    extra_fields.setdefault('is_active', True)
     extra_fields.setdefault('is_owner', True)
     extra_fields.setdefault('is_staff', True)
     return self.create_user(email, password, **extra_fields)
@@ -60,7 +59,6 @@ class UserManager(BaseUserManager):
   def create_admin(self, email, password, company=None, **extra_fields):
     extra_fields.setdefault('is_employee', True)
     extra_fields.setdefault('is_admin', True)
-    extra_fields.setdefault('is_active', True)
     extra_fields.setdefault('is_staff', True)
     
     # First create the user
@@ -79,7 +77,6 @@ class UserManager(BaseUserManager):
 
   def create_staff(self, email, password, company=None, **extra_fields):
     extra_fields.setdefault('is_employee', True)
-    extra_fields.setdefault('is_active', True)
     
     # First create the user
     user = self.create_user(email, password, **extra_fields)
@@ -102,7 +99,6 @@ class UserManager(BaseUserManager):
     extra_fields.setdefault('is_admin', True)
     extra_fields.setdefault('is_owner', True)
     extra_fields.setdefault('is_superuser', True)
-    extra_fields.setdefault('is_active', True) 
 
     # Use create_user to actually create the superuser
     return self.create_user(email, password, **extra_fields)
@@ -124,7 +120,6 @@ class User(AbstractBaseUser, PermissionsMixin):
   is_employee = models.BooleanField(default=False)
   is_admin = models.BooleanField(default=False)
   is_superuser = models.BooleanField(default=False)
-  is_active = models.BooleanField(default=True)
   allow_push_notification = models.BooleanField(default=False)
   allow_email_notification = models.BooleanField(default=False)
   allow_marketing_emails = models.BooleanField(default=False)
@@ -225,8 +220,6 @@ class Client(models.Model):
     return self.name
       
 
-
-
 class Contracts(models.Model):
   client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='client_contract')
   name = models.CharField(max_length=100)
@@ -251,8 +244,6 @@ class Contracts(models.Model):
   def check_completion_status(self):
     if self.end_date < date.today():
       self.is_completed = True
-
-
 
 
 class Task(models.Model):
@@ -423,6 +414,7 @@ class TaskComment(models.Model):
             # For non-completed shifts, save normally
             super().save(*args, **kwargs)
 
+
 class ChatRoom(models.Model):
     name = models.CharField(max_length=255)
     participants = models.ManyToManyField(User, related_name='chat_rooms')
@@ -434,6 +426,7 @@ class ChatRoom(models.Model):
 
     def __str__(self):
         return self.name
+    
 
 class Message(models.Model):
     sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_messages')
@@ -446,29 +439,32 @@ class Message(models.Model):
 
     def __str__(self):
         return f'{self.sender.username}: {self.content[:50]}'
+    
+
+class SubscriptionTier(models.Model):
+    name = models.CharField(max_length=100)
+    description = models.TextField()
+    features = models.JSONField(default=list)
+    numberOfEmployees = models.PositiveIntegerField()
+    rate = models.DecimalField(max_digits=10, decimal_places=2)
+    overage_rate = models.DecimalField(max_digits=10, decimal_places=2)
+    is_popular = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f'{self.name} - {self.numberOfEmployees} - {self.rate}'
   
 
 class SubscriptionPlan(models.Model):
-    COMPANY_SIZE_TIERS = [
-        (20, '20 employees'),
-        (50, '50 employees'),
-        (100, '100 employees'),
-        (200, '200 employees'),
-        (500, '500 employees'),
-        (1000, '1000 employees'),
-        (0000, 'unlimited employees'),
-    ]
-
     COMPANY_BILLING_CYCLE = [
         ('monthly', 'Monthly'),
         ('annual', 'Annual'),
     ]
     
-    company = models.OneToOneField(Company, on_delete=models.CASCADE)
-    tier = models.PositiveIntegerField(choices=COMPANY_SIZE_TIERS)
+    company = models.OneToOneField(Company, on_delete=models.CASCADE, related_name='subscription_plan_company')
+    tier = models.ForeignKey(SubscriptionTier, on_delete=models.SET_NULL, null=True, related_name='subscription_plan_tier')
     billing_cycle = models.CharField(max_length=10, choices=COMPANY_BILLING_CYCLE)
-    base_price = models.DecimalField(max_digits=10, decimal_places=2)
-    overage_rate = models.DecimalField(max_digits=10, decimal_places=2)  # Per employee rate
     start_date = models.DateField()
     renewal_date = models.DateField()
     is_active = models.BooleanField(default=True)
@@ -479,7 +475,7 @@ class SubscriptionPlan(models.Model):
 
 
 class EmployeeCountHistory(models.Model):
-    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='employee_count_history_company'  )
     date = models.DateField(auto_now_add=True)
     count = models.PositiveIntegerField()
     
@@ -494,7 +490,7 @@ class EmployeeCountHistory(models.Model):
   
 # company/models.py
 class Overage(models.Model):
-    subscription = models.ForeignKey(SubscriptionPlan, on_delete=models.CASCADE)
+    subscription = models.ForeignKey(SubscriptionPlan, on_delete=models.CASCADE, related_name='overage_subscription')
     start_date = models.DateField()
     end_date = models.DateField()
     extra_employees = models.PositiveIntegerField()
@@ -506,7 +502,36 @@ class Overage(models.Model):
         daily_rate = (self.subscription.overage_rate / 30)  # Monthly proration
         return round(self.extra_employees * daily_rate * self.overage_days, 2)
     
+    # Calculate the overage rate based on the tier and the billing cycle
     def save(self, *args, **kwargs):
-        if not self.calculated_charge:
-            self.calculated_charge = self.calculate_charge()
+       if self.subscription.billing_cycle == 'monthly' and self.subscription.tier > 20 and self.subscription.tier <= 100:
+          self.overage_rate = 0.15
+       elif self.subscription.billing_cycle == 'monthly' and self.subscription.tier > 100:
+          self.overage_rate = 0.10
+       if self.subscription.billing_cycle == 'annual' and self.subscription.tier > 50 and self.subscription.tier <= 200:
+          self.overage_rate = 0.10
+       if self.subscription.billing_cycle == 'annual' and self.subscription.tier > 200:
+          self.overage_rate = 0.05
+       super().save(*args, **kwargs)
+
+
+  
+class Billing(models.Model):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='billing_company')
+    billing_date = models.DateField()
+    base_charge = models.DecimalField(max_digits=10, decimal_places=2)
+    overage_charges = models.DecimalField(max_digits=10, decimal_places=2)
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    status = models.CharField(max_length=20, choices=[
+        ('pending', 'Pending'),
+        ('paid', 'Paid'),
+        ('overdue', 'Overdue')
+    ])
+    
+    def calculate_total(self):
+        return self.base_charge + self.overage_charges
+    
+    def save(self, *args, **kwargs):
+        if not self.total_amount:
+            self.total_amount = self.calculate_total()
         super().save(*args, **kwargs)

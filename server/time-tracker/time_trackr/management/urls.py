@@ -9,9 +9,9 @@ from .view.main.employees import get_available_employees, get_all_employees_deta
 from .view.main.client import create_client, create_contract, getContractsAndJobDetails, getClientAndContracts, update_contract, complete_contract, delete_contract, update_client, delete_client
 from .view.main.task_manager import get_active_tasks, get_clients_shifts, create_shift, create_task, assign_task, terminate_shift, approve_task, get_all_contracts, get_all_open_task, start_shift, update_task
 
-from .view.main.checkout import get_publishable_key, create_payment_sheet
-
 from .view.main.calender import get_shifts, email_shift_report, cancel_shift, update_shift, approve_shift 
+
+from .view.main.payment import create_payment_sheet, get_subscription_tiers
 
 from .view.account.login import CustomTokenObtainPairView
 
@@ -66,17 +66,16 @@ urlpatterns = [
     path('get/employee/task/details/', get_employee_task_details, name='get_employee_task_details'),
     path('get/employee/work/log/', get_employee_work_log, name='get_employee_work_log'),
 
+    path('get/subscription/tiers/', get_subscription_tiers, name='get_subscription_tiers'),
+
 
     # The path definitions for the dashboard
     path('get/today/events/', get_today_events, name='get_today_events'),
     path('get/contract/statistics/', get_contract_statistics, name='get_contract_statistics'),
-    path('get/publishable/key/', get_publishable_key, name='get_publishable_key'),
     path('create/payment/sheet/', create_payment_sheet, name='create_payment_sheet'),
 
     path('start/shift/', start_shift, name='start_shift'),
     path('terminate/shift/', terminate_shift, name='terminate_shift'),
-    
-    
     path('update/company/', update_company, name='update_company'),
     path('update/contract/', update_contract, name='update_contract'),
     path('update/user/preferences/', update_user_preferences, name='update_user_preferences'),

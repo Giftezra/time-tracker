@@ -13,6 +13,7 @@ class Staff(models.Model):
   company = models.ForeignKey('management.Company', on_delete=models.SET_NULL, related_name='staff_members', null=True)
   date_hired = models.DateField(auto_now_add=True)
   updated_at = models.DateTimeField(auto_now=True)
+  is_active = models.BooleanField(default=True)
   
   def __str__(self):
     return f'{self.user} - {self.company}'

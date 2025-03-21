@@ -1,10 +1,9 @@
 import { StyleSheet, Text, View, TextInput } from "react-native";
 import React, { useState } from "react";
-import { useCheckout } from "@/app/context/management/checkout/checkoutContext";
+import { useCheckout } from "@/app/context/management/payments/paymentContext";
 
 const BillingAddressComponent = () => {
-  const { billingAddress, handleBillingAddress } =
-    useCheckout();
+  const { billingAddress, handleBillingAddress } = useCheckout();
 
   return (
     <View style={styles.container}>

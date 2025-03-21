@@ -6,8 +6,11 @@ from django.core.mail import send_mail, EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from django.conf import settings
+
 from django.utils import timezone
-from .models import Subscription
+from .models import SubscriptionPlan, Company, EmployeeCountHistory, Overage, Billing
+from datetime import timedelta
+from dateutil.relativedelta import relativedelta
 
 
 @shared_task
@@ -149,45 +152,6 @@ def send_contract_updated_email(contract_name, client_name, old_end_date, new_en
     email.send()
 
 
-@shared_task
-def process_subscriptions():
-    """
-    Celery task to process subscriptions and generate invoices.
-    This task should be scheduled to run daily.
-    """
-    # Get all active subscriptions due for billing
-    subscriptions = Subscription.objects.filter(
-        next_billing_date__lte=timezone.now(),
-        status__in=['trial', 'active']
-    )
-
-    results = []
-    for subscription in subscriptions:
-        try:
-            # Generate invoice for the subscription
-            invoice = subscription.generate_invoice()
-            
-            # Update subscription status if trial is ending
-            if subscription.status == 'trial' and subscription.trial_ends_at <= timezone.now():
-                subscription.status = 'active'
-                subscription.save()
-                
-            results.append({
-                'company': subscription.company.name,
-                'invoice_id': invoice.id,
-                'amount': invoice.amount,
-                'status': 'success'
-            })
-            
-        except Exception as e:
-            results.append({
-                'company': subscription.company.name,
-                'error': str(e),
-                'status': 'failed'
-            })
-    
-    return results
-
 
 @shared_task
 def send_trial_ending_email(company_name, days_left, owner_email):
@@ -212,33 +176,76 @@ def send_trial_ending_email(company_name, days_left, owner_email):
     )
 
 
-@shared_task
-def check_trial_periods():
-    """
-    Celery task to check trial periods and notify companies before expiration.
-    This task should be scheduled to run daily.
-    """
-    # Find subscriptions where trial is ending in 2 days
-    trial_ending_soon = Subscription.objects.filter(
-        status='trial',
-        trial_ends_at__lte=timezone.now() + timezone.timedelta(days=2),
-        trial_ends_at__gt=timezone.now()
-    )
 
-    for subscription in trial_ending_soon:
-        try:
-            days_left = (subscription.trial_ends_at - timezone.now()).days
-            
-            # Send email notification to company owner
-            send_trial_ending_email.delay(
-                company_name=subscription.company.name,
-                days_left=days_left,
-                owner_email=subscription.company.owner.email
+# Create a Celery task or cron job
+def calculate_overage():
+    companies = Company.objects.all()
+    
+    for company in companies:
+        subscription = company.subscriptionplan
+        billing_cycle_days = 30 if subscription.billing_cycle == 'monthly' else 365
+        
+        # Get daily counts for current billing cycle
+        counts = EmployeeCountHistory.objects.filter(
+            company=company,
+            date__range=[subscription.start_date, subscription.renewal_date]
+        )
+        
+        overage_days = 0
+        max_overage = 0
+        
+        for entry in counts:
+            if entry.count > subscription.tier:
+                overage = entry.count - subscription.tier
+                max_overage = max(max_overage, overage)
+                overage_days += 1
+        
+        # Create Overage record
+        if overage_days > 0:
+            Overage.objects.create(
+                subscription=subscription,
+                start_date=subscription.start_date,
+                end_date=subscription.renewal_date,
+                extra_employees=max_overage,
+                overage_days=overage_days
             )
             
-        except Exception as e:
-            print(f"Failed to process trial notification for {subscription.company.name}: {str(e)}")
 
+              
 
-
-
+def generate_bills():
+    subscriptions = SubscriptionPlan.objects.filter(is_active=True)
+    
+    for sub in subscriptions:
+        if timezone.now().date() == sub.renewal_date:
+            # Calculate base charge
+            base_charge = sub.base_price
+            
+            # Calculate overages
+            overages = Overage.objects.filter(
+                subscription=sub,
+                start_date__gte=sub.start_date,
+                end_date__lte=sub.renewal_date,
+                is_paid=False
+            )
+            
+            total_overage = sum([o.calculated_charge for o in overages])
+            
+            # Create billing record
+            Billing.objects.create(
+                company=sub.company,
+                billing_date=sub.renewal_date,
+                base_charge=base_charge,
+                overage_charges=total_overage,
+                status='pending'
+            )
+            
+            # Update subscription dates
+            if sub.billing_cycle == 'monthly':
+                sub.start_date = sub.renewal_date
+                sub.renewal_date = sub.renewal_date + relativedelta(months=+1)
+            else:
+                sub.start_date = sub.renewal_date
+                sub.renewal_date = sub.renewal_date + relativedelta(years=+1)
+            sub.save()
+               

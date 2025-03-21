@@ -11,7 +11,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import get_object_or_404
  
-from .decorators import owner_required, staff_required, admin_required, superuser_required
+from .decorators import admin_required
 from django.core.exceptions import ValidationError
 from ...models import Company, Client, Contracts, Shift
 from staff.models import Staff

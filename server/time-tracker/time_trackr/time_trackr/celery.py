@@ -14,15 +14,14 @@ app.config_from_object('django.conf:settings', namespace='CELERY')
 
 # Configure the Celery beat schedule
 app.conf.beat_schedule = {
-    'process-subscriptions-daily': {
-        'task': 'management.tasks.process_subscriptions',
-        'schedule': crontab(hour=0, minute=0),  # Run at midnight every day
+    'generate_bills': {
+        'task': 'management.tasks.generate_bills',
+        'schedule': crontab(hour=0, minute=0),
     },
-    'check-trial-periods-daily': {
-        'task': 'management.tasks.check_trial_periods',
-        'schedule': crontab(hour=9, minute=0),  # Run at 9 AM every day
+    'calculate_overage': {
+        'task': 'management.tasks.calculate_overage',
+        'schedule': crontab(hour=0, minute=0),
     },
-    # Add other scheduled tasks here
 }
 
 # Auto-discover tasks from all installed apps

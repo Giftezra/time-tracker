@@ -5,11 +5,10 @@ import {
   ScrollView,
   TouchableOpacity,
 } from "react-native";
-import React, { useContext, useState } from "react";
 import { FontAwesome, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { CardType } from "@/app/types/management/checkout";
-import { useCheckout } from "@/app/context/management/checkout/checkoutContext";
+import { CardType } from "@/app/types/management/payment";
+import { useCheckout } from "@/app/context/management/payments/paymentContext";
 
 const PaymentComponent = () => {
   const { selectedCard, setSelectedCard, savedCards, billingDetails } =

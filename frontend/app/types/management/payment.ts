@@ -15,7 +15,11 @@ export interface CheckoutContextType {
   setSelectedCard: (id: string) => void;
   useOwnerAddress: boolean;
   setUseOwnerAddress: (value: boolean) => void;
-  billingDetails: BillingDetails;
+  subscriptionTiers: SubscriptionPlanTiers[];
+  selectedPlan: SubscriptionPlanTiers | null;
+  setSelectedPlan: (plan: SubscriptionPlanTiers) => void;
+  billingPeriod: "monthly" | "yearly";
+  toggleBillingPeriod: () => void;
 }
 
 export interface BillingAddress {
@@ -39,4 +43,27 @@ export interface BillingDetails {
   billingPeriod: string;
   ratePerEmployee: number;
   totalAmount: number;
+}
+
+export interface SubscriptionPlanTiers {
+  id: string;
+  name: string;
+  description: string;
+  features: string[];
+  isPopular?: boolean;
+  numberOfEmployees?: number;
+  rate?: number;
+  overageFee?: number;
+}
+
+export interface CurrentPlanDetails {
+  planName: string;
+  currentEmployees: number;
+  planLimit: number;
+  overageCount: number;
+  overageFees: number;
+  expiryDate: string;
+  overageDuration?: number;
+  billingPeriod: "monthly" | "yearly";
+  status: "active" | "expiring" | "overdue";
 }

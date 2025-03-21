@@ -4,7 +4,8 @@ import {
   CardType,
   CheckoutContextType,
   OwnerDetails,
-} from "@/app/types/management/checkout";
+  SubscriptionPlanTiers,
+} from "@/app/types/management/payment";
 import { userData } from "@/app/utils/loadData";
 import { createContext, useContext, useState, useEffect } from "react";
 import { useAuth } from "../../authentication";
@@ -22,17 +23,30 @@ const CheckoutContext = createContext<CheckoutContextType | undefined>(
  * - Manage the order summary
  */
 
-const CheckoutContextProvider = ({
-  children,
-}: {
-  children: React.ReactNode;
-}) => {
+const PaymentContext = ({ children }: { children: React.ReactNode }) => {
   const user = userData();
   const { axiosInstance } = useAuth();
 
   const [publishableKey, setPublishableKey] = useState<string>("");
-  const [ownerAddress, setOwnerAddress] = useState<OwnerDetails>();
+  const [ownerAddress, setOwnerAddress] = useState<OwnerDetails>(); // Payment states
+  const [savedCards, setSavedCards] = useState<CardType[]>([
+    { id: "1", last4: "4242", brand: "visa", isDefault: true },
+    { id: "2", last4: "5555", brand: "mastercard", isDefault: false },
+  ]);
+  const [selectedCard, setSelectedCard] = useState<string>(savedCards[0]?.id);
+  const [subscriptionTiers, setSubscriptionTiers] = useState<
+    SubscriptionPlanTiers[]
+  >([]);
+  const [useOwnerAddress, setUseOwnerAddress] = useState(false);
 
+  const [selectedPlan, setSelectedPlan] =
+    useState<SubscriptionPlanTiers | null>(null);
+  const [billingPeriod, setBillingPeriod] = useState<"monthly" | "yearly">(
+    "monthly"
+  );
+  const toggleBillingPeriod = () => {
+    setBillingPeriod((prev) => (prev === "monthly" ? "yearly" : "monthly"));
+  };
   // Update owner address when user data becomes available
   useEffect(() => {
     if (user) {
@@ -46,6 +60,13 @@ const CheckoutContextProvider = ({
     }
   }, [user]);
 
+  useEffect(() => {
+    const fetchData = async () => {
+      await fetchSubscriptionTiers();
+    };
+    fetchData();
+  }, []);
+
   // Billing address state
   const [billingAddress, setBillingAddress] = useState<BillingAddress>({
     fullName: "",
@@ -56,45 +77,28 @@ const CheckoutContextProvider = ({
     phone: "",
   });
 
-  // Payment states
-  const [savedCards, setSavedCards] = useState<CardType[]>([
-    { id: "1", last4: "4242", brand: "visa", isDefault: true },
-    { id: "2", last4: "5555", brand: "mastercard", isDefault: false },
-  ]);
-  const [selectedCard, setSelectedCard] = useState<string>(savedCards[0]?.id);
-
-  // Checkbox state for using owner address as billing
-  const [useOwnerAddress, setUseOwnerAddress] = useState(false);
-
-  // Billing details
-  const [billingDetails] = useState<BillingDetails>({
-    numberOfEmployees: 15,
-    billingPeriod: "Monthly",
-    ratePerEmployee: 10,
-    totalAmount: 150,
-  });
-
   const handleBillingAddress = (field: keyof BillingAddress, value: string) => {
-    setBillingAddress((prev) => ({ ...prev, [field]: value }));
+    setBillingAddress((prev: any) => ({ ...prev, [field]: value }));
   };
 
   /**
-   * Get the publishable key for Stripe payment processing from the server.
-   * Set the publishable key to the state immediately.
+   * Get the subscription tiers for the apps from the server.
+   * Set the subscription tiers to the state immediately.
    */
-  const fetchPublishableKey = async () => {
+  const fetchSubscriptionTiers = async () => {
     try {
-      const response = await axiosInstance.get("/api/get/publishable/key/");
-      setPublishableKey(response.data.publishableKey);
-      console.log(response.data);
+      const response = await axiosInstance.get("/api/get/subscription/tiers/");
+      if (response.status === 200) {
+        setSubscriptionTiers(response.data.subscriptionTiers);
+      }
     } catch (error) {
-      console.error("Error fetching publishable key:", error);
+      console.error("Error fetching subscription tiers:", error);
     }
   };
 
-  useEffect(() => {
+  const handleContinue = () => {
     
-  })
+  };
 
   const value: CheckoutContextType = {
     ownerAddress,
@@ -105,7 +109,11 @@ const CheckoutContextProvider = ({
     setSelectedCard,
     useOwnerAddress,
     setUseOwnerAddress,
-    billingDetails,
+    subscriptionTiers,
+    selectedPlan,
+    setSelectedPlan,
+    billingPeriod,
+    toggleBillingPeriod,
   };
 
   return (
@@ -125,4 +133,4 @@ export const useCheckout = () => {
   return context;
 };
 
-export default CheckoutContextProvider;
+export default PaymentContext;

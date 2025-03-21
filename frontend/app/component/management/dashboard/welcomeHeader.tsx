@@ -35,7 +35,7 @@ const DashboardWelcomeHeader = () => {
               styles.subscriptionButton,
               pressed && styles.buttonPressed,
             ]}
-            onPress={() => router.push("/management/(drawer)/checkout/main")}
+            onPress={() => router.push("/management/(drawer)/payment/main")}
           >
             <Text style={styles.buttonText}>Manage Subscription</Text>
           </Pressable>
