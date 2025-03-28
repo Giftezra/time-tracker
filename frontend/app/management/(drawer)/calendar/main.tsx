@@ -21,7 +21,7 @@ import CalendarShiftComponent from "@/app/component/management/calendar/shifts";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import SideComponent from "@/app/component/helper/sideComponent";
-import { useAuth } from "@/app/context/authentication";
+import { useAuth } from "@/app/authentication";
 import EditShiftComponent from "@/app/component/management/calendar/editshift";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 

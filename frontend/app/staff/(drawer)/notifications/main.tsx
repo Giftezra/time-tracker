@@ -1,50 +1,47 @@
 import { FlatList, StyleSheet, Text, View } from "react-native";
 import React from "react";
 import NotificationDetailsComponent from "@/app/component/staff/notification/notification";
-import { useNotificationContext } from "@/app/context/management/notificationProvider";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import {
   GestureHandlerRootView,
   Pressable,
 } from "react-native-gesture-handler";
-
+import { useNotifications } from "@/app/context/management/notifications/notificationContext";
 /**
  * The main notification component enables the staff to view all of ther notifitcations in on place. When the use clicks the
  * @returns
  */
 
 const MainStaffNotificationComponent = () => {
-  const { notifications, handleReadPress, handleUnreadPress, handleAllPress } =
-    useNotificationContext();
 
   return (
     <SafeAreaProvider style={styles.container}>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <View style={styles.headerContainer}>
           <Text style={styles.headerText}>Notifications</Text>
-          <Pressable style={styles.clearButton} onPress={handleAllPress}>
+          <Pressable style={styles.clearButton} onPress={() => {}}>
             <Text style={styles.clearText}>Clear all</Text>
           </Pressable>
         </View>
 
         <View style={styles.filterContainer}>
-          <Pressable style={styles.filterButton} onPress={handleAllPress}>
+          <Pressable style={styles.filterButton} onPress={() => {}}>
             <Text style={styles.filterButtonText}>All</Text>
           </Pressable>
-          <Pressable style={styles.filterButton} onPress={handleReadPress}>
+          <Pressable style={styles.filterButton} onPress={() => {}}>
             <Text style={styles.filterButtonText}>Read</Text>
           </Pressable>
-          <Pressable style={styles.filterButton} onPress={handleUnreadPress}>
+          <Pressable style={styles.filterButton} onPress={() => {}}>
             <Text style={styles.filterButtonText}>Unread</Text>
           </Pressable>
         </View>
 
-        <FlatList
-          data={notifications}
-          renderItem={({ item }) => <NotificationDetailsComponent {...item} />}
+        {/* <FlatList
+          data={[]}
+          renderItem={({ item }) => <NotificationDetailsComponent {} />}
           keyExtractor={(item) => item.id.toString()}
           contentContainerStyle={styles.listContainer}
-        />
+        /> */}
       </GestureHandlerRootView>
     </SafeAreaProvider>
   );

@@ -4,6 +4,10 @@ from asgiref.sync import sync_to_async
 from django.contrib.auth import get_user_model
 from management.models import Message, ChatRoom
 from django.shortcuts import get_object_or_404
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework import status
 
 class DirectMessageConsumer(AsyncWebsocketConsumer):
     """
@@ -116,3 +120,31 @@ class DirectMessageConsumer(AsyncWebsocketConsumer):
             room=chat_room,
             content=message
         )
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_chat_history(request, user_id):
+    """
+    Fetch chat history between the authenticated user and another user
+    """
+    try:
+        participant_ids = sorted([str(request.user.id), str(user_id)])
+        room_name = f'dm_{"_".join(participant_ids)}'
+    
+        chat_room = get_object_or_404(ChatRoom, name=room_name)
+        messages = Message.objects.filter(room=chat_room).order_by('timestamp')
+
+    # Get the char history
+        chat_history = []
+        for msg in messages:
+            chat_history.append({
+                'id': str(msg.id),
+                'content': msg.content,
+                'timestamp': msg.timestamp.isoformat(),
+                'sender_id': str(msg.sender.id),
+                'is_read': msg.is_read
+            })
+        
+            return Response({'chat_history': chat_history}, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)

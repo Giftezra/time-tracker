@@ -9,7 +9,7 @@ import {
 } from "@/app/types/staff/event";
 
 import { MessageComponentProps } from "@/app/types/staff/messages";
-import { useAuth } from "../authentication";
+import { useAuth } from "@/app/authentication";
 import { Alert } from "react-native";
 
 /**

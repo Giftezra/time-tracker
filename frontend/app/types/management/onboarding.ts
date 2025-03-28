@@ -105,4 +105,5 @@ export interface AuthContextType {
   screenWidth: number;
   windowWidth: number;
   axiosInstance: AxiosInstance;
+  setPreferredRole: (role: 'admin' | 'staff') => Promise<void>;
 }

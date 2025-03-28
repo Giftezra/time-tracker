@@ -11,11 +11,37 @@ import { id } from "react-native-paper-dates";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { SubscriptionPlanTiers } from "@/app/types/management/payment";
 import { useCheckout } from "@/app/context/management/payments/paymentContext";
+import CheckoutComponent from "./checkout";
 
 const SubscriptionPlansComponent = () => {
-  const { subscriptionTiers, selectedPlan, setSelectedPlan, billingPeriod, toggleBillingPeriod } = useCheckout();
+  const {
+    subscriptionTiers,
+    selectedPlan,
+    setSelectedPlan,
+    billingPeriod,
+    toggleBillingPeriod,
+    showCheckout,
+    setShowCheckout,
+    handleContinue,
+  } = useCheckout();
   const activeBtn = useThemeColor({}, "inactivebtn");
   const calendarText = ["Monthly", "Yearly"];
+
+  /* Show the checkout component when the continue button is pressed.
+  Pass the setShowCheckout function to the checkout component to close the checkout component when the back button is pressed */
+  if (showCheckout && selectedPlan) {
+    return (
+      <CheckoutComponent
+        selectedPlan={selectedPlan}
+        billingPeriod={billingPeriod}
+        onBack={() => setShowCheckout(false)}
+        onComplete={() => {
+          // Handle payment completion
+          console.log("Payment completed");
+        }}
+      />
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -69,8 +95,11 @@ const SubscriptionPlansComponent = () => {
 
       {/* Display the continue button only when the an item is selected */}
       {selectedPlan && (
-        <View style={styles.continueButtonContainer} >
-          <TouchableOpacity style={[styles.continueButton, { backgroundColor: activeBtn }]}>
+        <View style={styles.continueButtonContainer}>
+          <TouchableOpacity
+            style={[styles.continueButton, { backgroundColor: activeBtn }]}
+            onPress={handleContinue}
+          >
             <Text style={styles.continueButtonText}>Continue</Text>
           </TouchableOpacity>
         </View>

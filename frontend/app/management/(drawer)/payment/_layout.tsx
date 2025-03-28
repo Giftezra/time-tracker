@@ -1,18 +1,19 @@
 import { StyleSheet } from "react-native";
 import React, { useEffect, useState } from "react";
 import { Stack } from "expo-router";
-import { useAuth } from "@/app/context/authentication";
+import { useAuth } from "@/app/authentication";
 import PaymentContext from "@/app/context/management/payments/paymentContext";
+import MobileStripeProvider from "@/app/management/(drawer)/payment/MobileStripeProvider";
 
-const PaymentLayout = () => {
-  const publishableKey = "dhgfgfkjgf";
+export default function PaymentLayout() {
   return (
-    <PaymentContext>
-      <Stack screenOptions={{ headerShown: false }} />
-    </PaymentContext>
+    <MobileStripeProvider >
+      <PaymentContext>
+        <Stack screenOptions={{ headerShown: false }} />
+      </PaymentContext>
+    </MobileStripeProvider>
   );
 };
 
-export default PaymentLayout;
 
 const styles = StyleSheet.create({});

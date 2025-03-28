@@ -7,7 +7,7 @@ import {
 } from "@/app/types/management/client";
 import { BASE_URL } from "@/app/utils/urls";
 
-import { router } from "expo-router";
+import { router } from "expo-router"; 
 import {
   useContext,
   createContext,
@@ -16,7 +16,7 @@ import {
   useEffect,
 } from "react";
 import { Alert, Linking, Platform } from "react-native";
-import { useAuth } from "../../authentication";
+import { useAuth } from "@/app/authentication";
 import axios from "axios";
 
 const ClientContext = createContext<ClientContextType | undefined>(undefined);

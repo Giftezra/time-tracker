@@ -19,3 +19,16 @@ export interface CompletedShiftsInterface {
   pending_tasks: number;
 }
 
+export interface TaskChartProps {
+  width: number;
+  title: string;
+  taskStats: TaskStatistics;
+}
+
+export interface TaskStatistics {
+  completed: number;
+  ongoing: number;
+  pending: number;
+  assigned: number;
+  total: number;
+}

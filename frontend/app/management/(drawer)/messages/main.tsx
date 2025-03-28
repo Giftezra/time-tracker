@@ -21,7 +21,7 @@ import {
   TouchableOpacity,
 } from "react-native-gesture-handler";
 import SideComponent from "@/app/component/helper/sideComponent";
-import { useAuth } from "@/app/context/authentication";
+import { useAuth } from "@/app/authentication";
 import { useMessageContext } from "@/app/context/management/messages/messageContext";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
@@ -89,20 +89,22 @@ const MainAdminMessages = () => {
            */
 
           <View style={{ flex: 1, width: "100%" }}>
-            <View style={{ flex: 1, width: "100%" }}>
-              <ChatRoomComponent
-                onConversationSelect={handleChatDisplay}
-                onHandleModalVisibility={handleModalVisibility}
-              />
-            </View>
+            <ChatRoomComponent
+              onConversationSelect={handleChatDisplay}
+              onHandleModalVisibility={handleModalVisibility}
+            />
 
-            <View style={{ flex: 1, width: "100%" }}>
+            <Modal
+              visible={isModalVisible}
+              animationType="slide"
+              onRequestClose={handleCloseModal}
+            >
               <MessageComponent
                 conversation_id={chatDisplay?.chatroomId}
                 reciepient={chatDisplay?.reciepient}
                 closeModal={handleCloseModal}
               />
-            </View>
+            </Modal>
           </View>
         )}
       </KeyboardAvoidingView>

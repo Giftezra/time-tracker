@@ -20,6 +20,15 @@ export interface CheckoutContextType {
   setSelectedPlan: (plan: SubscriptionPlanTiers) => void;
   billingPeriod: "monthly" | "yearly";
   toggleBillingPeriod: () => void;
+  showCheckout: boolean;
+  setShowCheckout: (show: boolean) => void;
+  handleContinue: () => void;
+  billingDetails: BillingDetails;
+  setBillingDetails: (details: BillingDetails) => void;
+  paymentDetails: PaymentDetails;
+  setPaymentDetails: (details: PaymentDetails) => void;
+  currentPage: string;
+  setCurrentPage: (page: string) => void;
 }
 
 export interface BillingAddress {
@@ -36,6 +45,14 @@ export interface CardType {
   last4: string;
   brand: string;
   isDefault: boolean;
+}
+
+export interface PaymentDetails {
+  cardNumber: string;
+  expiryDate: string;
+  cvv: string;
+  name: string;
+  email: string;
 }
 
 export interface BillingDetails {
@@ -65,5 +82,13 @@ export interface CurrentPlanDetails {
   expiryDate: string;
   overageDuration?: number;
   billingPeriod: "monthly" | "yearly";
+  status: "active" | "expiring" | "overdue";
+}
+
+export interface SubscriptionHistoryInterface {
+  id: string;
+  planName: string;
+  startDate: string;
+  endDate: string;
   status: "active" | "expiring" | "overdue";
 }

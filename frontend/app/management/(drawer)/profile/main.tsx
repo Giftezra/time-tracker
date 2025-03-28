@@ -21,24 +21,19 @@ import {
 } from "react-native-gesture-handler";
 
 import UserDetailsComponent from "@/app/component/management/profile/user details";
-import EditUserDetailsComponent from "@/app/component/management/profile/edit_company_details";
+import EditUserDetailsComponent from "@/app/component/management/profile/editCompanyDetails";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import ProfileProvider from "@/app/context/management/profile/profileContext";
-import { useAuth } from "@/app/context/authentication";
+import ProfileProvider, {
+  useProfileContext,
+} from "@/app/context/management/profile/profileContext";
+import { useAuth } from "@/app/authentication";
 import SideComponent from "@/app/component/helper/sideComponent";
 
 const MainAdminProfile = () => {
   const { windowWidth } = useAuth();
-
-  const [modalVisible, setModalVisible] = React.useState(false);
+  const { savePreferences, onModalVisible, setOnModalVisible } =
+    useProfileContext();
   const secondary = useThemeColor({}, "secondaryColor");
-
-  /**
-   * Set the modal visible to false. Method is passed as props to trigger the modal visibility
-   */
-  const onModalVisible = () => {
-    setModalVisible(!modalVisible);
-  };
 
   return (
     <SafeAreaProvider
@@ -59,26 +54,27 @@ const MainAdminProfile = () => {
               }}
             >
               <View style={{ flex: 1 }}>
-                <UserDetailsComponent onModalVisible={onModalVisible} />
+                <UserDetailsComponent />
               </View>
               <View style={{ flex: 2 }}>
-                <EditUserDetailsComponent onModalVisible={onModalVisible} />
+                <EditUserDetailsComponent />
               </View>
             </View>
           </View>
         ) : (
           <View
             style={{
+              flex: 1,
               width: windowWidth,
             }}
           >
-            <UserDetailsComponent onModalVisible={onModalVisible} />
+            <UserDetailsComponent />
           </View>
         )}
 
-        <Modal animationType="slide" visible={modalVisible}>
+        <Modal animationType="slide" visible={onModalVisible}>
           <GestureHandlerRootView style={{ flex: 1 }}>
-            <EditUserDetailsComponent onModalVisible={onModalVisible} />
+            <EditUserDetailsComponent />
           </GestureHandlerRootView>
         </Modal>
       </KeyboardAvoidingView>

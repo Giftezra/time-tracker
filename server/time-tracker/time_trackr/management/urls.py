@@ -1,9 +1,9 @@
-from django.urls import path, include
+from django.urls import path, include, re_path
 from .view.account.authentication import register_owner, onboard_employee
 
 from .view.main.dashboard import update_company, delete_company, get_task_statistics, get_top_performers, get_today_events, get_contract_statistics,  get_employees_on_leave, get_today_events
 
-from .view.main.profile import create_company, update_user_preferences
+from .view.main.profile import create_company, update_user_preferences, update_owner_company_details
 from .view.main.employees import get_available_employees, get_all_employees_details, get_shift_details, get_employee_details, get_all_employees, get_employee_with_id, get_employee_task_details, get_employee_work_log
 
 from .view.main.client import create_client, create_contract, getContractsAndJobDetails, getClientAndContracts, update_contract, complete_contract, delete_contract, update_client, delete_client
@@ -18,6 +18,13 @@ from .view.account.login import CustomTokenObtainPairView
 from rest_framework_simplejwt.views import (
     TokenRefreshView, TokenObtainPairView
 )
+
+from .view.main.messages import DirectMessageConsumer
+
+# First define websocket_urlpatterns
+websocket_urlpatterns = [
+    re_path(r'ws/dm/(?P<user_id>\w+)/$', DirectMessageConsumer.as_asgi()),
+]
 
 urlpatterns = [
     # PAth definitions for all reqistration requests on the management app
@@ -79,10 +86,13 @@ urlpatterns = [
     path('update/company/', update_company, name='update_company'),
     path('update/contract/', update_contract, name='update_contract'),
     path('update/user/preferences/', update_user_preferences, name='update_user_preferences'),
+    path('update/owner/company/details/', update_owner_company_details, name='update_owner_company_details'),
     path('update/task/', update_task, name='update_task'),
     path('update/shift/', update_shift, name='update_shift'),
     path('update/client/', update_client, name='update_client'),
     
     path('get/task/statistics/', get_task_statistics, name='get_task_statistics'),
     path('get/top/performers/', get_top_performers, name='get_top_performers'),
+
+    path('messages/', include(websocket_urlpatterns)),
 ]

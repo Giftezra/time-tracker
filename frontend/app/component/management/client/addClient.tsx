@@ -3,7 +3,10 @@ import React, { useState } from "react";
 import { AntDesign, MaterialIcons } from "@expo/vector-icons";
 import { NewClientDetailsInterface } from "@/app/types/management/client";
 import { useClientContext } from "@/app/context/management/client/clientContext";
-
+import ButtonText from "../../helper/ButtonText";
+import SubHeaderText from "../../helper/SubHeaderText";
+import ThemedHeaderText from "../../helper/ThemedHeaderText";
+import SubtitleThemedText from "../../helper/SubtitleThemedText";
 /**
  * AddClientComponent is responsible for rendering a form to register new clients.
  * It provides input fields for client details including name, contact information,
@@ -61,7 +64,7 @@ const AddClientComponent = () => {
   return (
     <View style={styles.mainContainer}>
       <View style={styles.headerContainer}>
-        <Text style={styles.headerText}>Register New Client</Text>
+        <SubHeaderText text="register new client" />
       </View>
 
       <ScrollView
@@ -73,10 +76,10 @@ const AddClientComponent = () => {
           <View style={styles.formSection}>
             {/* Client Information Section */}
             <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>Client Information</Text>
+              <ThemedHeaderText text="client information" />
 
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Client Name</Text>
+                <SubtitleThemedText text="client name" />
                 <TextInput
                   placeholder="Enter client name"
                   style={styles.input}
@@ -88,7 +91,7 @@ const AddClientComponent = () => {
               </View>
 
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Client Email</Text>
+                <SubtitleThemedText text="client email" />
                 <TextInput
                   placeholder="Enter client email"
                   style={styles.input}
@@ -102,7 +105,7 @@ const AddClientComponent = () => {
               </View>
 
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Client Phone</Text>
+                <SubtitleThemedText text="client phone" />
                 <TextInput
                   placeholder="Enter client phone"
                   style={styles.input}
@@ -118,10 +121,10 @@ const AddClientComponent = () => {
 
             {/* Address Section */}
             <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>Address Details</Text>
+              <ThemedHeaderText text="address details" />
 
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Street Address</Text>
+                <SubtitleThemedText text="street address" />
                 <TextInput
                   placeholder="Enter client address"
                   style={styles.input}
@@ -135,7 +138,7 @@ const AddClientComponent = () => {
 
               <View style={styles.postcodeContainer}>
                 <View style={[styles.inputGroup, { flex: 1 }]}>
-                  <Text style={styles.label}>Postcode</Text>
+                  <SubtitleThemedText text="postcode" />
                   <TextInput
                     placeholder="Enter postcode"
                     style={styles.input}
@@ -147,27 +150,31 @@ const AddClientComponent = () => {
                   />
                 </View>
                 <TouchableOpacity style={styles.findAddressButton}>
-                  <Text style={styles.findAddressText}>Find Address</Text>
+                  <ButtonText text="find address" />
                 </TouchableOpacity>
               </View>
 
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>City</Text>
+                <SubtitleThemedText text="city" />
                 <TextInput
                   placeholder="Enter client city"
                   style={styles.input}
                   placeholderTextColor="#A0AEC0"
+                  importantForAutofill="yes"
+                  autoComplete='address-line2'
                   value={newClientDetails.city}
                   onChangeText={(text) => handleInputChange("city", text)}
                 />
               </View>
 
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Country</Text>
+                <SubtitleThemedText text="country" />
                 <TextInput
                   placeholder="Enter client country"
                   style={styles.input}
                   placeholderTextColor="#A0AEC0"
+                  importantForAutofill="yes"
+                  autoComplete="country"
                   value={newClientDetails.country}
                   onChangeText={(text) => handleInputChange("country", text)}
                 />
@@ -179,7 +186,7 @@ const AddClientComponent = () => {
             {isNewClientLoading ? (
               <ActivityIndicator size="large" color="#4299E1" />
             ) : (
-              <Text style={styles.registerButtonText}>Register Client</Text>
+              <ButtonText text="register client" />
             )}
           </TouchableOpacity>
         </View>
@@ -197,7 +204,7 @@ const styles = StyleSheet.create({
   },
 
   headerContainer: {
-    padding: 20,
+    padding: 10,
     backgroundColor: "#FFFFFF",
     borderBottomWidth: 1,
     borderBottomColor: "#E2E8F0",
@@ -276,7 +283,7 @@ const styles = StyleSheet.create({
 
   postcodeContainer: {
     flexDirection: "row",
-    alignItems: "flex-end",
+    alignItems: "center",
     gap: 12,
     marginBottom: 20,
   },

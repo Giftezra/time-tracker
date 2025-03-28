@@ -11,7 +11,7 @@ import React, { useState } from "react";
 import { AntDesign, MaterialIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { useAuth } from "@/app/context/authentication";
+import { useAuth } from "@/app/authentication";
 import { userData } from "@/app/utils/loadData";
 import UserDetailsComponent from "../management/profile/user details";
 
@@ -166,7 +166,7 @@ const SideComponent = () => {
 
       {/* Display the popup modal when a staff member clicks the profile button */}
       {profilePopup && (
-        <UserDetailsComponent onModalVisible={() => setProfilePopup(false)} />
+        <UserDetailsComponent />
       )}
     </View>
   );

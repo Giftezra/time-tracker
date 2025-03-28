@@ -48,7 +48,7 @@ const renderMessage = ({
   isSentByMe: boolean;
 }) => {
   return (
-    <Pressable style={{ flexDirection: "column", flex: 1 }}>
+    <Pressable style={styles.messageWrapper}>
       <View
         style={[
           styles.messageItem,
@@ -56,21 +56,27 @@ const renderMessage = ({
         ]}
       >
         <Text
-          style={[styles.messageText, { color: isSentByMe ? "#fff" : "#000" }]}
+          style={[
+            styles.messageText,
+            { color: isSentByMe ? "#FFFFFF" : "#000000" },
+          ]}
         >
           {item.content}
         </Text>
         <View style={styles.messageFooter}>
           <Text
-            style={[styles.timestamp, { color: isSentByMe ? "#eee" : "#666" }]}
+            style={[
+              styles.timestamp,
+              { color: isSentByMe ? "rgba(255,255,255,0.7)" : "#666666" },
+            ]}
           >
             {item.timestamp}
           </Text>
           {item.is_read && (
             <MaterialIcons
-              name="check"
+              name="done-all"
               size={16}
-              color={isSentByMe ? "#fff" : "green"}
+              color={isSentByMe ? "rgba(255,255,255,0.9)" : "#34B7F1"}
               style={{ marginLeft: 5 }}
             />
           )}
@@ -82,7 +88,13 @@ const renderMessage = ({
 
 const MessageComponent: React.FC<MesssageComponentInterface> = (props) => {
   const [text, setText] = useState("");
-  const { messages, isSentByMe, sendMessage} = useMessageContext();
+  const {
+    messages,
+    isSentByMe,
+    sendMessage,
+    connectWebSocket,
+    disconnectWebSocket,
+  } = useMessageContext();
 
   const secondaryColor = useThemeColor({}, "secondaryColor");
   const innerBackgroundColor = useThemeColor({}, "innerBackground");
@@ -90,24 +102,35 @@ const MessageComponent: React.FC<MesssageComponentInterface> = (props) => {
   const highlightColor = useThemeColor({}, "highlight");
   const textinput = useThemeColor({}, "textinput");
 
+  useEffect(() => {
+    // Connect to WebSocket when component mounts
+    if (props.conversation_id) {
+      connectWebSocket?.(props.conversation_id);
+    }
+
+    // Cleanup on unmount
+    return () => {
+      disconnectWebSocket?.();
+    };
+  }, [props.conversation_id]);
+
   return (
     <GestureHandlerRootView
       style={[styles.mainContainer, { backgroundColor: secondaryColor }]}
     >
-      {/* Conditionally display a back button on mobile to enable the user close the modal */}
-
-      {/* Use the passed props to set the header for the conversation */}
+      {/* Header row with back button, image and recipient info */}
       <View
         style={[styles.rowContainer, { backgroundColor: innerBackgroundColor }]}
       >
+        <Pressable style={styles.headerBackButton} onPress={props.closeModal}>
+          <AntDesign name="arrowleft" size={24} color={textcolor} />
+        </Pressable>
+
         <Image source={user_image} style={styles.image} />
         <View style={styles.reciepientandCallcontainer}>
           <Text style={[styles.reciepientText, { color: highlightColor }]}>
             {props.reciepient}
           </Text>
-          <Pressable style={styles.sendButton}>
-            <MaterialIcons name="call" size={26} color={"green"} />
-          </Pressable>
         </View>
       </View>
 
@@ -125,14 +148,18 @@ const MessageComponent: React.FC<MesssageComponentInterface> = (props) => {
         style={[styles.sendMessageContainer, { backgroundColor: textinput }]}
       >
         <TextInput
-          placeholder="Type a message"
+          placeholder="Enter your message here....."
           value={text}
           onChangeText={setText}
           style={styles.messageInput}
           autoCorrect={true}
           multiline={true}
+          numberOfLines={2}
         />
-        <Pressable style={styles.sendButton} onPress={() => sendMessage(props.conversation_id, text)}>
+        <Pressable
+          style={styles.sendButton}
+          onPress={() => sendMessage(props.conversation_id, text)}
+        >
           <AntDesign name="arrowright" size={24} color={textcolor} />
         </Pressable>
       </View>
@@ -146,14 +173,23 @@ const styles = StyleSheet.create({
   mainContainer: {
     flex: 1,
     width: "100%",
-    backgroundColor: "#31a7cb",
   },
 
   rowContainer: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    width: "100%",
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(0,0,0,0.1)",
+    backgroundColor: "#FFFFFF",
+  },
+
+  headerBackButton: {
+    padding: 8,
+    marginRight: 8,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
   },
 
   reciepientandCallcontainer: {
@@ -161,19 +197,17 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     flex: 1,
     alignItems: "center",
-    padding: 5,
+    marginLeft: 12,
   },
 
   image: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    marginHorizontal: 5,
-    marginVertical: 5,
+    width: 45,
+    height: 45,
+    borderRadius: 23,
   },
 
   reciepientText: {
-    fontSize: Platform.OS === "web" ? 15 : 20,
+    fontSize: Platform.OS === "web" ? 16 : 18,
     fontWeight: "600",
     fontFamily: "RobotoRegular",
     textTransform: "capitalize",
@@ -181,51 +215,61 @@ const styles = StyleSheet.create({
 
   sendMessageContainer: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    width: "100%",
-    borderWidth: 1,
-    borderRadius: 3,
-    marginBottom: 5,
-    padding: 3,
+    padding: 8,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(0,0,0,0.1)",
+    backgroundColor: "#FFFFFF",
   },
 
   messageInput: {
     flex: 1,
-    fontFamily: "BarlowRegular",
-    fontSize: 14,
-    fontWeight: "600",
+    padding: Platform.OS === "web" ? 8 : 10,
+    fontSize: 16,
+    backgroundColor: "#F0F2F5",
+    borderRadius: 20,
+    marginRight: 8,
+    minHeight: 40,
+    maxHeight: 100,
   },
 
   sendButton: {
-    padding: Platform.OS === "web" ? 8 : 10,
-    borderRadius: 20,
-    backgroundColor: "#063970",
-    marginEnd: 10,
+    padding: 10,
+    borderRadius: 25,
+    backgroundColor: "#0084FF",
+    justifyContent: "center",
+    alignItems: "center",
+    width: 45,
+    height: 45,
+  },
+
+  messageWrapper: {
+    flexDirection: "column",
+    marginVertical: 2,
+    paddingHorizontal: 8,
   },
 
   messageItem: {
-    maxWidth: "80%",
-    marginVertical: 4,
-    marginHorizontal: 8,
-    padding: 10,
-    borderRadius: 12,
+    maxWidth: "75%",
+    padding: 12,
+    borderRadius: 18,
   },
 
   sentMessage: {
     alignSelf: "flex-end",
-    backgroundColor: "#0084ff", // Facebook Messenger blue
+    backgroundColor: "#0084FF",
     borderBottomRightRadius: 4,
   },
 
   receivedMessage: {
     alignSelf: "flex-start",
-    backgroundColor: "#e4e6eb", // Light grey
+    backgroundColor: "#F0F2F5",
     borderBottomLeftRadius: 4,
   },
 
   messageText: {
-    fontSize: 16,
+    fontSize: 15,
+    lineHeight: 20,
     marginBottom: 4,
   },
 
@@ -236,19 +280,6 @@ const styles = StyleSheet.create({
   },
 
   timestamp: {
-    fontSize: 12,
-  },
-
-  deleteAction: {
-    backgroundColor: "red",
-    justifyContent: "center",
-    alignItems: "center",
-    width: 80,
-    height: "100%",
-  },
-
-  deleteActionText: {
-    color: "white",
-    fontWeight: "bold",
+    fontSize: 11,
   },
 });

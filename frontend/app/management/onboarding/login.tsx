@@ -9,7 +9,7 @@ import React from "react";
 import LoginComponent from "@/app/component/helper/login";
 import { Gesture, GestureHandlerRootView } from "react-native-gesture-handler";
 
-import AuthProvider from "@/app/context/authentication";
+import AuthProvider from "@/app/authentication";
 
 const image = require("../../../assets/images/login_background_image.jpg");
 

@@ -11,17 +11,15 @@ import React, { useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import SideComponent from "@/app/component/helper/sideComponent";
-import { useAuth } from "@/app/context/authentication";
+import { useAuth } from "@/app/authentication";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import MySubscriptionPlansComponent from "../../../component/management/payments/myPlans";
 import SubscriptionPlansComponent from "../../../component/management/payments/plans";
-
+import { useCheckout } from "@/app/context/management/payments/paymentContext";
 const MainCheckoutComponent = () => {
   const activeBtn = useThemeColor({}, "activebtn");
   const { windowWidth } = useAuth();
-
-  // Create a state to manaage the current page
-  const [currentPage, setCurrentPage] = useState<string>("My Plans");
+  const { currentPage, setCurrentPage } = useCheckout();
 
   // Create a function to handle the current page
   const handleCurrentPage = (page: string) => {
@@ -89,7 +87,7 @@ const MainCheckoutComponent = () => {
 
               {/* Main content container */}
               <ScrollView
-                style={{ flex: 1, padding: 20 }}
+                style={{ flex: 1, padding: 5 }}
                 showsVerticalScrollIndicator={false}
               >
                 {currentPage === "My Plans" ? (

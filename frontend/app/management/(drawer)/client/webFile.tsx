@@ -12,7 +12,7 @@ import JobDetailsComponent from "@/app/component/management/client/jobDetails";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import CustomModal from "@/app/component/helper/customModal";
 import SideComponent from "@/app/component/helper/sideComponent";
-import { useAuth } from "@/app/context/authentication";
+import { useAuth } from "@/app/authentication";
 import AddContractComponent from "@/app/component/management/client/addcontract";
 
 const WebClientComponent = () => {

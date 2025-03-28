@@ -18,7 +18,7 @@ import { user_image } from "@/app/utils/images";
 import { act } from "react-test-renderer";
 import { useSideComponentContext } from "@/app/context/staff/sideComponentProvider";
 import { userData } from "@/app/utils/loadData";
-import { useAuth } from "@/app/context/authentication";
+import { useAuth } from "@/app/authentication";
 import ProfileDisplayComponent from "./profileDisplay";
 import { useState } from "react";
 

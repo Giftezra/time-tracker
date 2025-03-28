@@ -6,24 +6,38 @@ import {
   Platform,
   Pressable,
   StyleSheet,
+  Switch,
   Text,
   View,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { ScrollView } from "react-native-gesture-handler";
 import { AntDesign, MaterialIcons } from "@expo/vector-icons";
-import {user_image} from "@/app/utils/images";
+import { user_image } from "@/app/utils/images";
 import { useProfileContext } from "@/app/context/management/profile/profileContext";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import {userData} from "@/app/utils/loadData";
-
-const UserDetailsComponent: React.FC<{
-  onModalVisible: () => void;
-}> = ({ onModalVisible }) => {
+import { userData } from "@/app/utils/loadData";
+import SubtitleThemedText from "../../helper/SubtitleThemedText";
+import ThemedHeaderText from "../../helper/ThemedHeaderText";
+import InnerThemedText from "../../helper/InnerThemedText";
+const UserDetailsComponent = () => {
   const user = userData();
 
-  const { notificationToggle, handleLink, handlePhone, handleToggle } =
-    useProfileContext();
+  const {
+    notificationToggle,
+    handleLink,
+    handlePhone,
+    handleToggle,
+    savePreferences,
+    allowEmailNotification,
+    allowMarketingEmails,
+    allowPushNotification,
+    setAllowEmailNotification,
+    setAllowMarketingEmails,
+    setAllowPushNotification,
+    onModalVisible,
+    setOnModalVisible,
+  } = useProfileContext();
   const [role, setRole] = useState<string>("");
 
   useEffect(() => {
@@ -31,6 +45,19 @@ const UserDetailsComponent: React.FC<{
       setRole(user.is_owner ? "owner" : "staff");
     }
   }, []);
+
+  //Call the hooke when the page unmouts to save the user preferences
+  // In the server
+  useEffect(() => {
+    try {
+      const fetchData = async () => {
+        savePreferences();
+      };
+      fetchData();
+    } catch (error) {
+      console.error(error);
+    }
+  }, [allowEmailNotification, allowMarketingEmails, allowPushNotification]);
 
   // Import the necceassary colors required for the component
   const secondary = useThemeColor({}, "secondaryColor");
@@ -46,75 +73,55 @@ const UserDetailsComponent: React.FC<{
     >
       <View style={styles.headerContainer}>
         <Image source={user_image} style={styles.image} />
-        <Text style={[styles.roleText, { color: headerText }]}>{role}</Text>
+        <SubtitleThemedText text={role} />
         {/* Only display the edit button for mobile views */}
         {Platform.OS !== "web" && (
-          <Pressable onPress={onModalVisible}>
+          <Pressable onPress={() => setOnModalVisible(true)}>
             <MaterialIcons name="edit" size={20} color="black" />
           </Pressable>
         )}
       </View>
 
       <View style={{ flex: 1, width: "100%" }}>
-        <Text style={[styles.headers, { color: headerText }]}>
-          user information
-        </Text>
+        <ThemedHeaderText text="user information" />
         <View style={styles.containers}>
           <View style={styles.textRowContainer}>
-            <Text style={[styles.subheader, { color: otherText }]}>
-              fullname
-            </Text>
-            <Text style={[styles.text, { color: text }]}>
-              {user?.first_name + " " + user?.last_name}
-            </Text>
+            <SubtitleThemedText text="fullname" />
+            <InnerThemedText text={user?.first_name + " " + user?.last_name} />
           </View>
 
           <View style={styles.textRowContainer}>
-            <Text style={[styles.subheader, { color: otherText }]}>mobile</Text>
-            <Text style={[styles.text, { color: text }]}>{user?.phone}</Text>
+            <SubtitleThemedText text="mobile" />
+            <InnerThemedText text={user?.phone} />
           </View>
 
           <View style={styles.textRowContainer}>
-            <Text style={[styles.subheader, { color: otherText }]}>email</Text>
-            <Text style={[styles.text, { color: text }]}>{user?.email}</Text>
+            <SubtitleThemedText text="email" />
+            <InnerThemedText text={user?.email} />
           </View>
 
           <View style={styles.textRowContainer}>
-            <Text style={[styles.subheader, { color: otherText }]}>
-              date of birth
-            </Text>
-            <Text style={[styles.text, { color: text }]}>{user?.dob}</Text>
+            <SubtitleThemedText text="date of birth" />
+            <InnerThemedText text={user?.dob || ""} />
           </View>
         </View>
 
         {/* Organisation details */}
-        <Text style={[styles.headers, { color: headerText }]}>company</Text>
+        <ThemedHeaderText text="company" />
         <View style={styles.containers}>
           <View style={styles.textRowContainer}>
-            <Text style={[styles.subheader, { color: otherText }]}>
-              company name
-            </Text>
-            <Text style={[styles.text, { color: text }]}>
-              {user?.company_name}
-            </Text>
+            <SubtitleThemedText text="company name" />
+            <InnerThemedText text={user?.company_name || ""} />
           </View>
 
           <View style={styles.textRowContainer}>
-            <Text style={[styles.subheader, { color: otherText }]}>
-              official address
-            </Text>
-            <Text style={[styles.text, { color: text }]}>
-              {user?.company_address}
-            </Text>
+            <SubtitleThemedText text="official address" />
+            <InnerThemedText text={user?.company_address || ""} />
           </View>
 
           <View style={styles.textRowContainer}>
-            <Text style={[styles.subheader, { color: otherText }]}>
-              postcode
-            </Text>
-            <Text style={[styles.text, { color: text }]}>
-              {user?.company_postcode}
-            </Text>
+            <SubtitleThemedText text="postcode" />
+            <InnerThemedText text={user?.company_postcode || ""} />
           </View>
 
           {/* Made pressable to navigate to the weblink provided */}
@@ -124,22 +131,14 @@ const UserDetailsComponent: React.FC<{
             }
           >
             <View style={styles.textRowContainer}>
-              <Text style={[styles.subheader, { color: otherText }]}>
-                weblink
-              </Text>
-              <Text style={[styles.text, { color: text }]}>
-                {user?.company_website}
-              </Text>
+              <SubtitleThemedText text="weblink" />
+              <InnerThemedText text={user?.company_website || ""} />
             </View>
           </Pressable>
 
           <View style={styles.textRowContainer}>
-            <Text style={[styles.subheader, { color: otherText }]}>
-              services
-            </Text>
-            <Text style={[styles.text, { color: text }]}>
-              {user?.company_services}
-            </Text>
+            <SubtitleThemedText text="services" />
+            <InnerThemedText text={user?.company_services || ""} />
           </View>
 
           <Pressable
@@ -148,12 +147,8 @@ const UserDetailsComponent: React.FC<{
             }
           >
             <View>
-              <Text style={[styles.subheader, { color: otherText }]}>
-                helpline
-              </Text>
-              <Text style={[styles.text, { color: text }]}>
-                {user?.company_helpline}
-              </Text>
+              <SubtitleThemedText text="helpline" />
+              <InnerThemedText text={user?.company_helpline || ""} />
             </View>
           </Pressable>
         </View>
@@ -161,62 +156,41 @@ const UserDetailsComponent: React.FC<{
 
       {/* These views defines the alert and notification display toggle */}
       <View style={styles.mainNotificationtoggleContainer}>
-        <Pressable
+        <View
           style={[styles.notificationContainer, { backgroundColor: secondary }]}
-          onPress={() => handleToggle("marketing alert")}
         >
-          <View style={styles.toggleButton}>
-            <View
-              style={[
-                styles.innerToggleButton,
-                notificationToggle?.includes("marketing alert") && {
-                  backgroundColor: "green",
-                },
-              ]}
-            />
-          </View>
-          <Text style={[styles.notificationToggleText, { color: otherText }]}>
-            Allow marketing alert
-          </Text>
-        </Pressable>
+          <ThemedHeaderText text="allow push notification" />
+          <Switch
+            value={allowPushNotification}
+            onValueChange={(value) => setAllowPushNotification(value)}
+            thumbColor={allowPushNotification ? "#fff" : "#DA5"}
+            trackColor={{ true: "#DA5", false: "#fff" }}
+          />
+        </View>
 
-        <Pressable
+        <View
           style={[styles.notificationContainer, { backgroundColor: secondary }]}
-          onPress={() => handleToggle("push notification")}
         >
-          <View style={styles.toggleButton}>
-            <View
-              style={[
-                styles.innerToggleButton,
-                notificationToggle?.includes("push notification") && {
-                  backgroundColor: "green",
-                },
-              ]}
-            />
-          </View>
-          <Text style={[styles.notificationToggleText, { color: otherText }]}>
-            Allow push notification
-          </Text>
-        </Pressable>
+          <ThemedHeaderText text="allow email notification" />
+          <Switch
+            value={allowEmailNotification}
+            onValueChange={(value) => setAllowEmailNotification(value)}
+            thumbColor={allowEmailNotification ? "#fff" : "#DA5"}
+            trackColor={{ true: "#DA5", false: "#fff" }}
+          />
+        </View>
 
-        <Pressable
+        <View
           style={[styles.notificationContainer, { backgroundColor: secondary }]}
-          onPress={() => handleToggle("email notification")}
         >
-          <View style={styles.toggleButton}>
-            <View
-              style={[
-                styles.innerToggleButton,
-                notificationToggle?.includes("email notification") && {
-                  backgroundColor: "green",
-                },
-              ]}
-            />
-          </View>
-          <Text style={[styles.notificationToggleText, { color: otherText }]}>
-            Allow email notification
-          </Text>
-        </Pressable>
+          <ThemedHeaderText text="allow marketing emails" />
+          <Switch
+            value={allowMarketingEmails}
+            onValueChange={(value) => setAllowMarketingEmails(value)}
+            thumbColor={allowMarketingEmails ? "#fff" : "#DA5"}
+            trackColor={{ true: "#DA5", false: "#fff" }}
+          />
+        </View>
       </View>
     </ScrollView>
   );
@@ -294,6 +268,7 @@ const styles = StyleSheet.create({
   mainNotificationtoggleContainer: {
     flexDirection: "column",
     justifyContent: "space-between",
+    marginTop: 20,
   },
 
   notificationContainer: {
@@ -304,23 +279,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 5,
     width: "100%",
-    marginVertical: 10,
-  },
-
-  toggleButton: {
-    width: 20,
-    height: 20,
-    borderRadius: 30,
-    borderWidth: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  innerToggleButton: {
-    backgroundColor: "white",
-    width: 15,
-    height: 15,
-    borderRadius: 30,
+    marginVertical: 5,
   },
 
   notificationToggleText: {
@@ -328,6 +287,5 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     fontFamily: "BarlowRegular",
     textTransform: "capitalize",
-    marginStart: 5,
   },
 });

@@ -75,14 +75,19 @@ const TextInputComponent = ({
   editable?: boolean;
 }) => {
   const textinput = useThemeColor({}, "textinput");
-  const [isFocused, setIsFocused] = useState(false);
   const secondaryColor = useThemeColor({}, "secondaryColor");
+  const [isFocused, setIsFocused] = useState(false);
 
   return (
     <View style={styles.mainContainer}>
-      <View style={[styles.textheader]}>
-        <Text style={[styles.text, { color: textinput }]}>
-          {isFocused ? text : ""}
+      <View
+        style={[
+          styles.textheader,
+          { backgroundColor: isFocused || value ? textinput : "transparent" },
+        ]}
+      >
+        <Text style={[styles.text, { color: secondaryColor }]}>
+          {isFocused || value ? text : ""}
         </Text>
       </View>
       <View style={[styles.textInputContainer, { backgroundColor: textinput }]}>
@@ -92,12 +97,14 @@ const TextInputComponent = ({
           placeholder={placeholder}
           style={[styles.textInput]}
           onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
           multiline={isMultiline}
           numberOfLines={lines}
           secureTextEntry={secureTextEntry}
           autoComplete={autoComplete}
           importantForAutofill={autoComplete ? "yes" : "no"}
           editable={editable}
+          keyboardType={keyboardType}
         />
       </View>
     </View>
@@ -110,23 +117,22 @@ const styles = StyleSheet.create({
   mainContainer: {
     paddingTop: 10,
     marginHorizontal: 1,
+    position: "relative",
   },
 
   text: {
     fontSize: Platform.OS === "web" ? 10 : 12,
     textTransform: "capitalize",
     fontFamily: "BarlowRegular",
-    fontWeight: "500",
+    fontWeight: "700",
   },
 
   textheader: {
     position: "absolute",
-    top: 0,
-    left: 10,
+    top: 14,
+    left: 20,
     zIndex: 100,
     paddingHorizontal: 5,
-    paddingTop: 2,
-    marginTop: 1,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -136,6 +142,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     borderRadius: 5,
     alignItems: "center",
+    marginTop: 10,
   },
 
   textInput: {
@@ -143,6 +150,6 @@ const styles = StyleSheet.create({
     padding: 10,
     fontSize: Platform.OS === "web" ? 12 : 14,
     fontFamily: "BarlowRegular",
-    fontWeight: "500",
+    fontWeight: "600",
   },
 });

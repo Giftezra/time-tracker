@@ -7,7 +7,7 @@ import {
   useMemo,
 } from "react";
 import { de } from "react-native-paper-dates";
-import { useAuth } from "../authentication";
+import { useAuth } from "@/app/authentication";
 import { MarkedDates } from "react-native-calendars/src/types";
 import { Alert } from "react-native";
 

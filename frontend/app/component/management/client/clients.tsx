@@ -27,7 +27,10 @@ import { ClientDetailsType } from "@/app/types/management/client";
 import { ScrollView } from "react-native-gesture-handler";
 import { useClientContext } from "@/app/context/management/client/clientContext";
 import iconSet from "@expo/vector-icons/build/Fontisto";
-
+import ThemedHeaderText from "../../helper/ThemedHeaderText";
+import ButtonText from "../../helper/ButtonText";
+import InnerThemedText from "../../helper/InnerThemedText";
+import SubtitleThemedText from "../../helper/SubtitleThemedText";
 /* This displays a client view which defines the total client a superadmin has on his contract list */
 const ClientDetailsComponent: React.FC<{
   props: ClientDetailsType;
@@ -77,7 +80,7 @@ const ClientDetailsComponent: React.FC<{
       style={[
         styles.maincontainer,
         {
-          backgroundColor: innerbackground,
+          backgroundColor: text,
           shadowColor: primary,
         },
       ]}
@@ -89,9 +92,7 @@ const ClientDetailsComponent: React.FC<{
           >
             <MaterialIcons name="delete" size={24} color={primary} />
           </TouchableOpacity>
-          <Text style={[styles.headerText, { color: otherText }]}>
-            {props.name}
-          </Text>
+          <ThemedHeaderText text={props.name} />
           <Pressable
             onPress={() => handlePhone(props.phone)}
             style={[styles.callButton, { borderColor: highlight }]}
@@ -106,9 +107,7 @@ const ClientDetailsComponent: React.FC<{
             onPress={() => editClient(props)}
           >
             <MaterialIcons name="edit" size={18} color={innerbackground} />
-            <Text style={[styles.actionButtonText, { color: innerbackground }]}>
-              Edit Client
-            </Text>
+            <ButtonText text="Edit Client" />
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -116,9 +115,7 @@ const ClientDetailsComponent: React.FC<{
             style={[styles.actionButton, { backgroundColor: primary }]}
           >
             <MaterialIcons name="add" size={18} color={innerbackground} />
-            <Text style={[styles.actionButtonText, { color: innerbackground }]}>
-              New Contract
-            </Text>
+            <ButtonText text="New Contract" />
           </TouchableOpacity>
         </View>
       </View>
@@ -126,41 +123,26 @@ const ClientDetailsComponent: React.FC<{
       <Pressable onPress={handleSiteToggle} style={styles.contentSection}>
         <View style={styles.infoSection}>
           <View style={styles.infoRow}>
-            <MaterialIcons name="location-on" size={16} color={text} />
-            <Text style={[styles.clientText, { color: text }]}>
-              {props.address}
-            </Text>
+            <MaterialIcons name="location-on" size={16} color={'#000'} />
+            <InnerThemedText text={props.address} />
           </View>
-          <Text style={[styles.clientText, { color: text, marginLeft: 24 }]}>
-            {props.postcode}
-          </Text>
+          <InnerThemedText text={props.postcode} />
 
           <View style={[styles.infoRow, { marginTop: 12 }]}>
-            <MaterialIcons name="email" size={16} color={text} />
-            <Text style={[styles.clientText, { color: text }]}>
-              {props.email}
-            </Text>
+            <MaterialIcons name="email" size={16} color={'#000'} />
+            <InnerThemedText text={props.email} />
           </View>
 
           <View style={styles.infoRow}>
-            <MaterialIcons name="phone" size={16} color={text} />
-            <Text style={[styles.clientText, { color: text }]}>
-              {props.phone}
-            </Text>
+            <MaterialIcons name="phone" size={16} color={'#000'} />
+            <InnerThemedText text={props.phone} />
           </View>
         </View>
       </Pressable>
 
       {siteToggle && (
         <View style={styles.dropdowncontainer}>
-          <Text
-            style={[
-              styles.headerText,
-              { color: otherText, fontSize: 12, marginBottom: 5 },
-            ]}
-          >
-            {props.name} contract details
-          </Text>
+          <SubtitleThemedText text={props.name} />
           <ScrollView
             style={{ flexGrow: 1, width: "100%", maxHeight: 200 }}
             nestedScrollEnabled={true}
@@ -177,9 +159,7 @@ const ClientDetailsComponent: React.FC<{
                 ]}
               >
                 <View style={styles.contractHeaderRow}>
-                  <Text style={[styles.siteText, { color: text, flex: 1 }]}>
-                    {contract.name}
-                  </Text>
+                  <InnerThemedText text={contract.name} />
 
                   <TouchableOpacity
                     style={styles.editButton}
@@ -200,26 +180,11 @@ const ClientDetailsComponent: React.FC<{
                   )}
                 </View>
 
-                <Text style={[styles.siteText, { color: text }]}>
-                  {contract.address}
-                </Text>
-                <Text
-                  style={[
-                    styles.siteText,
-                    { color: text, textTransform: "uppercase" },
-                  ]}
-                >
-                  {contract.postcode}
-                </Text>
-                <Text style={[styles.siteText, { color: text }]}>
-                  {contract.city}
-                </Text>
-                <Text style={[styles.siteText, { color: text }]}>
-                  {`start date: ${contract.start_date}`}
-                </Text>
-                <Text style={[styles.siteText, { color: text }]}>
-                  {`end date: ${contract.end_date}`}
-                </Text>
+                <InnerThemedText text={contract.address} />
+                <InnerThemedText text={contract.postcode} />
+                <InnerThemedText text={contract.city} />
+                <InnerThemedText text={`start date: ${contract.start_date}`} />
+                <InnerThemedText text={`end date: ${contract.end_date}`} />
               </View>
             ))}
           </ScrollView>
@@ -233,8 +198,8 @@ export default ClientDetailsComponent;
 
 const styles = StyleSheet.create({
   maincontainer: {
-    marginVertical: 8,
-    borderRadius: 12,
+    marginVertical: 3,
+    borderRadius: 5,
     marginHorizontal: 4,
     shadowRadius: 8,
     elevation: 4,

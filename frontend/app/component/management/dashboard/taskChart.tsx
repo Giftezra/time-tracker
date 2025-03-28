@@ -2,41 +2,21 @@ import { Platform, StyleSheet, Text, View } from "react-native";
 import React from "react";
 import { PieChart } from "react-native-gifted-charts";
 import { useDashboardContext } from "@/app/context/management/dashboard/dashboardContext";
-
+import SubtitleThemedText from "../../helper/SubtitleThemedText";
+import InnerThemedText from "../../helper/InnerThemedText";
+import ThemedHeaderText from "../../helper/ThemedHeaderText";
+import { TaskStatistics } from "@/app/types/management/dashboard";
 const TaskChartComponent = ({
   width,
   title,
+  pieData,
+  taskStats,
 }: {
   width: number;
   title: string;
+  pieData: any[];
+  taskStats?: TaskStatistics;
 }) => {
-  const { taskStats } = useDashboardContext();
-  const total = taskStats.total || 1; // Prevent division by zero
-
-  const pieData = [
-    {
-      value: (taskStats.completed / total) * 100,
-      color: "#4CAF50",
-      gradientCenterColor: "#81C784",
-      focused: true,
-    },
-    {
-      value: (taskStats.ongoing / total) * 100,
-      color: "#2196F3",
-      gradientCenterColor: "#64B5F6",
-    },
-    {
-      value: (taskStats.assigned / total) * 100,
-      color: "#FFC107",
-      gradientCenterColor: "#FFD54F",
-    },
-    {
-      value: (taskStats.pending / total) * 100,
-      color: "#FF5722",
-      gradientCenterColor: "#FF8A65",
-    },
-  ];
-
   const renderDot = (color: string) => {
     return <View style={[styles.dot, { backgroundColor: color }]} />;
   };
@@ -46,48 +26,54 @@ const TaskChartComponent = ({
    * @returns {JSX.Element}
    */
   const renderLegendComponent = () => {
-    return (
-      <View style={styles.renderLegendContainer}>
-        <View style={styles.legendRow}>
-          <View style={styles.renderLegendText}>
-            {renderDot("#4CAF50")}
-            <Text style={styles.legendText}>
-              Completed ({taskStats.completed})
-            </Text>
+    if (taskStats) {
+      return (
+        <View style={styles.renderLegendContainer}>
+          <View style={styles.legendRow}>
+            <View style={styles.renderLegendText}>
+              {renderDot("#4CAF50")}
+              <SubtitleThemedText text="Completed" />
+            </View>
+            <View style={styles.renderLegendText}>
+              {renderDot("#2196F3")}
+              <SubtitleThemedText text="Ongoing" />
+            </View>
           </View>
-          <View style={styles.renderLegendText}>
-            {renderDot("#2196F3")}
-            <Text style={styles.legendText}>Ongoing ({taskStats.ongoing})</Text>
-          </View>
-        </View>
-        <View style={styles.legendRow}>
-          <View style={styles.renderLegendText}>
-            {renderDot("#FFC107")}
-            <Text style={styles.legendText}>
-              Assigned ({taskStats.assigned})
-            </Text>
-          </View>
-          <View style={styles.renderLegendText}>
-            {renderDot("#FF5722")}
-            <Text style={styles.legendText}>Pending ({taskStats.pending})</Text>
+          <View style={styles.legendRow}>
+            <View style={styles.renderLegendText}>
+              {renderDot("#FFC107")}
+              <SubtitleThemedText text="Assigned" />
+            </View>
+            <View style={styles.renderLegendText}>
+              {renderDot("#FF5722")}
+              <SubtitleThemedText text="Pending" />
+            </View>
           </View>
         </View>
-      </View>
-    );
+      );
+    }else{
+      return (
+        <View style={styles.renderLegendContainer}>
+          <View style={styles.legendRow}>
+            <SubtitleThemedText text="No data available" />
+          </View>
+        </View>
+      );
+    }
   };
 
   const renderCenterLabel = () => {
     return (
       <View style={styles.centerLabel}>
-        <Text style={styles.totalNumber}>{taskStats.total}</Text>
-        <Text style={styles.totalText}>Total Tasks</Text>
+        <InnerThemedText text={taskStats?.total.toString() || "0"} />
+        <InnerThemedText text="Total Tasks" />
       </View>
     );
   };
 
   return (
     <View style={styles.piechartContainer}>
-      <Text style={styles.titleText}>{title}</Text>
+      <ThemedHeaderText text={title} />
       <PieChart
         data={pieData}
         donut
@@ -107,14 +93,9 @@ export default TaskChartComponent;
 
 const styles = StyleSheet.create({
   piechartContainer: {
-    padding: 16,
+    padding: 5,
     backgroundColor: "#fff",
-    borderRadius: 12,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
   },
   titleText: {
     fontSize: 18,

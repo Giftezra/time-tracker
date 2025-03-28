@@ -6,7 +6,6 @@
  */
 
 import {
-  ActivityIndicator,
   Modal,
   Platform,
   Pressable,
@@ -22,6 +21,7 @@ import { ActiveTaskType } from "@/app/types/management/task";
 import { useManagementTask } from "@/app/context/management/task manager/managementTaskProvider";
 import SearchInputContainer from "../../helper/searchInput";
 import { AntDesign, MaterialCommunityIcons } from "@expo/vector-icons";
+import SubtitleThemedText from "../../helper/SubtitleThemedText";
 
 /* Constant value for the sub headers representing each mapped item */
 const subHeaders = ["task serial", "employees", "contract", "start time"];
@@ -76,11 +76,8 @@ const ActiveTaskComponent = () => {
   const [terminationError, setTerminationError] = useState<string>("");
 
   const inactivebtn = useThemeColor({}, "inactivebtn");
-  const text = useThemeColor({}, "text");
   const icon = useThemeColor({}, "icon");
   const textinput = useThemeColor({}, "textinput");
-  const background = useThemeColor({}, "background");
-  const tint = useThemeColor({}, "tint");
 
   /**
    * Method is used to handle the task termination process, and also handles any errors
@@ -99,16 +96,14 @@ const ActiveTaskComponent = () => {
   };
 
   return (
-    <View style={styles.maincontainer}>
-      <Text style={[styles.headerText, { color: text }]}>active tasks</Text>
+    <View style={[styles.maincontainer, { backgroundColor: "white" }]}>
+      <Text style={[styles.headerText, { color: "black" }]}>active tasks</Text>
       {/* Handles the task filter view */}
       <SearchInputContainer placeholder="staff name" />
       {/* Display the subheaders */}
       <View style={styles.subheadercontainer}>
         {subHeaders.map((header, index) => (
-          <Text key={index} style={[styles.subHeadersText, { color: text }]}>
-            {header}
-          </Text>
+          <SubtitleThemedText key={index} text={header} />
         ))}
       </View>
       {/* Map the list of active activities making them scrollable.
@@ -132,19 +127,22 @@ const ActiveTaskComponent = () => {
             onLongPress={() => setIsPopupVisible(true)}
           >
             <Text
-              style={[styles.text, { color: text, textTransform: "uppercase" }]}
+              style={[
+                styles.text,
+                { color: "black", textTransform: "uppercase" },
+              ]}
             >
               {task.task_serial}
             </Text>
 
-            <Text style={[styles.text, { color: text }]}>
+            <Text style={[styles.text, { color: "black" }]}>
               {task.employee_name}
             </Text>
 
-            <Text style={[styles.text, { color: text }]}>
+            <Text style={[styles.text, { color: "black" }]}>
               {task.contract_name}
             </Text>
-            <Text style={[styles.text, { color: text }]}>
+            <Text style={[styles.text, { color: "black" }]}>
               {formatTime(task.start_time)}
             </Text>
             {isPopupVisible &&

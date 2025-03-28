@@ -19,7 +19,7 @@ import TodayEventsComponent from "@/app/component/management/dashboard/todayEven
 import LeaderBoardComponent from "@/app/component/management/dashboard/leaderBoard";
 import { id } from "react-native-paper-dates";
 import SideComponent from "@/app/component/helper/sideComponent";
-import { useAuth } from "@/app/context/authentication";
+import { useAuth } from "@/app/authentication";
 import { EmployeeOnLeaveInterface } from "@/app/types/management/dashboard";
 
 const event = ["johns birthday", "mary resumption"];
@@ -72,7 +72,7 @@ const WebDashboard = () => {
           {/* Right hand side of the dashboard */}
           <View style={[styles.rightContainer, { width: "30%" }]}>
             <View style={{ width: "100%", marginBottom: 5 }}>
-              <TodayEventsComponent event={event} />
+              <TodayEventsComponent event={[]} />
             </View>
 
             <View
@@ -127,7 +127,7 @@ const WebDashboard = () => {
                 setTaskChartWidth(width);
               }}
             >
-              <TaskChartComponent width={taskChartWidth} title="task" />
+              <TaskChartComponent width={taskChartWidth} title="task" pieData={[]} />
             </View>
           </View>
         </View>

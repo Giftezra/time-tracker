@@ -19,7 +19,7 @@ import { router } from "expo-router";
 import { OwnerOnboardingType } from "@/app/types/management/onboarding";
 import RegistrationTextInputComponent from "@/app/component/helper/registrationTextinput";
 import ArrowButtonComponent from "@/app/component/helper/arrowButton";
-import { useAuth } from "@/app/context/authentication";
+import { useAuth } from "@/app/authentication";
 import CalendarComponent from "@/app/component/helper/customCalendar";
 import { tranY } from "@/app/utils/animations/onboardingAnimation";
 

@@ -4,7 +4,7 @@ import {
   EmployeeContextType,
   EmployeeDetailsType,
   EmployeeOverviewInterface,
-  TaskDetailsProps,
+  TaskDetailsProps, 
   WorklogInterface,
 } from "@/app/types/management/employee";
 import { BASE_URL } from "@/app/utils/urls";
@@ -15,7 +15,7 @@ import {
   ReactNode,
   useEffect,
 } from "react";
-import { useAuth } from "../../authentication";
+import { useAuth } from "@/app/authentication";
 import { Axios, AxiosError } from "axios";
 
 const EmployeeContext = createContext<EmployeeContextType | undefined>(

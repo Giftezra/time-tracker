@@ -56,8 +56,8 @@ export interface EmployeeDetailsComponentType {
 export interface CreateTaskInterface {
   contract_id: string;
   employee_id: string;
-  task_serial: string;
-  description: string;
+  task_serial?: string;
+  description?: string;
   start_time: { hours: number; minutes: number };
   end_time: { hours: number; minutes: number };
   dates: Date[];
@@ -105,16 +105,17 @@ export interface ActiveTaskContextType {
     hours: number;
     minutes: number;
   }) => void;
-  handle_date_display: () => void;
-  handle_time_display: () => void;
+  handleDateDisplay: () => void;
+  handleStartTimeDisplay: () => void;
+  handleEndTimeDisplay: () => void;
   getAvailableEmployees: () => Promise<EmployeeType[] | undefined>;
   dateVisible: boolean;
-  start_time_visible: boolean;
+  startTimeVisible: boolean;
   endTimeVisible: boolean;
   createShift: (params: CreateTaskInterface) => Promise<void>;
   create_task: (params: CreateTaskInterface) => Promise<void>;
-  start_time: { hours: number; minutes: number };
-  end_time: { hours: number; minutes: number };
+  startTime: { hours: number; minutes: number };
+  endTime: { hours: number; minutes: number };
   dates: Date[];
   collectNewTaskData: (key: keyof CreateTaskInterface, value: string) => void;
   taskData: CreateTaskInterface | undefined;
@@ -129,4 +130,5 @@ export interface ActiveTaskContextType {
   setIsEditTaskModalVisible: (visible: boolean) => void;
   setEditTask: (task: OpenTaskProps | null) => void;
   updateTask: (task: OpenTaskProps) => Promise<ResponseType>;
+  handleTaskCreation: (taskData: CreateTaskInterface) => Promise<any>;
 }

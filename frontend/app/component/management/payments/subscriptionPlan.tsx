@@ -94,21 +94,21 @@ const SubscriptionTierComponent = ({
       )}
 
       {/* Conditional rendering for savings badge */}
-      {subscriptionPlan.name === "Ultimate"
+      {subscriptionPlan.name === "ultimate"
         ? billingPeriod === "yearly" && (
             <View style={[styles.savingsBadge, { backgroundColor: activeBtn }]}>
               <Text style={styles.savingsText}>Save 10%</Text>
             </View>
           )
-        : subscriptionPlan.name === "Pro" ||
-          subscriptionPlan.name === "Enterprise"
+        : subscriptionPlan.name === "pro" ||
+          subscriptionPlan.name === "enterprise"
         ? billingPeriod === "yearly" && (
             <View style={[styles.savingsBadge, { backgroundColor: activeBtn }]}>
               <Text style={styles.savingsText}>Save 8%</Text>
             </View>
           )
-        : (subscriptionPlan.name === "Starter" ||
-            subscriptionPlan.name === "Basic") &&
+        : (subscriptionPlan.name === "starter" ||
+            subscriptionPlan.name === "basic") &&
           billingPeriod === "yearly" && (
             <View style={[styles.savingsBadge, { backgroundColor: activeBtn }]}>
               <Text style={styles.savingsText}>Save 4%</Text>

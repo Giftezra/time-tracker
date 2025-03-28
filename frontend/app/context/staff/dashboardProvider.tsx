@@ -4,7 +4,7 @@ import {
   StaffDashboardContextType,
 } from "@/app/types/staff/dashboard";
 import { useContext, createContext, useState, useEffect } from "react";
-import { useAuth } from "../authentication";
+import { useAuth } from "@/app/authentication";
 const DashboardContext = createContext<StaffDashboardContextType | undefined>(
   undefined
 );
@@ -35,49 +35,49 @@ const StaffDashboardProvider = ({
     pending_tasks: 0,
   });
 
-  // // useEffect(() => {
-  // //   // Update progress every minute
-  // //   const calculateProgress = () => {
-  // //     const now = new Date().getTime();
-  // //     if (!ongoingTask) return;
-  // //     const taskEndTime = new Date(ongoingTask.task_end_time).getTime();
-  // //     const taskStartTime = new Date(ongoingTask.shift_start_time).getTime();
+  // useEffect(() => {
+  //   // Update progress every minute
+  //   const calculateProgress = () => {
+  //     const now = new Date().getTime();
+  //     if (!ongoingTask) return;
+  //     const taskEndTime = new Date(ongoingTask.task_end_time).getTime();
+  //     const taskStartTime = new Date(ongoingTask.shift_start_time).getTime();
 
-  // //     // Calculate progress
-  // //     const totalDuration = taskEndTime - taskStartTime;
-  // //     const elapsedTime = now - taskStartTime;
-  // //     const newProgress = Math.max(0, Math.min(elapsedTime / totalDuration, 1));
+  //     // Calculate progress
+  //     const totalDuration = taskEndTime - taskStartTime;
+  //     const elapsedTime = now - taskStartTime;
+  //     const newProgress = Math.max(0, Math.min(elapsedTime / totalDuration, 1));
 
-  // //     setProgress(newProgress);
-  // //   };
+  //     setProgress(newProgress);
+  //   };
 
-  // //   // Calculate initial progress
-  // //   calculateProgress();
+  //   // Calculate initial progress
+  //   calculateProgress();
 
-  // //   // Set up interval to update progress
-  // //   const intervalId = setInterval(calculateProgress, 60000); // Update every minute
+  //   // Set up interval to update progress
+  //   const intervalId = setInterval(calculateProgress, 60000); // Update every minute
 
-  // //   // Cleanup interval on unmount
-  // //   return () => clearInterval(intervalId);
-  // // }, [ongoingTask?.shift_start_time, ongoingTask?.task_end_time]);
+  //   // Cleanup interval on unmount
+  //   return () => clearInterval(intervalId);
+  // }, [ongoingTask?.shift_start_time, ongoingTask?.task_end_time]);
 
-  // /* Load the users current shift when the page mounts  */
-  // // useEffect(() => {
-  // //   const fetchData = async () => {
-  // //     setIsLoading(true);
-  // //     try {
-  // //       const completedShiftsData = await getCompletedShiftsData();
-  // //       setCompletedShifts(completedShiftsData);
-  // //       const ongoingTaskData = await getCurrentShiftData();
-  // //       setOngoingTask(ongoingTaskData);
-  // //     } catch (error) {
-  // //       console.error("Error fetching data:", error);
-  // //     } finally {
-  // //       setIsLoading(false);
-  // //     }
-  // //   };
-  // //   fetchData();
-  // // }, []);
+  /* Load the users current shift when the page mounts  */
+  // useEffect(() => {
+  //   const fetchData = async () => {
+  //     setIsLoading(true);
+  //     try {
+  //       const completedShiftsData = await getCompletedShiftsData();
+  //       setCompletedShifts(completedShiftsData);
+  //       const ongoingTaskData = await getCurrentShiftData();
+  //       setOngoingTask(ongoingTaskData);
+  //     } catch (error) {
+  //       console.error("Error fetching data:", error);
+  //     } finally {
+  //       setIsLoading(false);
+  //     }
+  //   };
+  //   fetchData();
+  // }, []);
 
   /**
    * Retrieve the users current shift data from the server.

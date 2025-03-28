@@ -1,8 +1,20 @@
-import React, { createContext, useContext, useState, useCallback } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+  useRef,
+} from "react";
 import {
   NotificationItem,
   NotificationContextType,
 } from "../../../types/management/notification";
+import * as Notifications from "expo-notifications";
+import { Platform } from "react-native";
+import Constants from "expo-constants";
+import { ExpoPushToken } from "expo-notifications";
+import Device from "expo-device";
 
 /**
  * Context for managing application-wide notifications
@@ -26,6 +38,20 @@ const NotificationContext = createContext<NotificationContextType | undefined>(
 const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
+  const [expoPushToken, setExpoPushToken] = useState<ExpoPushToken | null>(
+    null
+  );
+  const [error, setError] = useState<string | null>(null);
+  const [tokenRegistered, setTokenRegistered] = useState(false);
+  const [channels, setChannels] = useState<Notifications.NotificationChannel[]>(
+    []
+  );
+  const [notification, setNotification] = useState<
+    Notifications.Notification | undefined
+  >(undefined);
+  const notificationListener = useRef<Notifications.EventSubscription>();
+  const responseListener = useRef<Notifications.EventSubscription>();
+
   // Initial state with sample notifications for development
   const [notifications, setNotifications] = useState<NotificationItem[]>([
     {
@@ -57,22 +83,72 @@ const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     },
   ]);
 
-  /**
-   * Adds a new notification to the beginning of the notifications list
-   * @param notification - The notification object without an ID
-   */
-  const addNotification = useCallback(
-    (notification: Omit<NotificationItem, "id">) => {
-      setNotifications((prev) => [
-        {
-          ...notification,
-          id: Date.now().toString(), // Simple ID generation
-        },
-        ...prev,
-      ]);
-    },
-    []
-  );
+  // useEffect(() => {
+  //   const initializeNotifications = async () => {
+  //     try {
+  //       // Check if running on a device
+  //       if (!Device.isDevice) {
+  //         setError("Must use physical device for Push Notifications");
+  //         return;
+  //       }
+
+  //       // Request permission first
+  //       const { status: existingStatus } =
+  //         await Notifications.getPermissionsAsync();
+  //       let finalStatus = existingStatus;
+
+  //       if (existingStatus !== "granted") {
+  //         const { status } = await Notifications.requestPermissionsAsync();
+  //         finalStatus = status;
+  //       }
+
+  //       if (finalStatus !== "granted") {
+  //         setError("Failed to get push token for push notification!");
+  //         return;
+  //       }
+
+  //       // Get the token
+  //       const projectId = Constants.expoConfig?.extra?.eas?.projectId;
+  //       if (!projectId) {
+  //         setError("Project ID is not configured");
+  //         return;
+  //       }
+
+  //       const token = await Notifications.getExpoPushTokenAsync({
+  //         projectId: projectId,
+  //       });
+
+  //       setExpoPushToken(token);
+  //       setTokenRegistered(true);
+
+  //       // Set up notification handlers
+  //       notificationListener.current =
+  //         Notifications.addNotificationReceivedListener((notification) => {
+  //           setNotification(notification);
+  //         });
+
+  //       responseListener.current =
+  //         Notifications.addNotificationResponseReceivedListener((response) => {
+  //           console.log(response);
+  //         });
+  //     } catch (err) {
+  //       setError(err instanceof Error ? err.message : "Unknown error occurred");
+  //     }
+  //   };
+
+  //   initializeNotifications();
+
+  //   return () => {
+  //     if (notificationListener.current) {
+  //       Notifications.removeNotificationSubscription(
+  //         notificationListener.current
+  //       );
+  //     }
+  //     if (responseListener.current) {
+  //       Notifications.removeNotificationSubscription(responseListener.current);
+  //     }
+  //   };
+  // }, []);
 
   /**
    * Marks a specific notification as read
@@ -105,16 +181,18 @@ const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     setNotifications([]);
   }, []);
 
+  const value: NotificationContextType = {
+    notifications,
+    markAsRead,
+    deleteNotification,
+    clearAllNotifications,
+    expoPushToken,
+    error,
+    tokenRegistered,
+  };
+
   return (
-    <NotificationContext.Provider
-      value={{
-        notifications,
-        addNotification,
-        markAsRead,
-        deleteNotification,
-        clearAllNotifications,
-      }}
-    >
+    <NotificationContext.Provider value={value}>
       {children}
     </NotificationContext.Provider>
   );

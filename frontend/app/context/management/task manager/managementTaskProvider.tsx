@@ -16,9 +16,8 @@ import {
   useEffect,
   useCallback,
 } from "react";
-import { FeTurbulence } from "react-native-svg";
-import { useAuth } from "../../authentication";
 import { Alert } from "react-native";
+import { useAuth } from "@/app/authentication";
 
 /**
  * Create a context for the management task context.
@@ -49,6 +48,9 @@ const ManagementTaskProvider = ({
   const [taskData, setTaskData] = useState<CreateTaskInterface | undefined>(
     undefined
   );
+  const [taskDataError, setTaskDataError] = useState<
+    CreateTaskInterface | undefined
+  >(undefined);
 
   // Data to be retrieved from the server
   const [employeeList, setEmployeeList] = useState<EmployeeType[]>([]);
@@ -70,35 +72,13 @@ const ManagementTaskProvider = ({
   const [assignTaskModalVisible, setAssignTaskModalVisible] = useState(false);
 
   const [selectedTask, setSelectedTask] = useState<OpenTaskProps | null>(null);
-  const [selectedDates, setSelectedDates] = useState<Date[]>([]);
-  const [selectedStartTime, setSelectedStartTime] = useState({
-    hours: 0,
-    minutes: 0,
-  });
-  const [selectedEndTime, setSelectedEndTime] = useState({
-    hours: 0,
-    minutes: 0,
-  });
 
   const [dates, setDates] = useState<Date[]>([]);
-  const [start_time, setStartTime] = useState({ hours: 0, minutes: 0 });
-  const [end_time, setEndTime] = useState({ hours: 0, minutes: 0 });
+  const [startTime, setStartTime] = useState({ hours: 0, minutes: 0 });
+  const [endTime, setEndTime] = useState({ hours: 0, minutes: 0 });
   const [dateVisible, setDateVisible] = useState(false);
   const [startTimeVisible, seStartTimeVisible] = useState(false);
   const [endTimeVisible, setEndTimeVisible] = useState(false);
-
-  // The tasks entered by the user in the edit task component
-  const [taskDetails, setTaskDetails] = useState({
-    contract_name: editTask?.contract_name || "",
-    contract_address: editTask?.contract_address || "",
-    contract_postcode: editTask?.contract_postcode || "",
-    task_description: editTask?.task_description || "",
-    task_serial: editTask?.task_serial || "",
-    task_start_date: editTask?.task_start_date || "",
-    task_start_time: editTask?.task_start_time || "",
-    task_end_date: editTask?.task_end_date || "",
-    task_end_time: editTask?.task_end_time || "",
-  });
 
   const [selectedContract, setSelectedContract] =
     useState<ContractListType | null>(null);
@@ -430,12 +410,16 @@ const ManagementTaskProvider = ({
     setEndTimeVisible(false);
   }, [setEndTimeVisible]);
 
-  const handle_date_display = () => {
+  const handleDateDisplay = () => {
     setDateVisible(!dateVisible);
   };
 
-  const handle_time_display = () => {
+  const handleStartTimeDisplay = () => {
     seStartTimeVisible(!startTimeVisible);
+  };
+
+  const handleEndTimeDisplay = () => {
+    setEndTimeVisible(!endTimeVisible);
   };
 
   /**
@@ -456,6 +440,101 @@ const ManagementTaskProvider = ({
   };
 
   const hideModal = () => setIsModalVisible(false);
+
+  /**
+   * This method determines whether to create a task or shift based on employee selection
+   * and handles the API call accordingly
+   */
+  const handleTaskCreation = async (taskData: CreateTaskInterface) => {
+    try {
+      if (!taskData) {
+        throw new Error("Task data is undefined");
+      }
+
+      // Validate required fields
+      if (!taskData.amount || taskData.amount <= 0) {
+        setTaskDataError({
+          ...taskData,
+          amount: 0,
+        });
+        return;
+      }
+
+      if (!taskData.dates || taskData.dates.length === 0) {
+        setTaskDataError({
+          ...taskData,
+          dates: [],
+        });
+        return;
+      }
+
+      // Validate that all dates are in the future
+      const now = new Date();
+      now.setHours(0, 0, 0, 0); // Reset time to start of day for date comparison
+
+      const hasPastDate = taskData.dates.some((date) => {
+        const taskDate = new Date(date);
+        taskDate.setHours(0, 0, 0, 0);
+        return taskDate < now;
+      });
+
+      if (hasPastDate) {
+        Alert.alert("Task dates cannot be in the past");
+        return;
+      }
+
+      // Validate time fields
+      if (!taskData.start_time || !taskData.end_time) {
+        setTaskDataError({
+          ...taskData,
+          start_time: { hours: 0, minutes: 0 },
+          end_time: { hours: 0, minutes: 0 },
+        });
+        return;
+      }
+
+      // Validate that end time is after start time
+      const startMinutes =
+        taskData.start_time.hours * 60 + taskData.start_time.minutes;
+      const endMinutes =
+        taskData.end_time.hours * 60 + taskData.end_time.minutes;
+
+      if (endMinutes <= startMinutes) {
+        Alert.alert("End time must be after start time");
+        return;
+      }
+
+      // Check if we have employee IDs
+      const hasEmployees =
+        taskData.employee_id && taskData.employee_id.length > 0;
+
+      // Call appropriate creation method
+      const response = hasEmployees
+        ? await create_shift(taskData)
+        : await create_task(taskData);
+
+      console.log("[handleTaskCreation] Success:", {
+        type: hasEmployees ? "shift" : "task",
+        response: response,
+      });
+
+      return response;
+    } catch (error: any) {
+      // Show error alert to user
+      Alert.alert(
+        "Task Creation Error",
+        error.message || "An error occurred while creating the task",
+        [{ text: "OK" }]
+      );
+
+      console.error("[handleTaskCreation] Error:", {
+        status: error.response?.status,
+        message: error.message,
+        details: error.response?.data,
+      });
+      throw error;
+    }
+  };
 
   const value: ActiveTaskContextType = {
     employeeList,
@@ -478,15 +557,16 @@ const ManagementTaskProvider = ({
     onDateDismiss: on_date_dismiss,
     onStartTimeDismiss: on_start_time_dismiss,
     onEndTimeDismiss: on_end_time_dismiss,
-    handle_date_display,
-    handle_time_display,
+    handleDateDisplay,
+    handleStartTimeDisplay,
+    handleEndTimeDisplay,
     dateVisible,
-    start_time_visible: startTimeVisible,
+    startTimeVisible,
     endTimeVisible,
     createShift: create_shift,
     create_task,
-    start_time,
-    end_time,
+    startTime,
+    endTime,
     dates,
     collectNewTaskData,
     taskData,
@@ -501,6 +581,7 @@ const ManagementTaskProvider = ({
     setIsEditTaskModalVisible,
     setEditTask,
     updateTask,
+    handleTaskCreation,
   };
 
   return (

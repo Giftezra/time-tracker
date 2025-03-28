@@ -17,18 +17,13 @@ import TextInputComponent from "../../helper/textInput";
 import ButtonComponent from "../../helper/buttons";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useProfileContext } from "@/app/context/management/profile/profileContext";
-import {userData} from "@/app/utils/loadData";
-
-
-const EditUserDetailsComponent = ({
-  onModalVisible,
-}: {
-  onModalVisible: () => void;
-}) => {
-  const { userDetails, handleUpdate, updateProfile } = useProfileContext();
-  const innerBackground = useThemeColor({}, "innerBackground");
+import { userData } from "@/app/utils/loadData";
+import ThemedHeaderText from "../../helper/ThemedHeaderText";
+const EditUserDetailsComponent = () => {
+  const { userDetails, handleUpdate, updateCompanyDetails, setOnModalVisible } = useProfileContext();
   const headerText = useThemeColor({}, "headerText");
   const otherText = useThemeColor({}, "otherText");
+  const tintColor = useThemeColor({}, "tint");
 
   const [editable, setEditable] = useState<boolean>(false);
 
@@ -51,27 +46,28 @@ const EditUserDetailsComponent = ({
 
   return (
     <ScrollView
-      style={styles.maincontainer}
+      style={styles.mainContainer}
       showsHorizontalScrollIndicator={false}
       nestedScrollEnabled={true}
     >
-      {/* Displays for the user information update */}
       <View style={styles.headerContainer}>
-        {/* Display a toggle button to close the modal when clicked
-        This is only valid for mobile platforms */}
-        <Text style={[styles.headerText, { color: headerText }]}>
-          update user information
-        </Text>
+        <ThemedHeaderText text="profile settings" />
         {Platform.OS !== "web" && (
-          <Pressable onPress={onModalVisible}>
-            <MaterialIcons name="cancel" size={24} color="black" />
+          <Pressable onPress={() => setOnModalVisible(false)} style={styles.closeButton}>
+            <MaterialIcons name="close" size={24} color={headerText} />
           </Pressable>
         )}
       </View>
-      <View>
-        <View style={[styles.container, { backgroundColor: innerBackground }]}>
+
+      <View style={styles.sectionContainer}>
+        <Text style={[styles.sectionTitle, { color: headerText }]}>
+          Personal Information
+        </Text>
+        <View
+          style={[styles.formContainer, { backgroundColor: tintColor }]}
+        >
           <TextInputComponent
-            text="first name"
+            text="First Name"
             placeholder={user?.first_name}
             value={userDetails?.firstname}
             setValue={(text) => handleUpdate("firstname", text)}
@@ -80,7 +76,7 @@ const EditUserDetailsComponent = ({
           />
 
           <TextInputComponent
-            text="last name"
+            text="Last Name"
             placeholder={user?.last_name}
             value={userDetails?.lastname}
             setValue={(text) => handleUpdate("lastname", text)}
@@ -90,7 +86,7 @@ const EditUserDetailsComponent = ({
           />
 
           <TextInputComponent
-            text="email"
+            text="Email"
             placeholder={user?.email}
             value={userDetails?.email}
             setValue={(text) => handleUpdate("email", text)}
@@ -99,7 +95,7 @@ const EditUserDetailsComponent = ({
           />
 
           <TextInputComponent
-            text="phone"
+            text="Phone"
             placeholder={user?.phone}
             value={userDetails?.phone}
             setValue={(text) => handleUpdate("phone", text)}
@@ -108,8 +104,8 @@ const EditUserDetailsComponent = ({
           />
 
           <TextInputComponent
-            text="dob"
-            placeholder="date of birth"
+            text="Date of Birth"
+            placeholder="Date of birth"
             value={userDetails?.dob}
             setValue={(text) => handleUpdate("dob", text)}
             isMultiline={false}
@@ -119,14 +115,17 @@ const EditUserDetailsComponent = ({
             editable={editable}
           />
         </View>
+      </View>
 
-        {/* Displays for the company information update */}
-        <View style={[styles.container, { backgroundColor: innerBackground }]}>
-          <Text style={[styles.headerText, { color: headerText }]}>
-            company details
-          </Text>
+      <View style={styles.sectionContainer}>
+        <Text style={[styles.sectionTitle, { color: headerText }]}>
+          Company Details
+        </Text>
+        <View
+          style={[styles.formContainer, { backgroundColor: tintColor }]}
+        >
           <TextInputComponent
-            text="company name"
+            text="Company Name"
             placeholder={user?.company_name}
             value={userDetails?.company_name}
             setValue={(text) => handleUpdate("company_name", text)}
@@ -134,7 +133,7 @@ const EditUserDetailsComponent = ({
           />
 
           <TextInputComponent
-            text="company address"
+            text="Company Address"
             placeholder={user?.company_address}
             value={userDetails?.company_postcode}
             setValue={(text) => handleUpdate("company_postcode", text)}
@@ -142,7 +141,7 @@ const EditUserDetailsComponent = ({
           />
 
           <TextInputComponent
-            text="company email"
+            text="Company Email"
             placeholder={user?.comapny_email || "n/a"}
             value={userDetails?.company_email}
             setValue={(text) => handleUpdate("company_email", text)}
@@ -153,7 +152,7 @@ const EditUserDetailsComponent = ({
             placeholder={user?.company_services}
             value={userDetails?.company_services}
             setValue={(text) => handleUpdate("company_services", text)}
-            text="services"
+            text="Services"
             editable={editable}
           />
 
@@ -161,29 +160,29 @@ const EditUserDetailsComponent = ({
             placeholder={user?.company_helpline}
             value={userDetails?.company_helpline}
             setValue={(text) => handleUpdate("company_helpline", text)}
-            text="helpline"
+            text="Helpline"
             editable={editable}
           />
 
-          <View>
-            <Text style={[styles.infoText, { color: otherText }]}>
-              If you have a web domain, enter it here else, enter n/a
-            </Text>
-            <TextInputComponent
-              placeholder={user?.company_website}
-              value={userDetails?.company_website}
-              setValue={(text) => handleUpdate("company_website", text)}
-              text="weblink"
-              editable={editable}
-            />
-          </View>
+          <Text style={[styles.infoText, { color: otherText }]}>
+            If you have a web domain, enter it here else, enter n/a
+          </Text>
+          <TextInputComponent
+            placeholder={user?.company_website}
+            value={userDetails?.company_website}
+            setValue={(text) => handleUpdate("company_website", text)}
+            text="Website"
+            editable={editable}
+          />
         </View>
+      </View>
 
+      <View style={styles.buttonContainer}>
         <ButtonComponent
           onPress={() => {
-            if (userDetails) updateProfile(userDetails);
+            updateCompanyDetails();
           }}
-          title="save"
+          title="Save Changes"
         />
       </View>
     </ScrollView>
@@ -193,77 +192,66 @@ const EditUserDetailsComponent = ({
 export default EditUserDetailsComponent;
 
 const styles = StyleSheet.create({
-  maincontainer: {
-    flexGrow: 1,
-    padding: 5,
+  mainContainer: {
+    flex: 1,
+    backgroundColor: "#F5F7FA",
   },
 
   headerContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: 5,
+    padding: 24,
+    backgroundColor: "transparent",
   },
 
   headerText: {
-    fontSize: Platform.OS === "web" ? 10 : 12,
-    fontWeight: "500",
-    fontFamily: "BarlowLight",
-    color: "black",
-    padding: 5,
-    textTransform: "uppercase",
+    fontSize: Platform.OS === "web" ? 14 : 16,
+    fontWeight: "700",
+    fontFamily: "BarlowRegular",
   },
 
-  container: {
-    flexDirection: "column",
-    justifyContent: "space-between",
-    padding: 10,
-    borderWidth: 1,
-    borderRadius: 3,
-    width: "100%",
-    marginBottom: 10,
+  closeButton: {
+    padding: 8,
+    borderRadius: 50,
+    backgroundColor: "rgba(0, 0, 0, 0.05)",
   },
 
-  subheaderText: {
-    fontSize: 12,
+  sectionContainer: {
+    marginBottom: 24,
+    paddingHorizontal: 24,
+  },
+
+  sectionTitle: {
+    fontSize: Platform.OS === "web" ? 12 : 14,
     fontWeight: "600",
     fontFamily: "BarlowRegular",
-    color: "black",
-    padding: 2,
-    textTransform: "capitalize",
+    marginBottom: 16,
   },
 
-  input: {
-    padding: 8,
-    borderWidth: 1,
-    width: "100%",
-    fontSize: 14,
-    fontFamily: "OswaldVariable",
-    fontWeight: "normal",
-    textTransform: "lowercase",
-    marginBottom: 10,
-  },
-
-  saveButton: {
-    backgroundColor: "gray",
-    padding: 10,
-    paddingEnd: 20,
-    paddingStart: 20,
+  formContainer: {
+    padding: 12,
     borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  scrollView: {
-    flexGrow: 1,
-    width: "100%",
+    backgroundColor: "white",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 15,
+    elevation: 2,
   },
 
   infoText: {
-    fontSize: Platform.OS === "web" ? 10 : 12,
-    fontWeight: "300",
+    fontSize: Platform.OS === "web" ? 13 : 14,
     fontFamily: "BarlowLight",
-    padding: 2,
-    textTransform: "lowercase",
+    marginTop: 16,
+    marginBottom: 8,
+  },
+
+  buttonContainer: {
+    padding: 24,
+    paddingBottom: Platform.OS === "web" ? 24 : 40,
   },
 });

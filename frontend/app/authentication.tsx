@@ -6,7 +6,16 @@ import {
   useState,
   useEffect,
 } from "react";
-import { ActivityIndicator, Alert, Dimensions, Platform } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  Dimensions,
+  Platform,
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+} from "react-native";
 import { router } from "expo-router";
 import axios, { AxiosError } from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -17,8 +26,8 @@ import {
   OwnerOnboardingType,
 } from "@/app/types/management/onboarding";
 
-import { BASE_URL } from "@/app/utils/urls";
 import { storeData, loadUserData } from "@/app/utils/loadData";
+import { BASE_URL } from "@/app/utils/urls";
 
 /**
  * AuthContext provides authentication state and methods throughout the application.
@@ -38,6 +47,8 @@ const axiosInstance = axios.create({
 interface AuthProviderProps {
   children: ReactNode;
 }
+
+const PREFERRED_ROLE_KEY = 'preferred_role';
 
 /**
  * AuthProvider component manages authentication state and provides authentication-related
@@ -202,13 +213,12 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const storedToken = await AsyncStorage.getItem("token");
         const storedRefreshToken = await AsyncStorage.getItem("refresh");
         const storedUser = await loadUserData();
+        const preferredRole = await AsyncStorage.getItem(PREFERRED_ROLE_KEY);
 
         if (storedToken && storedUser && storedRefreshToken) {
-          console.log("Token retrieved ok", storedToken);
           setToken(storedToken);
           setRefreshToken(storedRefreshToken);
 
-          // Set the authorization header immediately
           axiosInstance.defaults.headers.common[
             "Authorization"
           ] = `Bearer ${storedToken}`;
@@ -225,13 +235,25 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               : ""
           );
 
-          // Redirect based on user role
-          if (storedUser.is_owner || storedUser.is_admin) {
+          // Redirect based on user role and preferences
+          if (storedUser.is_owner) {
             router.replace("/management/(drawer)/dashboard/main");
+          } else if (storedUser.is_admin && storedUser.is_employee) {
+            // Check for preferred role before showing bridge
+            if (preferredRole === 'admin') {
+              router.replace("/management/(drawer)/dashboard/main");
+            } else if (preferredRole === 'staff') {
+              router.replace("/staff/(drawer)/dashboard/main");
+            } else {
+              router.replace("/management/bridge");
+            }
           } else if (storedUser.is_employee) {
             router.replace("/staff/(drawer)/dashboard/main");
+          } else if (storedUser.is_admin) {
+            router.replace("/management/(drawer)/dashboard/main");
           } else if (storedUser.is_superuser) {
-            Alert.alert("Error", "Superuser Not Allowed ");
+            Alert.alert("Error", "Superuser Not Allowed");
+            await signOut();
           }
         }
       } catch (error) {
@@ -242,6 +264,8 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     initializeAuth();
   }, []);
+
+  
 
   /**
    * Authenticates a user with their email and password.
@@ -272,8 +296,6 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return;
       }
 
-      console.log("Login successful, access token received:", data.access);
-
       // Store tokens in AsyncStorage first
       await storeData(data);
 
@@ -293,11 +315,18 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           : ""
       );
 
-      /* Check the role and replace the screen based on the users role */
-      if (user.is_owner || user.is_admin) {
+      // Handle routing based on user role
+      if (user.is_owner) {
         router.replace("/management/(drawer)/dashboard/main");
+      } else if (user.is_admin && user.is_employee) {
+        // Show bridge screen only when user has both admin and employee roles
+        router.replace("/management/bridge");
       } else if (user.is_employee) {
+        // Regular employee goes directly to staff dashboard
         router.replace("/staff/(drawer)/dashboard/main");
+      } else if (user.is_admin) {
+        // Admin-only goes directly to management dashboard
+        router.replace("/management/(drawer)/dashboard/main");
       }
     } catch (error) {
       console.error("Login error:", error);
@@ -401,8 +430,22 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setRole(null);
     setUser(null);
     // Clear all stored auth data
-    await AsyncStorage.multiRemove(["token", "refresh", "user"]);
+    await AsyncStorage.multiRemove(["token", "refresh", "user", PREFERRED_ROLE_KEY]);
     router.replace("/management/onboarding/login");
+  };
+
+  // Add function to set preferred role
+  const setPreferredRole = async (role: 'admin' | 'staff') => {
+    try {
+      await AsyncStorage.setItem(PREFERRED_ROLE_KEY, role);
+      if (role === 'admin') {
+        router.replace("/management/(drawer)/dashboard/main");
+      } else {
+        router.replace("/staff/(drawer)/dashboard/main");
+      }
+    } catch (error) {
+      console.error("Error saving preferred role:", error);
+    }
   };
 
   const value = {
@@ -427,6 +470,7 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     screenWidth,
     windowWidth,
     axiosInstance,
+    setPreferredRole,
   };
 
   return (

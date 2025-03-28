@@ -1,9 +1,11 @@
 import { Stack } from "expo-router";
-import AuthProvider from "./context/authentication";
-import ProfileProvider from "./context/management/profile/profileContext";
+import AuthProvider from "./authentication";
+import NotificationProvider from "./context/management/notifications/notificationContext";
 
 export default function RootLayout() {
   return (
-    <Stack screenOptions={{ headerShown: false }} />
+    <NotificationProvider>
+      <Stack screenOptions={{ headerShown: false }} />
+    </NotificationProvider>
   );
 }

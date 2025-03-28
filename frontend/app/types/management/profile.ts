@@ -6,7 +6,7 @@ export interface ProfileContextType {
   handlePhone: (phone: string | undefined) => void;
   handleUpdate: (key: keyof ProfileUpdateType, value: string) => void;
   userDetails: ProfileUpdateType | null;
-  updateProfile: (data: ProfileUpdateType) => void;
+  updateCompanyDetails: () => void;
   allowEmailNotification: boolean;
   allowPushNotification: boolean;
   allowMarketingEmails: boolean;
@@ -14,6 +14,8 @@ export interface ProfileContextType {
   setAllowPushNotification(allow: boolean): void;
   setAllowEmailNotification(allow: boolean): void;
   setAllowMarketingEmails(allow: boolean): void;
+  onModalVisible: boolean;
+  setOnModalVisible: (visible: boolean) => void;
 }
 
 export interface ProfileUpdateType {

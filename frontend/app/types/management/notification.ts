@@ -1,3 +1,5 @@
+import { ExpoPushToken } from "expo-notifications";
+
 export type NotificationType = "shift" | "billing" | "system" | "alert";
 
 export interface NotificationItem {
@@ -11,8 +13,10 @@ export interface NotificationItem {
 
 export interface NotificationContextType {
   notifications: NotificationItem[];
-  addNotification: (notification: Omit<NotificationItem, "id">) => void;
   markAsRead: (id: string) => void;
   deleteNotification: (id: string) => void;
   clearAllNotifications: () => void;
+  expoPushToken: ExpoPushToken | null;
+  error: string | null;
+  tokenRegistered: boolean;
 }

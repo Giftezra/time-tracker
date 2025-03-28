@@ -25,13 +25,14 @@ import CreateTaskComponent from "@/app/component/management/task_manager/createT
 import OpenTaskComponents from "@/app/component/management/task_manager/opentasks";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { useAuth } from "@/app/context/authentication";
+import { useAuth } from "@/app/authentication";
 import SideComponent from "@/app/component/helper/sideComponent";
 import AssignTaskModal from "@/app/component/management/task_manager/assignTask";
 import { AntDesign } from "@expo/vector-icons";
 import { useManagementTask } from "@/app/context/management/task manager/managementTaskProvider";
 import EditTaskComponent from "@/app/component/management/task_manager/editTask";
-
+import ThemedHeaderText from "@/app/component/helper/ThemedHeaderText";
+import SubtitleThemedText from "@/app/component/helper/SubtitleThemedText";
 /** Variable for the sub header representing views to display */
 const subHeader = ["open tasks", "active tasks", "create task"];
 
@@ -46,15 +47,11 @@ const MainEmployeeTaskManager = () => {
     setIsEditTaskModalVisible,
     updateTask,
   } = useManagementTask();
-  
+
   const { screenWidth, windowWidth } = useAuth();
 
-  const background = useThemeColor({}, "background");
-  const text = useThemeColor({}, "text");
   const secondaryColor = useThemeColor({}, "secondaryColor");
   const highlight = useThemeColor({}, "highlight");
-  const innerBackground = useThemeColor({}, "innerBackground");
-
 
   const [toggleView, setToggleView] = useState<string>("open tasks");
 
@@ -70,14 +67,18 @@ const MainEmployeeTaskManager = () => {
   return (
     <SafeAreaProvider style={{ flex: 1 }}>
       <KeyboardAvoidingView
-        style={[
-          { flex: 1, width: windowWidth },
-          { backgroundColor: background },
-        ]}
+        style={[{ flex: 1, width: windowWidth, backgroundColor: "white" }]}
       >
         {/* Display the views based on the plaform */}
         {Platform.OS === "web" ? (
-          <View style={{ flex: 1, width: windowWidth, flexDirection: "row" }}>
+          <View
+            style={{
+              flex: 1,
+              width: windowWidth,
+              flexDirection: "row",
+              backgroundColor: "white",
+            }}
+          >
             <View style={{ width: windowWidth * 0.2 }}>
               <SideComponent />
             </View>
@@ -85,20 +86,16 @@ const MainEmployeeTaskManager = () => {
               style={[
                 styles.rowContainer,
                 {
-                  backgroundColor: innerBackground,
+                  backgroundColor: "white",
                   width: windowWidth * 0.8,
                 },
               ]}
             >
               <View style={styles.columnContainer}>
-                <View
-                  style={[styles.column, { backgroundColor: secondaryColor }]}
-                >
+                <View style={[styles.column]}>
                   <OpenTaskComponents />
                 </View>
-                <View
-                  style={[styles.column, { backgroundColor: secondaryColor }]}
-                >
+                <View style={[styles.column]}>
                   <ActiveTaskComponent />
                 </View>
               </View>
@@ -118,21 +115,15 @@ const MainEmployeeTaskManager = () => {
            * The mobile view of the task manager. The view is divided into two sections:
            * The views are arranged in a column layout.
            */
-          <View
-            style={[
-              styles.mobileContainer,
-              { backgroundColor: innerBackground },
-            ]}
-          >
+          <View style={[styles.mobileContainer, { backgroundColor: "white" }]}>
             <View>
-              <View style={{ backgroundColor: secondaryColor }}>
-                <Text style={styles.mobileHeaderText}>Task manager</Text>
+              <View>
+                <ThemedHeaderText text="Task manager" />
               </View>
               {/* Create buttons to monitor the states and conditinally display the respective view  */}
               <View
                 style={[
                   styles.mobileHeader,
-                  { backgroundColor: secondaryColor },
                 ]}
               >
                 {/* Conditionally render the sub header */}
@@ -147,7 +138,7 @@ const MainEmployeeTaskManager = () => {
                         { borderBottomWidth: 1, borderBottomColor: highlight }),
                     ]}
                   >
-                    <Text style={styles.mobileButtonText}>{header}</Text>
+                    <SubtitleThemedText text={header} />
                   </TouchableOpacity>
                 ))}
               </View>
@@ -155,32 +146,17 @@ const MainEmployeeTaskManager = () => {
 
             {/* Conditionally render the selected view */}
             {toggleView === "open tasks" && (
-              <View
-                style={[
-                  styles.mobileToggleView,
-                  { backgroundColor: secondaryColor },
-                ]}
-              >
+              <View style={[styles.mobileToggleView]}>
                 <OpenTaskComponents />
               </View>
             )}
             {toggleView === "active tasks" && (
-              <View
-                style={[
-                  styles.mobileToggleView,
-                  { backgroundColor: secondaryColor },
-                ]}
-              >
+              <View style={[styles.mobileToggleView]}>
                 <ActiveTaskComponent />
               </View>
             )}
             {toggleView === "create task" && (
-              <View
-                style={[
-                  styles.mobileToggleView,
-                  { backgroundColor: secondaryColor },
-                ]}
-              >
+              <View style={[styles.mobileToggleView]}>
                 <CreateTaskComponent />
               </View>
             )}
@@ -198,7 +174,7 @@ const MainEmployeeTaskManager = () => {
               style={styles.modalCloseButton}
               onPress={() => setAssignTaskModalVisible(false)}
             >
-              <AntDesign name="close" size={24} color={text} />
+              <AntDesign name="close" size={24} color={'#fff'} />
             </TouchableOpacity>
             {selectedTask && (
               <AssignTaskModal
@@ -222,7 +198,7 @@ const MainEmployeeTaskManager = () => {
                 style={styles.modalCloseButton}
                 onPress={() => setIsEditTaskModalVisible(false)}
               >
-                <AntDesign name="close" size={24} color={text} />
+                <AntDesign name="close" size={24} color={'#fff'} />
               </TouchableOpacity>
             </View>
 
@@ -321,7 +297,7 @@ const styles = StyleSheet.create({
   mobileToggleView: {
     flex: 1,
     flexDirection: "column",
-    padding: 5,
+    padding: 2,
   },
 
   mobileSelectedView: {

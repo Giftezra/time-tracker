@@ -15,6 +15,9 @@ import { useThemeColor } from "@/hooks/useThemeColor";
 import { AntDesign, MaterialIcons } from "@expo/vector-icons";
 import { useClientContext } from "@/app/context/management/client/clientContext";
 import { JobDetailsType } from "@/app/types/management/client";
+import ThemedHeaderText from "../../helper/ThemedHeaderText";
+import SubtitleThemedText from "../../helper/SubtitleThemedText";
+import InnerThemedText from "../../helper/InnerThemedText";
 /* The component displays the job details and which employee was assigned to a shift.
 
 Each shift has a pay range , and other data to simulate a site.*/
@@ -35,13 +38,11 @@ const JobDetailsComponent: React.FC<JobDetailsType> = (props) => {
   const toggleContractDisplay = () => setToggleContract(!toggleContract);
 
   return (
-    <View style={[styles.maincontainer, { backgroundColor: innerbackground }]}>
+    <View style={[styles.maincontainer, { backgroundColor: primary }]}>
       {/* The main component displays the client details so that when clicked, the tasks associated with the client are displayed. */}
       <Pressable onPress={toggleContractDisplay}>
         <View style={styles.clientHeader}>
-          <Text style={[styles.headerText, { color: text }]}>
-            {props.client_name}
-          </Text>
+          <ThemedHeaderText text={props.client_name || ""} />
           <AntDesign
             name={toggleContract ? "caretup" : "caretdown"}
             size={16}
@@ -51,67 +52,37 @@ const JobDetailsComponent: React.FC<JobDetailsType> = (props) => {
 
         <View style={styles.contractContainer}>
           <View style={styles.contractInfoRow}>
-            <Text style={[styles.contractLabel, { color: otherText }]}>
-              Contract Name:
-            </Text>
-            <Text style={[styles.contractValue, { color: text }]}>
-              {props.contract_name}
-            </Text>
+            <SubtitleThemedText text="Contract Name:" />
+            <InnerThemedText text={props.contract_name} />
           </View>
           <View style={styles.contractInfoRow}>
-            <Text style={[styles.contractLabel, { color: otherText }]}>
-              Address:
-            </Text>
-            <Text style={[styles.contractValue, { color: text }]}>
-              {props.contract_address}
-            </Text>
+            <SubtitleThemedText text="Address:" />
+            <InnerThemedText text={props.contract_address} />
           </View>
           <View style={styles.contractInfoRow}>
-            <Text style={[styles.contractLabel, { color: otherText }]}>
-              Postcode:
-            </Text>
-            <Text style={[styles.contractValue, { color: text }]}>
-              {props.contract_postcode}
-            </Text>
+            <SubtitleThemedText text="Postcode:" />
+            <InnerThemedText text={props.contract_postcode} />
           </View>
           <View style={styles.contractInfoRow}>
-            <Text style={[styles.contractLabel, { color: otherText }]}>
-              Serial:
-            </Text>
-            <Text style={[styles.contractValue, { color: text }]}>
-              {props.task_serial}
-            </Text>
+            <SubtitleThemedText text="Serial:" />
+            <InnerThemedText text={props.task_serial} />
           </View>
           <View style={styles.timeFrameContainer}>
-            <Text style={[styles.contractLabel, { color: otherText }]}>
-              Task time frame
-            </Text>
+            <SubtitleThemedText text="Task time frame" />
             <View style={styles.timeFrameContent}>
               <View style={styles.timeFrameItem}>
-                <Text style={[styles.timeFrameLabel, { color: otherText }]}>
-                  start date
-                </Text>
-                <Text style={[styles.timeFrameValue, { color: text }]}>
-                  {props.task_start_date?.split("T")[0]}
-                </Text>
+                <SubtitleThemedText text="start date" />
+                <InnerThemedText text={props.task_start_date?.split("T")[0]} />
               </View>
 
               <View style={styles.timeFrameItem}>
-                <Text style={[styles.timeFrameLabel, { color: otherText }]}>
-                  start time
-                </Text>
-                <Text style={[styles.timeFrameValue, { color: text }]}>
-                  {props.task_start_time}
-                </Text>
+                <SubtitleThemedText text="start time" />
+                <InnerThemedText text={props.task_start_time} />
               </View>
 
               <View style={styles.timeFrameItem}>
-                <Text style={[styles.timeFrameLabel, { color: otherText }]}>
-                  finish time
-                </Text>
-                <Text style={[styles.timeFrameValue, { color: text }]}>
-                  {props.task_end_time}
-                </Text>
+                <SubtitleThemedText text="finish time" />
+                <InnerThemedText text={props.task_end_time} />
               </View>
             </View>
           </View>
@@ -121,24 +92,14 @@ const JobDetailsComponent: React.FC<JobDetailsType> = (props) => {
       {toggleContract && (
         <View style={styles.detailsContainer}>
           <View style={styles.staffSection}>
-            <Text style={[styles.sectionHeader, { color: otherText }]}>
-              Staff Assigned
-            </Text>
+            <ThemedHeaderText text="Staff Assigned" />
             {props.employee.map((employee, index) => (
               <View key={index} style={styles.employeeContainer}>
                 <View>
-                  <Text style={[styles.text, { color: text }]}>
-                    {employee.name}
-                  </Text>
-                  <Text style={[styles.text, { color: text }]}>
-                    {employee.email}
-                  </Text>
-                  <Text style={[styles.text, { color: text }]}>
-                    {employee.id}
-                  </Text>
-                  <Text style={[styles.text, { color: text }]}>
-                    {employee.phone}
-                  </Text>
+                  <SubtitleThemedText text={employee.name} />
+                  <InnerThemedText text={employee.email} />
+                  <InnerThemedText text={employee.id} />
+                  <InnerThemedText text={employee.phone} />
                 </View>
                 <TouchableOpacity onPress={() => handlePhone(employee.phone)}>
                   <AntDesign name="phone" size={24} color={primary} />
@@ -154,36 +115,22 @@ const JobDetailsComponent: React.FC<JobDetailsType> = (props) => {
 
           <View style={styles.infoSection}>
             <View style={styles.infoRow}>
-              <Text style={[styles.infoLabel, { color: text }]}>Rate</Text>
-              <Text style={[styles.infoValue, { color: text }]}>
-                {props.pay}
-              </Text>
+              <SubtitleThemedText text="Rate" />
+              <InnerThemedText text={props.pay?.toString() || ""} />
             </View>
             <View style={styles.infoRow}>
-              <Text style={[styles.infoLabel, { color: text }]}>
-                Start Date
-              </Text>
-              <Text style={[styles.infoValue, { color: text }]}>
-                {props.task_start_date?.split("T")[0]}
-              </Text>
+              <SubtitleThemedText text="Start Date" />
+              <InnerThemedText text={props.task_start_date?.split("T")[0]} />
             </View>
             {countDown === null ? (
               <View style={styles.infoRow}>
-                <Text style={[styles.infoLabel, { color: text }]}>
-                  Time Elapsed
-                </Text>
-                <Text style={[styles.infoValue, { color: text }]}>
-                  {timeElapsed}
-                </Text>
+                <SubtitleThemedText text="Time Elapsed" />
+                <InnerThemedText text={timeElapsed?.toString() || ""} />
               </View>
             ) : (
               <View style={styles.infoRow}>
-                <Text style={[styles.infoLabel, { color: text }]}>
-                  Shift Starts In
-                </Text>
-                <Text
-                  style={[styles.infoValue, { color: text }]}
-                >{`${countDown} minutes`}</Text>
+                <SubtitleThemedText text="Shift Starts In" />
+                <InnerThemedText text={`${countDown} minutes`} />
               </View>
             )}
           </View>
@@ -197,10 +144,11 @@ export default JobDetailsComponent;
 
 const styles = StyleSheet.create({
   maincontainer: {
-    marginVertical: 8,
-    borderRadius: 8,
+    marginVertical: 1,
+    borderRadius: 4,
     overflow: "hidden",
     marginHorizontal: 4,
+    borderBottomWidth: 1,
   },
 
   clientHeader: {

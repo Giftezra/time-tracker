@@ -7,15 +7,13 @@ import {
   Ionicons,
   MaterialCommunityIcons,
 } from "@expo/vector-icons";
-import { useNotificationContext } from "@/app/context/management/notificationProvider";
-
+import { useNotifications } from "@/app/context/management/notifications/notificationContext";
 const NotificationDetailsComponent: React.FC<NotificationType> = (props) => {
-  const { toggleReadStatus } = useNotificationContext();
   const highlight = useThemeColor({}, "highlight");
 
   return (
     <Pressable
-      onPress={() => toggleReadStatus(props.id)}
+      onPress={() => console.log(props.id)}
       style={[
         styles.maincontainer,
         props.isRead

@@ -28,6 +28,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import AddClientComponent from "@/app/component/management/client/addClient";
 import EditContractComponent from "@/app/component/management/client/editContracts";
 import EditClientComponent from "@/app/component/management/client/editClient";
+import ButtonText from "@/app/component/helper/ButtonText";
 const MainClient = () => {
   const {
     isCreateContractModalVisible,
@@ -55,7 +56,7 @@ const MainClient = () => {
             style={styles.newClientButton}
             onPress={() => setIsCreateClientModalVisible(true)}
           >
-            <Text style={styles.newClientButtonText}>new client</Text>
+            <ButtonText text="new client" />
           </TouchableOpacity>
         </View>
 

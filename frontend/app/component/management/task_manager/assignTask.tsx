@@ -17,7 +17,7 @@ import { EmployeeType } from "@/app/types/management/employee";
 import { OpenTaskProps } from "@/app/types/management/task";
 import { FlatList } from "react-native-gesture-handler";
 import { useManagementTask } from "@/app/context/management/task manager/managementTaskProvider";
-import { useAuth } from "@/app/context/authentication";
+import { useAuth } from "@/app/authentication";
 
 const AssignTaskModal = ({
   task,
@@ -54,7 +54,6 @@ const AssignTaskModal = ({
     });
   };
 
-
   /**
    * Used to assigned the selected task to a list of employees
    * Return the response from the server and show the alert to the user based on the response
@@ -69,19 +68,18 @@ const AssignTaskModal = ({
 
     try {
       // Get array of employee IDs
-      const employeeIds = selectedEmployees.map((emp)=>(emp.employee_id))
+      const employeeIds = selectedEmployees.map((emp) => emp.employee_id);
       // Call the context method to assign task
-      const response = await axiosInstance.post('/api/assign/task/', {
+      const response = await axiosInstance.post("/api/assign/task/", {
         task_id: task.task_id,
-        staff_ids: employeeIds
-      })
+        staff_ids: employeeIds,
+      });
       if (response.status === 200) {
         Alert.alert("Task Assignment", response.data);
         onClose();
       } else {
         Alert.alert("Error", "Failed to assign task. Please try again.");
       }
-      
     } catch (error) {
       Alert.alert("Error", "Failed to assign task. Please try again.");
       console.error("Error assigning task:", error);
@@ -89,21 +87,25 @@ const AssignTaskModal = ({
   };
 
   return (
-    <View style={[styles.mainContainer, { backgroundColor: innerBackground }]}>
-      <Text style={styles.headerText}>
+    <View style={[styles.mainContainer, { backgroundColor: "white" }]}>
+      <Text style={[styles.headerText, { color: "black" }]}>
         Assigning task: {task.contract_name}
       </Text>
-      <Text style={[styles.text, { color: text }]}>{task.contract_name}</Text>
-      <Text style={[styles.text, { color: text }]}>{task.task_serial}</Text>
+      <Text style={[styles.text, { color: "black" }]}>
+        {task.contract_name}
+      </Text>
+      <Text style={[styles.text, { color: "black" }]}>{task.task_serial}</Text>
       <View style={styles.dateContainer}>
-        <Text style={[styles.text, { color: text }]}>Start Date:</Text>
-        <Text style={[styles.text, { color: text }]}>
+        <Text style={[styles.text, { color: "black" }]}>Start Date:</Text>
+        <Text style={[styles.text, { color: "black" }]}>
           {task.task_start_date}
         </Text>
       </View>
       <View style={styles.dateContainer}>
-        <Text style={[styles.text, { color: text }]}>End Date:</Text>
-        <Text style={[styles.text, { color: text }]}>{task.task_end_date}</Text>
+        <Text style={[styles.text, { color: "black" }]}>End Date:</Text>
+        <Text style={[styles.text, { color: "black" }]}>
+          {task.task_end_date}
+        </Text>
       </View>
       {/* Contains the details of the selected task */}
       <View
@@ -178,20 +180,12 @@ const AssignTaskModal = ({
                   >
                     {item.employee_name}
                   </Text>
-                  <Text
-                    style={[
-                      styles.pressableText,
-                      { color: isSelected ? "white" : text },
-                    ]}
-                  >
-                    {item.employee_id}
-                  </Text>
                 </Pressable>
               );
             }}
           />
         )}
-      </View>
+      </View> 
       <TouchableOpacity
         onPress={handleAssignTask}
         style={[

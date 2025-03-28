@@ -1,8 +1,7 @@
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View, Pressable } from "react-native";
 import React, { useState } from "react";
 import {
   GestureHandlerRootView,
-  Pressable,
 } from "react-native-gesture-handler";
 import { AntDesign } from "@expo/vector-icons";
 import { useCheckout } from "@/app/context/management/payments/paymentContext";
@@ -60,9 +59,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: 5,
+    padding: 10,
     borderWidth: 1,
     borderColor: "gray",
+    borderRadius: 10,
   },
 
   addressContainer: {

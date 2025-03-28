@@ -13,6 +13,7 @@ import { ClientDetailsType } from "@/app/types/management/client";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useClientContext } from "@/app/context/management/client/clientContext";
+import ButtonText from "../../helper/ButtonText";
 const EditClientComponent = ({ client }: { client: ClientDetailsType }) => {
   const { updateClient, isEditClientLoading } = useClientContext();
 
@@ -124,7 +125,7 @@ const EditClientComponent = ({ client }: { client: ClientDetailsType }) => {
             {isEditClientLoading ? (
                 <ActivityIndicator size="small" color={text} />
             ) : (
-                <Text style={styles.buttonText}>Update Client</Text>
+              <ButtonText text="Update Client" />
             )}
         </TouchableOpacity>
       </View>

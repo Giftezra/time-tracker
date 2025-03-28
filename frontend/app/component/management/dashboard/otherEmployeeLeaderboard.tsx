@@ -9,7 +9,8 @@ import {
 import { AntDesign, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useDashboardContext } from "@/app/context/management/dashboard/dashboardContext";
-
+import SubtitleThemedText from "../../helper/SubtitleThemedText";
+import InnerThemedText from "../../helper/InnerThemedText";
 const image = require("@/assets/images/user image.jpg");
 
 const OtherEmployeeOnLeaderboard = ({
@@ -49,8 +50,8 @@ const OtherEmployeeOnLeaderboard = ({
       />
       <View style={styles.constainer}>
         <View style={styles.innerContainer}>
-          <Text style={[styles.highlightedTexts, { color: text }]}>{name}</Text>
-          <Text style={[styles.othertexts, { color: otherText }]}>{role}</Text>
+          <SubtitleThemedText text={name} />
+          <InnerThemedText text={role} />
         </View>
 
         <View style={styles.innerContainer}>

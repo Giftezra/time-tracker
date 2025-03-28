@@ -75,5 +75,66 @@ def update_user_preferences(request):
         return Response({'new_data': new_user_notification}, status=status.HTTP_200_OK)
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    
+
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
+@owner_required
+def update_owner_company_details(request):
+    try:
+        if not request.data:
+            return Response({'error': 'No data provided'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        data = request.data.get('data')
+        print(data)
+        company_name = data.get('company_name')
+        company_address = data.get('company_address')
+        company_postcode = data.get('company_postcode')
+        company_website = data.get('company_website')
+        company_services = data.get('company_services')
+        company_helpline = data.get('company_helpline')
+        company_email = data.get('company_email')
+        firstname = data.get('firstname')
+        lastname = data.get('lastname')
+        email = data.get('email')
+        phone = data.get('phone')
+        dob = data.get('dob')
+        
+        # Get the company object associated with the owner
+        company = Company.objects.get(owner=request.user)
+        user = request.user
+        # Update the user details and the company details
+        if firstname:
+            user.firstname = firstname
+        if lastname:
+            user.lastname = lastname
+        if email:
+            user.email = email
+        if phone:
+            user.phone = phone
+        if dob:
+            user.dob = dob
+        if company_name:
+            company.name = company_name
+        if company_address:
+            company.address = company_address
+        if company_postcode:
+            company.postcode = company_postcode
+        if company_website:
+            company.website = company_website
+        if company_services:
+            company.services = company_services
+        if company_helpline:
+            company.helpline = company_helpline
+        if company_email:
+            company.email = company_email
+        request.user.save()
+        company.save()
+        return Response({'message': 'Company details updated successfully'}, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+            
+
         
 

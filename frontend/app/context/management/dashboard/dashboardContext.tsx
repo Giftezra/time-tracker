@@ -8,9 +8,9 @@ import {
 } from "@/app/types/management/dashboard";
 import { loadUserData, userData } from "@/app/utils/loadData";
 import { useContext, createContext, useState, useEffect } from "react";
-import { useAuth } from "../../authentication";
 import axios from "axios";
 import { useEmployeeContext } from "../employee/employeeContext";
+import { useAuth } from "@/app/authentication";
 
 /**
  * DashboardContext - React Context for managing dashboard-related state and operations

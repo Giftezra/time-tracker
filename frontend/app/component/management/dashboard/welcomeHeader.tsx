@@ -3,7 +3,10 @@ import React, { useEffect, useState } from "react";
 import { useDashboardContext } from "@/app/context/management/dashboard/dashboardContext";
 import { router } from "expo-router";
 import { userData } from "@/app/utils/loadData";
-
+import InnerThemedText from "../../helper/InnerThemedText";
+import SubtitleThemedText from "../../helper/SubtitleThemedText";
+import ThemedHeaderText from "../../helper/ThemedHeaderText";
+import ButtonText from "../../helper/ButtonText";
 const DashboardWelcomeHeader = () => {
   const user = userData();
 
@@ -19,14 +22,12 @@ const DashboardWelcomeHeader = () => {
     <View style={styles.maincontainer}>
       <View style={styles.headerRow}>
         <View style={styles.welcometextContainer}>
-          <Text style={styles.welcometext}>
-            Welcome back, {user?.first_name}
-          </Text>
-          <Text style={styles.otherText}>
-            {role === "Owner"
+          <ThemedHeaderText text={`Welcome back, ${user?.first_name}`} />
+          <SubtitleThemedText text={
+            role === "Owner"
               ? "Monitor your business performance and daily activities"
-              : "Track your tasks and daily activities"}
-          </Text>
+              : "Track your tasks and daily activities"
+          } />
         </View>
 
         {role === "Owner" && (
@@ -37,18 +38,18 @@ const DashboardWelcomeHeader = () => {
             ]}
             onPress={() => router.push("/management/(drawer)/payment/main")}
           >
-            <Text style={styles.buttonText}>Manage Subscription</Text>
+            <InnerThemedText text="Manage Subscription" />
           </Pressable>
         )}
       </View>
 
       <View style={styles.todaysTaskContainer}>
-        <Text style={styles.todaystaskText}>Daily Overview</Text>
-        <Text style={styles.otherText}>
-          {role === "Owner"
+        <ThemedHeaderText text="Daily Overview" />
+        <InnerThemedText text={
+          role === "Owner"
             ? "View company performance metrics and scheduled activities"
-            : "Review your schedule and assigned tasks"}
-        </Text>
+            : "Review your schedule and assigned tasks"
+        } />
 
         <Pressable
           style={({ pressed }) => [
@@ -57,7 +58,7 @@ const DashboardWelcomeHeader = () => {
           ]}
           onPress={() => router.navigate("/management/calendar/main")}
         >
-          <Text style={styles.calendarButtonText}>View Calendar</Text>
+          <ButtonText text="View Calendar" />
         </Pressable>
       </View>
     </View>

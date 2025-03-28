@@ -12,7 +12,7 @@ import {
   GestureHandlerRootView,
   ScrollView,
 } from "react-native-gesture-handler";
-import { useAuth } from "@/app/context/authentication";
+import { useAuth } from "@/app/authentication";
 import WebDashboard from "./webDashboard";
 import MobileDashboard from "./mobileDashboard";
 import { SafeAreaProvider } from "react-native-safe-area-context";

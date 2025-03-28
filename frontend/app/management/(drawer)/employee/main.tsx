@@ -23,7 +23,7 @@ import EmployeeDisplayComponent from "@/app/component/management/employees/emplo
 import { EmployeeDetailsType } from "@/app/types/management/employee";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useEmployeeContext } from "@/app/context/management/employee/employeeContext";
-import { useAuth } from "@/app/context/authentication";
+import { useAuth } from "@/app/authentication";
 import SideComponent from "@/app/component/helper/sideComponent";
 import AddEmployeeComponent from "@/app/component/management/employees/addemployee";
 import EmployeeAnalyticsComponent from "@/app/component/management/employees/employeeAnalytics";

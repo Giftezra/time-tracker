@@ -8,12 +8,10 @@ import {
   Touchable,
   TouchableOpacity,
   View,
+  Pressable,
 } from "react-native";
 import React, { useState } from "react";
-import {
-  GestureHandlerRootView,
-  Pressable,
-} from "react-native-gesture-handler";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import CalendarComponent from "../../helper/customCalendar";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import TextInputComponent from "../../helper/textInput";
@@ -21,7 +19,9 @@ import SubmitButtonComponent from "../../helper/submitButton";
 import { useClientContext } from "@/app/context/management/client/clientContext";
 import DateScroller from "../../helper/dateScroller";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-
+import SubHeaderText from "../../helper/SubHeaderText";
+import InnerThemedText from "../../helper/InnerThemedText";
+import ButtonText from "../../helper/ButtonText";
 const renderCalendar = () => {
   return (
     <CalendarComponent
@@ -105,20 +105,14 @@ const AddContractComponent = () => {
   return (
     <GestureHandlerRootView style={styles.mainContainer}>
       <ScrollView style={styles.scrollView}>
-        <Text style={styles.pageTitle}>Create a new contract</Text>
+        <SubHeaderText text="create a new contract" />
 
         <View style={styles.warningContainer}>
-          <Text style={styles.warningText}>
-            Note: contracts created on time tracker does not reflect a signed
-            contract. Time tracker is solely used to manage clients and general
-            task systems.
-          </Text>
-          <Text style={styles.warningText}>
-            Please read our terms and conditions and privacy policy
-          </Text>
+          <InnerThemedText text="Note: contracts created on time tracker does not reflect a signed contract. Time tracker is solely used to manage clients and general task systems." />
+          <InnerThemedText text="Please read our terms and conditions and privacy policy" />
 
           <Pressable style={styles.warningPressables}>
-            <Text style={{ textDecorationLine: "underline" }}>here</Text>
+            <InnerThemedText text="here" />
           </Pressable>
         </View>
 
@@ -142,9 +136,7 @@ const AddContractComponent = () => {
             <Pressable
               style={[styles.findAddressBtn, { backgroundColor: otherText }]}
             >
-              <Text style={[styles.findAddressBtnText, { color: text }]}>
-                Find Address
-              </Text>
+              <ButtonText text="find address" />
             </Pressable>
           </View>
 
@@ -152,11 +144,13 @@ const AddContractComponent = () => {
             onPress={toggleEnterAddress}
             style={styles.manualAddressBtn}
           >
-            <Text style={styles.manualAddressText}>
-              {enterAddress
-                ? "− Hide manual address"
-                : "+ Enter address manually"}
-            </Text>
+            <InnerThemedText
+              text={
+                enterAddress
+                  ? "− Hide manual address"
+                  : "+ Enter address manually"
+              }
+            />
           </Pressable>
 
           {enterAddress && (
@@ -164,6 +158,7 @@ const AddContractComponent = () => {
               <TextInputComponent
                 placeholder="Address line 1"
                 text="Address line 1"
+                autoComplete="address-line1"
                 value={newContract?.address}
                 setValue={(text) => handleAddContractInput("address", text)}
               />
@@ -171,6 +166,7 @@ const AddContractComponent = () => {
               <TextInputComponent
                 placeholder="City"
                 text="City"
+                autoComplete="address-line2"
                 value={newContract?.city}
                 setValue={(text) => handleAddContractInput("city", text)}
               />
@@ -183,10 +179,13 @@ const AddContractComponent = () => {
                 style={styles.dateButton}
                 onPress={toggleStartDateScroller}
               >
-                <Text style={styles.dateButtonText}>
-                  Start Date:{" "}
-                  {formatDate(startDate.day, startDate.month, startDate.year)}
-                </Text>
+                <InnerThemedText
+                  text={`Start Date: ${formatDate(
+                    startDate.day,
+                    startDate.month,
+                    startDate.year
+                  )}`}
+                />
                 <MaterialCommunityIcons
                   name="calendar"
                   size={24}
@@ -231,10 +230,13 @@ const AddContractComponent = () => {
                 style={styles.dateButton}
                 onPress={toggleEndDateScroller}
               >
-                <Text style={styles.dateButtonText}>
-                  End Date:{" "}
-                  {formatDate(endDate.day, endDate.month, endDate.year)}
-                </Text>
+                <InnerThemedText
+                  text={`End Date: ${formatDate(
+                    endDate.day,
+                    endDate.month,
+                    endDate.year
+                  )}`}
+                />
                 <MaterialCommunityIcons
                   name="calendar"
                   size={24}
@@ -326,7 +328,7 @@ const styles = StyleSheet.create({
   },
   postcodeContainer: {
     flexDirection: "row",
-    alignItems: "flex-end",
+    alignItems: "center",
     marginBottom: 16,
     gap: 12,
   },
@@ -356,8 +358,8 @@ const styles = StyleSheet.create({
     fontFamily: "BarlowRegular",
   },
   addressFields: {
-    gap: 16,
-    marginBottom: 16,
+    gap: 5,
+    marginBottom: 15,
   },
   dateContainer: {
     flexDirection: "column",

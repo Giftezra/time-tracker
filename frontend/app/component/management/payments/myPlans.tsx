@@ -1,9 +1,20 @@
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import React, { useState } from "react";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { CurrentPlanDetails } from "@/app/types/management/payment";
-
+import {
+  CardType,
+  CurrentPlanDetails,
+  SubscriptionHistoryInterface,
+} from "@/app/types/management/payment";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import SubscriptionHistory from "./SubscriptionHistory";
+import { useCheckout } from "@/app/context/management/payments/paymentContext";
+import { FontAwesome } from "@expo/vector-icons";
+import CheckoutComponent from "./checkout";
+import InnerThemedText from "../../helper/InnerThemedText";
+import ButtonText from "@/app/component/helper/ButtonText";
 const MySubscriptionPlansComponent = () => {
+  const { currentPage, setCurrentPage } = useCheckout();
   // This would typically come from your API/backend
   const [currentPlan] = useState<CurrentPlanDetails>({
     planName: "Pro",
@@ -16,6 +27,29 @@ const MySubscriptionPlansComponent = () => {
     status: "active",
   });
 
+  const [subscriptionHistory, setSubscriptionHistory] = useState<
+    SubscriptionHistoryInterface[]
+  >([
+    {
+      id: "1",
+      planName: "Pro",
+      startDate: "2025-04-30",
+      endDate: "2025-05-30",
+      status: "overdue",
+    },
+    {
+      id: "2",
+      planName: "Pro",
+      startDate: "2025-04-30",
+      endDate: "2025-05-30",
+      status: "active",
+    },
+  ]);
+
+  const [payOverage, setPayOverage] = useState(false);
+  const [showSubscriptionHistory, setShowSubscriptionHistory] = useState(false);
+  const [showCards, setShowCards] = useState(false);
+
   const warningColor = useThemeColor({}, "primaryColor");
   const primaryColor = useThemeColor({}, "primaryColor");
   const textColor = useThemeColor({}, "highlight");
@@ -26,6 +60,52 @@ const MySubscriptionPlansComponent = () => {
     const diffTime = expiry.getTime() - today.getTime();
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   };
+
+  const { selectedCard, setSelectedCard, savedCards, billingDetails } =
+    useCheckout();
+  const primary = useThemeColor({}, "primaryColor");
+
+  const renderCard = (card: CardType) => (
+    <TouchableOpacity
+      key={card.id}
+      style={[
+        styles.cardContainer,
+        selectedCard === card.id && styles.selectedCard,
+      ]}
+      onPress={() => setSelectedCard(card.id)}
+    >
+      <View style={styles.cardInfo}>
+        {card.brand === "visa" ? (
+          <FontAwesome name="cc-visa" size={24} color={primary} />
+        ) : (
+          <FontAwesome name="cc-mastercard" size={24} color={primary} />
+        )}
+        <Text style={styles.cardText}>•••• {card.last4}</Text>
+        {card.isDefault && <Text style={styles.defaultBadge}>Default</Text>}
+      </View>
+      <MaterialCommunityIcons
+        name={selectedCard === card.id ? "radiobox-marked" : "radiobox-blank"}
+        size={24}
+        color={primary}
+      />
+    </TouchableOpacity>
+  );
+
+  /* Display the checkout component when the pay for overage button is pressed */
+  if (payOverage) {
+    return (
+      <View style={styles.container}>
+        <CheckoutComponent
+          overagePlan="400"
+          onBack={() => setPayOverage(false)}
+          onComplete={() => {
+            setPayOverage(false);
+            setCurrentPage("My Plans");
+          }}
+        />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -100,23 +180,63 @@ const MySubscriptionPlansComponent = () => {
 
       <View style={styles.divider} />
 
+      <View style={[styles.planCard, { backgroundColor: "#ffffff" }]}>
+        <TouchableOpacity
+          style={styles.historyHeader}
+          onPress={() => setShowSubscriptionHistory(!showSubscriptionHistory)}
+        >
+          <Text style={styles.historyTitle}>Subscription History</Text>
+          <Text style={styles.toggleText}>
+            {showSubscriptionHistory ? "Hide" : "Show"}
+          </Text>
+        </TouchableOpacity>
+
+        {showSubscriptionHistory && (
+          <View style={styles.historyList}>
+            {subscriptionHistory.map((item) => (
+              <SubscriptionHistory key={item.id} props={item} />
+            ))}
+          </View>
+        )}
+      </View>
+
+      <View style={styles.divider} />
+
+      <View style={[styles.planCard, { backgroundColor: "#ffffff" }]}>
+        <TouchableOpacity
+          style={styles.historyHeader}
+          onPress={() => setShowCards(!showCards)}
+        >
+          <Text style={styles.historyTitle}>Payment Methods</Text>
+          <Text style={styles.toggleText}>{showCards ? "Hide" : "Show"}</Text>
+        </TouchableOpacity>
+
+        {showCards && savedCards && (
+          <View style={styles.cardsList}>
+            {savedCards.map((card) => renderCard(card))}
+          </View>
+        )}
+      </View>
+
+      <View style={styles.divider} />
+
       <View style={styles.infoContainer}>
-        <Text style={styles.infoText}>
-          You can pay for your overage now, reduce the number of staff to{" "}
-          {currentPlan.planLimit} or increase your plan limit to avoid overage
-          fees
-        </Text>
+        <InnerThemedText
+          text={`You can pay for your overage now, reduce the number of staff to ${currentPlan.planLimit} or increase your plan limit to avoid overage fees`}
+        />
 
         <View style={styles.buttonContainer}>
           <TouchableOpacity
             style={[styles.button, { backgroundColor: primaryColor }]}
+            onPress={() => setPayOverage(true)}
           >
-            <Text style={styles.buttonText}>Pay for Overage</Text>
+            <ButtonText text="Pay for Overage" />
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.button, { backgroundColor: primaryColor }]}
+            onPress={() => setCurrentPage("Plans")}
           >
-            <Text style={styles.buttonText}>Increase Plan Limit</Text>
+            <ButtonText text="Increase Plan Limit" />
           </TouchableOpacity>
         </View>
       </View>
@@ -155,16 +275,9 @@ const styles = StyleSheet.create({
   },
   planCard: {
     borderRadius: 16,
-    padding: 24,
-    marginBottom: 24,
+    padding: 15,
+    marginBottom: 5,
     shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
   },
   planHeaderSection: {
     marginBottom: 20,
@@ -265,5 +378,68 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 15,
     fontWeight: "600",
+  },
+  subscriptionHistoryContainer: {
+    marginTop: 20,
+  },
+  subscriptionHistoryTitle: {
+    fontSize: 20,
+  },
+  historyHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 5,
+  },
+  historyTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    fontFamily: "BarlowRegular",
+    color: "#374151",
+  },
+  toggleText: {
+    fontSize: 14,
+    color: "#6B7280",
+  },
+  historyList: {
+    marginTop: 12,
+  },
+  selectedCard: {
+    backgroundColor: "#e0e0e0",
+    borderWidth: 1,
+  },
+
+  cardInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+
+  cardText: {
+    fontSize: 16,
+    marginLeft: 8,
+  },
+
+  defaultBadge: {
+    fontSize: 12,
+    backgroundColor: "#e3f2fd",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+  },
+
+  cardContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 10,
+    backgroundColor: "#f5f5f5",
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+
+  cardsList: {
+    marginTop: 12,
+    gap: 8,
   },
 });

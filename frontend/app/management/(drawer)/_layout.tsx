@@ -13,12 +13,12 @@ import SideComponent from "@/app/component/helper/sideComponent";
 import { AntDesign, MaterialIcons } from "@expo/vector-icons";
 
 import { useThemeColor } from "@/hooks/useThemeColor";
-import AuthProvider from "@/app/context/authentication";
+import AuthProvider from "@/app/authentication";
 import { SafeAreaView } from "react-native-safe-area-context";
 import ProfileProvider from "@/app/context/management/profile/profileContext";
 import ExpandScreenComponent from "@/app/component/helper/expandScreen";
 import { Stack } from "expo-router";
-import { useAuth } from "@/app/context/authentication";
+import { useAuth } from "@/app/authentication";
 import { userData } from "@/app/utils/loadData";
 
 const VersionDisplay = ({ color }: { color: string }) => {

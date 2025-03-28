@@ -11,20 +11,12 @@ import React, { useState } from "react";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import {
   FlatList,
-  Pressable,
-  ScrollView,
-  TextInput,
 } from "react-native-gesture-handler";
 import ClientDetailsComponent from "@/app/component/management/client/clients";
-import { ClientDetailsType } from "@/app/types/management/client";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useClientContext } from "@/app/context/management/client/clientContext";
 import JobDetailsComponent from "@/app/component/management/client/jobDetails";
-import CustomModal from "@/app/component/helper/customModal";
-import AddContractComponent from "@/app/component/management/client/addcontract";
 import SearchInputContainer from "@/app/component/helper/searchInput";
-import AddClientComponent from "@/app/component/management/client/addClient";
-
+import SubtitleThemedText from "@/app/component/helper/SubtitleThemedText";
 const ClientMobileComponent = () => {
   const {
     jobDetailsData,
@@ -63,9 +55,7 @@ const ClientMobileComponent = () => {
             ]}
             onPress={() => handleToggleView(header)}
           >
-            <Text style={[styles.mobileSelectButtonText, { color: text }]}>
-              {header}
-            </Text>
+            <SubtitleThemedText text={header} />
           </TouchableOpacity>
         ))}
       </View>

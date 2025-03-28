@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import React, { useEffect } from "react";
 import RegistrationTextInputComponent from "@/app/component/helper/registrationTextinput";
-import { useAuth } from "@/app/context/authentication";
+import { useAuth } from "@/app/authentication";
 import {
   GestureHandlerRootView,
   ScrollView,

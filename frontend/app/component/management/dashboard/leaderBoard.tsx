@@ -15,7 +15,10 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useDashboardContext } from "@/app/context/management/dashboard/dashboardContext";
 import { LeaderBoardData } from "@/app/types/management/dashboard";
-
+import ThemedHeaderText from "../../helper/ThemedHeaderText";
+import SubtitleThemedText from "../../helper/SubtitleThemedText";
+import ButtonText from "../../helper/ButtonText";
+import InnerThemedText from "../../helper/InnerThemedText";
 const LeaderBoardComponent = () => {
   const { topPerformers, setIsModalVisible } = useDashboardContext();
 
@@ -48,20 +51,10 @@ const LeaderBoardComponent = () => {
 
   return (
     <GestureHandlerRootView
-      style={[styles.container, { backgroundColor: background }]}
+      style={[styles.container,]}
     >
       <View>
-        <Text
-          style={{
-            fontSize: 14,
-            fontWeight: "500",
-            fontFamily: "BarlowRegular",
-            textTransform: "uppercase",
-            marginBottom: 5,
-          }}
-        >
-          top employees
-        </Text>
+        <ThemedHeaderText text="Top Employees" />
         <ScrollView horizontal={true} showsVerticalScrollIndicator={false}>
           {topEmployeeData.map((item, index) => (
             <LeaderBoardCardComponent
@@ -77,51 +70,49 @@ const LeaderBoardComponent = () => {
         </ScrollView>
       </View>
 
-      <View style={{ height: 200 }}>
-        <View style={styles.otherEmployeeTextContainer}>
-          <View>
-            <Text style={styles.otherEmployeeText}>other employees</Text>
+      {otherEmployeeData.length > 0 && (
+        <View style={{ height: 200 }}>
+          <View style={styles.otherEmployeeTextContainer}>
+            <View>
+              <SubtitleThemedText text="other employees" />
+            </View>
+
+            <View style={styles.otherEmployeeButtonContainer}>
+              <TouchableOpacity
+                style={[
+                  styles.otherEmployeebtn,
+                  { backgroundColor: innerBackground },
+                ]}
+              >
+                <ButtonText text="weekly" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.otherEmployeebtn,
+                  { backgroundColor: innerBackground },
+                ]}
+              >
+                <ButtonText text="monthly" />
+              </TouchableOpacity>
+            </View>
           </View>
 
-          <View style={styles.otherEmployeeButtonContainer}>
-            <TouchableOpacity
-              style={[
-                styles.otherEmployeebtn,
-                { backgroundColor: innerBackground },
-              ]}
-            >
-              <Text style={[styles.otherEmployeebtnText, { color: otherText }]}>
-                weekly
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.otherEmployeebtn,
-                { backgroundColor: innerBackground },
-              ]}
-            >
-              <Text style={[styles.otherEmployeebtnText, { color: otherText }]}>
-                monthly
-              </Text>
-            </TouchableOpacity>
-          </View>
+          <ScrollView showsVerticalScrollIndicator={false}>
+            {otherEmployeeData.map((item) => (
+              <OtherEmployeeOnLeaderboard
+                key={item.id || ""}
+                id={item.id || ""}
+                name={item.name || ""}
+                email={item.email || ""}
+                phone={item.phone || ""}
+                role={item.role || ""}
+                taskCompleted={item.taskCompleted || 0}
+                setIsModalVisible={setIsModalVisible}
+              />
+            ))}
+          </ScrollView>
         </View>
-
-        <ScrollView showsVerticalScrollIndicator={false}>
-          {otherEmployeeData.map((item) => (
-            <OtherEmployeeOnLeaderboard
-              key={item.id || ""}
-              id={item.id || ""}
-              name={item.name || ""}
-              email={item.email || ""}
-              phone={item.phone || ""}
-              role={item.role || ""}
-              taskCompleted={item.taskCompleted || 0}
-              setIsModalVisible={setIsModalVisible}
-            />
-          ))}
-        </ScrollView>
-      </View>
+      )}
     </GestureHandlerRootView>
   );
 };
@@ -131,10 +122,9 @@ export default LeaderBoardComponent;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 10,
-    elevation: 5,
-    shadowRadius: 5,
+    padding: 5,
     marginStart: 5,
+    backgroundColor: "#fff",
   },
 
   scrollViewContent: {

@@ -4,11 +4,12 @@ import {
   CardType,
   CheckoutContextType,
   OwnerDetails,
+  PaymentDetails,
   SubscriptionPlanTiers,
 } from "@/app/types/management/payment";
 import { userData } from "@/app/utils/loadData";
 import { createContext, useContext, useState, useEffect } from "react";
-import { useAuth } from "../../authentication";
+import { useAuth } from "@/app/authentication";
 
 const CheckoutContext = createContext<CheckoutContextType | undefined>(
   undefined
@@ -27,6 +28,9 @@ const PaymentContext = ({ children }: { children: React.ReactNode }) => {
   const user = userData();
   const { axiosInstance } = useAuth();
 
+  // Create a state to manaage the current page
+  const [currentPage, setCurrentPage] = useState<string>("My Plans");
+  const [showCheckout, setShowCheckout] = useState(false);
   const [publishableKey, setPublishableKey] = useState<string>("");
   const [ownerAddress, setOwnerAddress] = useState<OwnerDetails>(); // Payment states
   const [savedCards, setSavedCards] = useState<CardType[]>([
@@ -76,6 +80,13 @@ const PaymentContext = ({ children }: { children: React.ReactNode }) => {
     country: "",
     phone: "",
   });
+  const [paymentDetails, setPaymentDetails] = useState<PaymentDetails>({
+    cardNumber: "",
+    expiryDate: "",
+    cvv: "",
+    name: "",
+    email: "",
+  });
 
   const handleBillingAddress = (field: keyof BillingAddress, value: string) => {
     setBillingAddress((prev: any) => ({ ...prev, [field]: value }));
@@ -96,9 +107,17 @@ const PaymentContext = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  // Add handleContinue implementation
   const handleContinue = () => {
-    
+    setShowCheckout(true);
   };
+
+  const [billingDetails, setBillingDetails] = useState<BillingDetails>({
+    numberOfEmployees: 0,
+    billingPeriod: "monthly",
+    ratePerEmployee: 0,
+    totalAmount: 0,
+  });
 
   const value: CheckoutContextType = {
     ownerAddress,
@@ -114,6 +133,15 @@ const PaymentContext = ({ children }: { children: React.ReactNode }) => {
     setSelectedPlan,
     billingPeriod,
     toggleBillingPeriod,
+    showCheckout,
+    setShowCheckout,
+    handleContinue,
+    billingDetails,
+    setBillingDetails,
+    paymentDetails,
+    setPaymentDetails,
+    currentPage,
+    setCurrentPage,
   };
 
   return (

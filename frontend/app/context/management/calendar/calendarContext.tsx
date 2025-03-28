@@ -15,7 +15,7 @@ import {
   useEffect,
 } from "react";
 import { th } from "react-native-paper-dates";
-import { useAuth } from "../../authentication";
+import { useAuth } from "@/app/authentication";
 import { Alert } from "react-native";
 
 dayjs.extend(isSameOrBefore);

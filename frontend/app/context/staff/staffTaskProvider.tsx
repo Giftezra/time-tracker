@@ -7,7 +7,7 @@ import {
 import { BASE_URL } from "@/app/utils/urls";
 import { Alert } from "react-native";
 import { TaskDetailsProps } from "@/app/types/management/task";
-import { useAuth } from "../authentication";
+import { useAuth } from "@/app/authentication";
 
 /**
  * Creata  new context for the task.

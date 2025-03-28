@@ -4,7 +4,7 @@ import {
   OngoingShiftType,
 } from "@/app/types/staff/timeSheet";
 import { createContext, useContext, useEffect, useState } from "react";
-import { useAuth } from "../authentication";
+import { useAuth } from "@/app/authentication";
 
 const TimeSheetContext = createContext<TimesheetContextType | undefined>(
   undefined

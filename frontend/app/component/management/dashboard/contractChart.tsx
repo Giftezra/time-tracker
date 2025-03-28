@@ -13,10 +13,11 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Colors } from "react-native/Libraries/NewAppScreen";
 import { transform } from "@babel/core";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { useAuth } from "@/app/context/authentication";
+import { useAuth } from "@/app/authentication";
 import { useDashboardContext } from "@/app/context/management/dashboard/dashboardContext";
 import { BarDat, BarData } from "@/app/types/management/dashboard";
-
+import ThemedHeaderText from "../../helper/ThemedHeaderText";
+import InnerThemedText from "../../helper/InnerThemedText";
 const renderTitle = () => {
   return (
     <View style={styles.renderMaincontainer}>
@@ -51,16 +52,7 @@ const renderTitle = () => {
             marginRight: 8,
           }}
         />
-        <Text
-          style={{
-            color: "black",
-            fontSize: 12,
-            fontFamily: "BarlowLight",
-            fontWeight: "400",
-          }}
-        >
-          Contracts
-        </Text>
+        <InnerThemedText text="Contracts" />
       </View>
     </View>
   );
@@ -134,30 +126,14 @@ const ContractChartComponent = ({ width }: { width: number }) => {
               ]}
               onPress={() => handleYearChange(year)}
             >
-              <Text
-                style={[
-                  styles.pressableText,
-                  selectedYear === year && styles.selectedText,
-                ]}
-              >
-                {year}
-              </Text>
+              <InnerThemedText text={year.toString()} />
             </Pressable>
           ))}
         </View>
       )}
 
       <View style={styles.title}>
-        <Text
-          style={{
-            color: "black",
-            fontSize: 16,
-            fontFamily: "BarlowLight",
-            fontWeight: "500",
-          }}
-        >
-          Contracts
-        </Text>
+        <ThemedHeaderText text="Contracts" />
         <Pressable onPress={handleOverlay}>
           <MaterialCommunityIcons
             name="dots-horizontal"

@@ -18,8 +18,8 @@ import {
 import React, { useState } from "react";
 import {
   ScrollView,
-  Swipeable,
-  TouchableOpacity,
+  GestureDetector,
+  Gesture,
 } from "react-native-gesture-handler";
 import { AntDesign } from "@expo/vector-icons";
 import { useThemeColor } from "@/hooks/useThemeColor";
@@ -44,33 +44,12 @@ const ChatRoomComponent = ({
   const secondaryColor = useThemeColor({}, "secondaryColor");
   const text = useThemeColor({}, "text");
   const textinput = useThemeColor({}, "textinput");
-  const inactivebtn = useThemeColor({}, "inactivebtn");
-  const innerbackground = useThemeColor({}, "innerBackground");
 
   return (
     /**
         Main container */
 
     <View style={[styles.maincontainer, { backgroundColor: secondaryColor }]}>
-      {/* Row container contains the search container and the new message icon to open a new conversation */}
-      <View style={[styles.searchContainer, { backgroundColor: textinput }]}>
-        {/* Search container */}
-        <TextInput
-          placeholder="search messages"
-          inputMode="search"
-          value={search}
-          onChangeText={(text) => setSearch(text)}
-          style={[styles.searchInput]}
-        />
-        <TouchableOpacity style={styles.iconButtons}>
-          <AntDesign name="search1" size={20} color={text} />
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.iconButtons}>
-          <AntDesign name="plus" size={20} color={text} />
-        </TouchableOpacity>
-      </View>
-
       {/* Renders all of the users conversations.
           All components are wrapped in a scroll view to enable scrolling.
           The swipeable component is used to delete a conversation when swiped left to present the delete icon
@@ -79,24 +58,35 @@ const ChatRoomComponent = ({
         style={styles.messageContainer}
         showsVerticalScrollIndicator={false}
       >
-        {chatroomDetails.map((chat, index) => (
-          <Swipeable key={index} containerStyle={styles.swipeable}>
-            <Pressable
-              style={[styles.messageRow, { backgroundColor: innerbackground }]}
-              onPress={() =>
-                onConversationSelect(chat.id, chat.name, chat.time)
-              }
-              onPressIn={() => onHandleModalVisibility(chat.id)}
-            >
-              <Image source={user_image} style={styles.image} />
-              <View style={styles.messageDetailsContainer}>
-                <Text style={styles.reciepientText}>{chat.name}</Text>
-                <Text style={styles.text}>{chat.lastMessage}</Text>
-              </View>
-              <Text style={styles.timeText}>{chat.time}</Text>
-            </Pressable>
-          </Swipeable>
-        ))}
+        {chatroomDetails.map((chat, index) => {
+          const swipeGesture = Gesture.Pan()
+            .activeOffsetX(-20)
+            .onEnd(() => {
+              deleteConversation();
+            });
+
+          return (
+            <GestureDetector key={index} gesture={swipeGesture}>
+              <Pressable
+                style={[
+                  styles.messageRow,
+                  { backgroundColor: textinput },
+                ]}
+                onPress={() =>
+                  onConversationSelect(chat.id, chat.name, chat.time)
+                }
+                onPressIn={() => onHandleModalVisibility(chat.id)}
+              >
+                <Image source={user_image} style={styles.image} />
+                <View style={styles.messageDetailsContainer}>
+                  <Text style={styles.reciepientText}>{chat.name}</Text>
+                  <Text style={styles.text}>{chat.lastMessage}</Text>
+                </View>
+                <Text style={styles.timeText}>{chat.time}</Text>
+              </Pressable>
+            </GestureDetector>
+          );
+        })}
       </ScrollView>
     </View>
   );
@@ -108,28 +98,7 @@ const styles = StyleSheet.create({
   maincontainer: {
     flex: 1,
     width: "100%",
-    backgroundColor: "#f5f5f5",
-    borderRadius: 8,
     overflow: "hidden",
-  },
-
-  searchContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 5,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(0,0,0,0.1)",
-    backgroundColor: "#ffffff",
-  },
-
-  searchInput: {
-    flex: 1,
-    padding: Platform.OS === "web" ? 8 : 12,
-    fontSize: 14,
-    fontFamily: "BarlowRegular",
-    backgroundColor: "#f8f9fa",
-    borderRadius: 20,
-    marginRight: 8,
   },
 
   iconButtons: {
@@ -150,7 +119,8 @@ const styles = StyleSheet.create({
     padding: 10,
     alignItems: "center",
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(0,0,0,0.05)",
+    paddingHorizontal: 5,
+    borderRadius: 5,
   },
 
   image: {
@@ -175,16 +145,13 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontFamily: "RobotoRegular",
     fontWeight: "600",
-    color: "#1a1a1a",
+    textTransform: "capitalize",
+    color: "#D1E",
   },
 
   timeText: {
     fontSize: 12,
     color: "#999999",
     marginLeft: 8,
-  },
-
-  swipeable: {
-    width: "100%",
   },
 });

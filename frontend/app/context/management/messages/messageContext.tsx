@@ -9,11 +9,12 @@ import {
   ChatRoomInterface,
   Message,
   MessageContextType,
-} from "@/app/types/management/messgaes";
-import { useAuth } from "../../authentication";
+} from "@/app/types/staff/messages";
+import { useAuth } from "@/app/authentication";
 import { ChatRoomType } from "@/app/types/management/messgaes";
 import { Pressable } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
+import { WebSocketMessage } from "@/app/types/staff/messages";
 
 // Create the context
 const MessageContext = createContext<MessageContextType | undefined>(undefined);
@@ -83,12 +84,14 @@ const MessageProvider: React.FC<MessageProviderProps> = ({ children }) => {
       content: "Hello, how are you?",
       timestamp: "2023-01-01 12:00:00",
       is_read: true,
+      sender_id: "1",
     },
     {
       id: "2",
       content: "I'm good, thank you!",
       timestamp: "2023-01-01 12:01:00",
       is_read: false,
+      sender_id: "2",
     },
   ]);
   const [chatDisplay, setChatDisplay] = useState<ChatRoomInterface>({
@@ -99,7 +102,7 @@ const MessageProvider: React.FC<MessageProviderProps> = ({ children }) => {
 
   const [isSentByMe, setIsSentByMe] = useState<boolean>(false);
 
-  // const [chatroomDetails, setChatroomDetails] = useState<ChatRoomType[]>([]);
+  const [webSocket, setWebSocket] = useState<WebSocket | null>(null);
 
   /**
    * The method is used to send a message to the server.
@@ -109,29 +112,66 @@ const MessageProvider: React.FC<MessageProviderProps> = ({ children }) => {
    * @param content is the message content
    * @returns
    */
-  const sendMessage = async (chatRoomId: string, content: string) => {
-    setIsSentByMe(true);
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: Date.now().toString(), // temporary ID
-        content: content,
-        timestamp: new Date().toISOString(),
-        is_read: false,
-      },
-    ]);
-    try {
-      const response = await axiosInstance.post("/api/management/messages/", {
-        data: {
-          conversationId: chatRoomId,
-          content,
+  const connectWebSocket = (userId: string) => {
+    const ws = new WebSocket(`ws://your-server/ws/dm/${userId}/`);
+
+    ws.onmessage = (event) => {
+      const data: WebSocketMessage = JSON.parse(event.data);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: data.message_id,
+          content: data.message,
+          timestamp: data.timestamp,
+          is_read: false,
+          sender_id: data.sender_id,
         },
-      });
-      return response.data;
-    } catch (error) {
-      console.error("Error sending message:", error);
-      throw error;
+      ]);
+    };
+
+    ws.onclose = () => {
+      console.log("WebSocket connection closed");
+    };
+
+    setWebSocket(ws);
+  };
+
+  const disconnectWebSocket = () => {
+    if (webSocket) {
+      webSocket.close();
+      setWebSocket(null);
     }
+  };
+
+  const sendMessage = async (
+    chatRoomId: string,
+    content: string
+  ): Promise<Message> => {
+    if (!webSocket) {
+      throw new Error("WebSocket not connected");
+    }
+
+    webSocket.send(
+      JSON.stringify({
+        message: content,
+      })
+    );
+
+    setIsSentByMe(true);
+
+    // Create and return a new message object
+    const newMessage: Message = {
+      id: Date.now().toString(), // Temporary ID until server responds
+      content: content,
+      timestamp: new Date().toISOString(),
+      is_read: true,
+      sender_id: "current_user_id", // You might want to get this from your auth context
+    };
+
+    // Update messages state
+    setMessages((prev) => [...prev, newMessage]);
+
+    return newMessage;
   };
 
   /**
@@ -247,6 +287,8 @@ const MessageProvider: React.FC<MessageProviderProps> = ({ children }) => {
     chatDisplay,
     handleChatDisplay,
     isSentByMe,
+    connectWebSocket,
+    disconnectWebSocket,
   };
 
   return (

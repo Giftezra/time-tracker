@@ -6,7 +6,7 @@ import { BASE_URL } from "@/app/utils/urls";
 import { useContext, createContext, useState } from "react";
 import { Alert, Linking } from "react-native";
 import { de } from "react-native-paper-dates";
-import { useAuth } from "../../authentication";
+import { useAuth } from "@/app/authentication";
 import { AxiosResponse } from "axios";
 import { userData } from "@/app/utils/loadData";
 
@@ -20,10 +20,23 @@ const ProfileProvider = ({ children }: { children: React.ReactNode }) => {
   const { axiosInstance } = useAuth();
   const user = userData();
 
+  const [onModalVisible, setOnModalVisible] = useState<boolean>(false);
+
   const [notificationToggle, setNotificationToggle] = useState<string[]>([]);
-  const [userDetails, setUserDetails] = useState<ProfileUpdateType | null>(
-    null
-  );
+  const [userDetails, setUserDetails] = useState<ProfileUpdateType>({
+    firstname: user?.first_name,
+    lastname: user?.last_name,
+    email: user?.email,
+    phone: user?.phone,
+    dob: user?.dob || "",
+    company_name: user?.company_name,
+    company_address: user?.company_address,
+    company_postcode: user?.company_postcode,
+    company_website: user?.company_website,
+    company_services: user?.company_services,
+    company_helpline: user?.company_helpline,
+    company_email: user?.comapny_email,
+  });
 
   const [allowPushNotification, setAllowPushNotification] = useState<boolean>(
     user?.allow_push_notification || false
@@ -45,16 +58,6 @@ const ProfileProvider = ({ children }: { children: React.ReactNode }) => {
       setNotificationToggle([...notificationToggle, toggle]);
     }
   };
-
-  const updateProfile = async (data: ProfileUpdateType) => {
-    try {
-      const response = await axiosInstance.patch("/api/update/profile/", data);
-      alert("Profile updated successfully");
-    } catch (error: any) {
-      console.error(error);
-    }
-  };
-
 
   const handleLink = (link: string) => {
     if (!link) return;
@@ -80,6 +83,26 @@ const ProfileProvider = ({ children }: { children: React.ReactNode }) => {
     });
   };
 
+  const updateCompanyDetails = async () => {
+    try {
+      const response = await axiosInstance.patch("/api/update/owner/company/details/", {
+        data: userDetails,
+      });
+      if (response.status === 200) {
+        Alert.alert("Success", "Company details updated successfully");
+        setUserDetails(response.data.new_data);
+        setOnModalVisible(false);
+      } else {
+        Alert.alert("Error", response.data.error || "Failed to update details");
+      }
+    } catch (error: any) {
+      Alert.alert(
+        "Error",
+        error.response?.data?.error || "Failed to update company details"
+      );
+      console.error(error);
+    }
+  };
   /**
    * This method is used to handle the users ability to open the company website.
    * It uses linking to open a the url provided by the company
@@ -136,12 +159,15 @@ const ProfileProvider = ({ children }: { children: React.ReactNode }) => {
    * It uses
    */
   const savePreferences = async () => {
-    const response = await axiosInstance.patch('/api/update/user/preferences/', {
-      allow_push_notification: allowPushNotification,
-      allow_email_notification: allowEmailNotification,
-      allow_marketing_emails: allowMarketingEmails,
-    })
-    
+    const response = await axiosInstance.patch(
+      "/api/update/user/preferences/",
+      {
+        allow_push_notification: allowPushNotification,
+        allow_email_notification: allowEmailNotification,
+        allow_marketing_emails: allowMarketingEmails,
+      }
+    );
+
     if (response.status === 200) {
       const newData = response.data.new_data;
       setAllowEmailNotification(newData.allow_email_notification);
@@ -158,7 +184,7 @@ const ProfileProvider = ({ children }: { children: React.ReactNode }) => {
     handleLink,
     handleUpdate,
     userDetails,
-    updateProfile,
+    updateCompanyDetails,
     allowEmailNotification,
     allowPushNotification,
     allowMarketingEmails,
@@ -168,6 +194,8 @@ const ProfileProvider = ({ children }: { children: React.ReactNode }) => {
     setAllowMarketingEmails,
     handleWebsiteCall,
     handlePhone,
+    onModalVisible,
+    setOnModalVisible,
   };
 
   return (

@@ -3,6 +3,9 @@ import React from "react";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useDashboardContext } from "@/app/context/management/dashboard/dashboardContext";
 import { useNavigation } from "@react-navigation/native";
+import SubtitleThemedText from "../../helper/SubtitleThemedText";
+import InnerThemedText from "../../helper/InnerThemedText";
+import ButtonText from "../../helper/ButtonText";
 const image = require("@/assets/images/user image.jpg");
 
 const LeaderBoardCardComponent = ({
@@ -42,8 +45,8 @@ const LeaderBoardCardComponent = ({
 
       <View style={styles.innercontainera}>
         <Image source={image} style={styles.avatar} />
-        <Text style={[styles.nameText, { color: text }]}>{name}</Text>
-        <Text style={[styles.text, { color: othertext }]}>{role}</Text>
+        <SubtitleThemedText text={name} />
+        <InnerThemedText text={role} />
       </View>
 
       <View style={styles.statsContainer}>
@@ -58,18 +61,14 @@ const LeaderBoardCardComponent = ({
           style={styles.actionButton}
           onPress={handleProfilePress}
         >
-          <Text style={[styles.actionButtonText, { color: othertext }]}>
-            Profile
-          </Text>
+          <ButtonText text="Profile" />
         </TouchableOpacity>
         <View style={styles.divider} />
         <TouchableOpacity
           style={styles.actionButton}
           onPress={() => setEmployeeId(id!)}
         >
-          <Text style={[styles.actionButtonText, { color: othertext }]}>
-            Message
-          </Text>
+          <ButtonText text="Message" />
         </TouchableOpacity>
       </View>
     </View>

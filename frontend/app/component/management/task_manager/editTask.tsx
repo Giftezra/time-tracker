@@ -13,8 +13,11 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { useManagementTask } from "@/app/context/management/task manager/managementTaskProvider";
 import TimeScroller from "@/app/component/helper/timeScroller";
 import DateScroller from "@/app/component/helper/dateScroller";
-
-
+import ThemedHeaderText from "@/app/component/helper/ThemedHeaderText";
+import TextInputComponent from "../../helper/textInput";
+import SubtitleThemedText from "../../helper/SubtitleThemedText";
+import InnerThemedText from "../../helper/InnerThemedText";
+import ButtonText from "../../helper/ButtonText";
 const EditTaskComponent = ({
   props,
   onPress,
@@ -115,60 +118,66 @@ const EditTaskComponent = ({
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Edit Task</Text>
+      <ThemedHeaderText text="Edit Task" />
+      <View
+        style={{
+          borderBottomWidth: 1,
+          padding: 10,
+          marginBottom: 10,
+        }}
+      />
 
       <ScrollView style={styles.scrollView} nestedScrollEnabled>
         <View style={styles.taskInfo}>
-          <Text style={styles.fieldLabel}>Task Serial</Text>
-          <TextInput
-            style={styles.input}
+          <TextInputComponent
+            text="Task Serial"
+            placeholder="Enter Task Serial"
             value={taskDetails.task_serial}
-            onChangeText={(text) =>
+            setValue={(text) =>
               setTaskDetails((prev) => ({ ...prev, task_serial: text }))
             }
           />
 
-          <Text style={styles.fieldLabel}>Contract Name</Text>
-          <TextInput
-            style={styles.input}
+          <TextInputComponent
+            text="Contract Name"
+            placeholder="Enter Contract Name"
             value={taskDetails.contract_name}
-            onChangeText={(text) =>
+            setValue={(text) =>
               setTaskDetails((prev) => ({ ...prev, contract_name: text }))
             }
           />
 
-          <Text style={styles.fieldLabel}>Address</Text>
-          <TextInput
-            style={styles.input}
+          <TextInputComponent
+            text="Address"
+            placeholder="Enter Address"
             value={taskDetails.contract_address}
-            onChangeText={(text) =>
+            setValue={(text) =>
               setTaskDetails((prev) => ({ ...prev, contract_address: text }))
             }
           />
 
-          <Text style={styles.fieldLabel}>Postcode</Text>
-          <TextInput
-            style={styles.input}
+          <TextInputComponent
+            text="Postcode"
+            placeholder="Enter Postcode"
             value={taskDetails.contract_postcode}
-            onChangeText={(text) =>
+            setValue={(text) =>
               setTaskDetails((prev) => ({ ...prev, contract_postcode: text }))
             }
           />
 
-          <Text style={styles.fieldLabel}>Description</Text>
-          <TextInput
-            style={[styles.input, styles.textArea]}
+          <TextInputComponent
+            text="Description"
+            placeholder="Enter Description"
             value={taskDetails.task_description}
-            onChangeText={(text) =>
+            setValue={(text) =>
               setTaskDetails((prev) => ({ ...prev, task_description: text }))
             }
-            multiline
-            numberOfLines={4}
+            isMultiline={true}
+            lines={4}
           />
 
           <View style={styles.timeSection}>
-            <Text style={styles.sectionHeader}>Time Settings</Text>
-
+            <ThemedHeaderText text="Time Settings" />
             <Pressable
               style={[
                 styles.timePickerButton,
@@ -181,12 +190,10 @@ const EditTaskComponent = ({
               }
             >
               <View style={styles.timePickerHeader}>
-                <Text style={styles.timePickerLabel}>Start Time</Text>
-                <Text style={styles.timeDisplay}>
-                  {`${startHours.toString().padStart(2, "0")}:${startMinutes
+                <SubtitleThemedText text="Start Time" />
+                <InnerThemedText text={`${startHours.toString().padStart(2, "0")}:${startMinutes
                     .toString()
-                    .padStart(2, "0")}`}
-                </Text>
+                    .padStart(2, "0")}`} />
                 <MaterialIcons name="access-time" size={24} color="#4a4a4a" />
               </View>
             </Pressable>
@@ -198,7 +205,7 @@ const EditTaskComponent = ({
                   onChange={setStartHours}
                   max={24}
                 />
-                <Text style={styles.timeSeparator}>:</Text>
+                <InnerThemedText text=":" />
                 <TimeScroller
                   value={startMinutes}
                   onChange={setStartMinutes}
@@ -217,12 +224,10 @@ const EditTaskComponent = ({
               }
             >
               <View style={styles.timePickerHeader}>
-                <Text style={styles.timePickerLabel}>End Time</Text>
-                <Text style={styles.timeDisplay}>
-                  {`${endHours.toString().padStart(2, "0")}:${endMinutes
+                <SubtitleThemedText text="End Time" />
+                <InnerThemedText text={`${endHours.toString().padStart(2, "0")}:${endMinutes
                     .toString()
-                    .padStart(2, "0")}`}
-                </Text>
+                    .padStart(2, "0")}`} />
                 <MaterialIcons name="access-time" size={24} color="#4a4a4a" />
               </View>
             </Pressable>
@@ -234,7 +239,7 @@ const EditTaskComponent = ({
                   onChange={setEndHours}
                   max={24}
                 />
-                <Text style={styles.timeSeparator}>:</Text>
+                <InnerThemedText text=":" />
                 <TimeScroller
                   value={endMinutes}
                   onChange={setEndMinutes}
@@ -253,12 +258,10 @@ const EditTaskComponent = ({
               }
             >
               <View style={styles.timePickerHeader}>
-                <Text style={styles.timePickerLabel}>End Date</Text>
-                <Text style={styles.timeDisplay}>
-                  {`${day.toString().padStart(2, "0")}/${month
+                <SubtitleThemedText text="End Date" />
+                <InnerThemedText text={`${day.toString().padStart(2, "0")}/${month
                     .toString()
-                    .padStart(2, "0")}/${year}`}
-                </Text>
+                    .padStart(2, "0")}/${year}`} />
                 <MaterialIcons name="date-range" size={24} color="#4a4a4a" />
               </View>
             </Pressable>
@@ -278,7 +281,7 @@ const EditTaskComponent = ({
           </View>
 
           <Pressable style={styles.saveButton} onPress={handleSave}>
-            <Text style={styles.saveButtonText}>Save Changes</Text>
+            <ButtonText text="Save Changes" />
           </Pressable>
         </View>
       </ScrollView>
@@ -293,7 +296,7 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
     backgroundColor: "#fff",
-    borderRadius: 15,
+    borderRadius: 5,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -309,12 +312,10 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   taskInfo: {
-    padding: 16,
+    padding: 5,
     backgroundColor: "#fff",
-    borderRadius: 12,
+    borderRadius: 5,
     marginBottom: 24,
-    borderWidth: 1,
-    borderColor: "#f0f0f0",
   },
   fieldLabel: {
     fontSize: 14,

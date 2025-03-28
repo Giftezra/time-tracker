@@ -14,7 +14,7 @@ import {
 } from "@/app/types/staff/sideComponent";
 import { Alert, Linking } from "react-native";
 import { userData } from "@/app/utils/loadData";
-import { useAuth } from "../authentication";
+import { useAuth } from "@/app/authentication";
 
 const SideComponentContext = createContext<
   SideComponentContextType | undefined

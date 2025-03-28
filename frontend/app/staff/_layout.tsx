@@ -1,9 +1,9 @@
 import { Platform, StyleSheet, Text, View } from "react-native";
 import React from "react";
-import AuthProvider from "../context/authentication";
+import AuthProvider from "@/app/authentication";
 import { Stack } from "expo-router";
-import ProfileProvider from "../context/management/profile/profileContext";
-import NotificationProvider from "../context/management/notificationProvider";
+import ProfileProvider from "@/app/context/management/profile/profileContext";
+import NotificationProvider from "@/app/context/management/notifications/notificationContext";
 const MainStaffMainLayout = () => {
   return (
     <AuthProvider>

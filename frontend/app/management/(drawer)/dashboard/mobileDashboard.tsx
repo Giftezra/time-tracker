@@ -12,9 +12,34 @@ import ContractChartComponent from "@/app/component/management/dashboard/contrac
 import TaskChartComponent from "@/app/component/management/dashboard/taskChart";
 import { EmployeeOnLeaveInterface } from "@/app/types/management/dashboard";
 import { useDashboardContext } from "@/app/context/management/dashboard/dashboardContext";
-
+import ThemedHeaderText from "@/app/component/helper/ThemedHeaderText";
 const MobileDashboard = () => {
-  const { unavailableEmployees, todayEvents } = useDashboardContext();
+  const { unavailableEmployees, todayEvents, taskStats } = useDashboardContext();
+    const total = taskStats.total || 1; // Prevent division by zero
+
+    const pieData = [
+      {
+        value: (taskStats.completed / total) * 100,
+        color: "#4CAF50",
+        gradientCenterColor: "#81C784",
+        focused: true,
+      },
+      {
+        value: (taskStats.ongoing / total) * 100,
+        color: "#2196F3",
+        gradientCenterColor: "#64B5F6",
+      },
+      {
+        value: (taskStats.assigned / total) * 100,
+        color: "#FFC107",
+        gradientCenterColor: "#FFD54F",
+      },
+      {
+        value: (taskStats.pending / total) * 100,
+        color: "#FF5722",
+        gradientCenterColor: "#FF8A65",
+      },
+    ];
 
   const white = useThemeColor({}, "white");
   const [width, setWidth] = useState(0);
@@ -61,12 +86,16 @@ const MobileDashboard = () => {
         </View>
 
         <View style={styles.section}>
-          <TaskChartComponent width={width} title="Total Tasks" />
+          <TaskChartComponent width={width} title="Total Tasks" pieData={pieData} taskStats={taskStats} />
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.headerText}>Leader Board</Text>
+          <ThemedHeaderText text="Leader Board" />
           <LeaderBoardComponent />
+        </View>
+
+        <View style={styles.section}>
+          <TaskChartComponent width={width} title="Employee overage" pieData={pieData} />
         </View>
       </ScrollView>
     </SafeAreaProvider>

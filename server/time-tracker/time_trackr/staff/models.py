@@ -6,6 +6,7 @@ from django.utils import timezone
 from django.core.management import call_command
 from django.contrib.auth.models import BaseUserManager
 from django.contrib.auth import get_user_model
+from datetime import timedelta
 
 
 class Staff(models.Model):
@@ -18,26 +19,25 @@ class Staff(models.Model):
   def __str__(self):
     return f'{self.user} - {self.company}'
   
+  def check_activity_status(self):
+    """Check if staff has had any shifts in the last 15 days then update their status to inactive"""
+    fifteen_days_ago = timezone.now().date() - timedelta(days=15)
+    
+    # Check for any timesheets in the last 15 days
+    recent_timesheet = self.staff_time_sheet.filter(
+        created_at__gte=fifteen_days_ago
+    ).exists()
+    
+    # Update is_active status if no recent activity
+    if not recent_timesheet and self.is_active:
+        self.is_active = False
+        self.save(update_fields=['is_active'])
+    
   def save(self, *args, **kwargs):
-    is_new = self.pk is None
-    
-    if is_new:
-      self.trial_end_date = timezone.now().date() + timezone.timedelta(days=7)
-      
+    # Only check activity status if this is an existing staff member
+    if self.pk:
+        self.check_activity_status()
     super().save(*args, **kwargs)
-    
-    if is_new and self.company:
-      from management.models import Subscription
-      
-      subscription, created = Subscription.objects.get_or_create(
-        company=self.company,
-        defaults={
-          'status': 'trial',
-          'trial_ends_at': timezone.now() + timezone.timedelta(days=7),
-          'next_billing_date': timezone.now() + timezone.timedelta(days=7)
-        }
-      )
-  
   
   
   

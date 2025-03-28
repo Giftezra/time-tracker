@@ -15,7 +15,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import SearchInputContainer from "../../helper/searchInput";
 import { useManagementTask } from "@/app/context/management/task manager/managementTaskProvider";
-
+import ThemedHeaderText from "@/app/component/helper/ThemedHeaderText";
 const OpenTaskComponents = () => {
   // Get the methods from the context
   const { unassignedTask, openAssignTaskModal, setEditTask, setIsEditTaskModalVisible } = useManagementTask();
@@ -51,9 +51,7 @@ const OpenTaskComponents = () => {
             >
               <View style={styles.taskHeader}>
                 <View style={styles.taskTitleContainer}>
-                  <Text style={[styles.taskTitle, { color: text }]}>
-                    {task.contract_name}
-                  </Text>
+                  <ThemedHeaderText text={task.contract_name || ""} />
                   <Pressable
                     style={[styles.priorityBadge]}
                     onPress={() => {
@@ -125,16 +123,16 @@ export default OpenTaskComponents;
 const styles = StyleSheet.create({
   maincontainer: {
     flex: 1,
-    padding: 16,
+    padding: 5,
   },
   header: {
-    marginBottom: 10,
+    marginBottom: 5,
   },
   headerTitle: {
     fontSize: Platform.OS === "web" ? 24 : 28,
     fontWeight: "bold",
     fontFamily: "BarlowRegular",
-    marginBottom: 16,
+    marginBottom: 5,
   },
   searchWrapper: {
     marginBottom: 16,
@@ -147,9 +145,9 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   taskCard: {
-    borderRadius: 12,
+    borderRadius: 5,
     padding: 16,
-    marginBottom: 16,
+    marginVertical: 5,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
