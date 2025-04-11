@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import React, { useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import CalendarComponent from "../../helper/customCalendar";
+import CustomCalendar from "../../helper/customCalendar";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import TextInputComponent from "../../helper/textInput";
 import SubmitButtonComponent from "../../helper/submitButton";
@@ -24,7 +24,7 @@ import InnerThemedText from "../../helper/InnerThemedText";
 import ButtonText from "../../helper/ButtonText";
 const renderCalendar = () => {
   return (
-    <CalendarComponent
+    <CustomCalendar
       onSelectDate={() => {
         alert("Date selected");
       }}

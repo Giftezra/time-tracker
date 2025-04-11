@@ -120,6 +120,7 @@ class User(AbstractBaseUser, PermissionsMixin):
   is_employee = models.BooleanField(default=False)
   is_admin = models.BooleanField(default=False)
   is_superuser = models.BooleanField(default=False)
+  token = models.CharField(max_length=255, blank=True, null=True, default=None)
   allow_push_notification = models.BooleanField(default=False)
   allow_email_notification = models.BooleanField(default=False)
   allow_marketing_emails = models.BooleanField(default=False)
@@ -202,6 +203,12 @@ class Company(models.Model):
   
   def __str__(self):
     return self.name
+  
+  def save(self, *args, **kwargs):
+     user = self.owner
+     if not user.is_owner:
+        raise ValueError('Only users with the owner flag can create a company')
+     super().save(*args, **kwargs)
   
   
 class Client(models.Model):
@@ -438,7 +445,7 @@ class Message(models.Model):
         ordering = ['timestamp']
 
     def __str__(self):
-        return f'{self.sender.username}: {self.content[:50]}'
+        return f'{self.sender.get_full_name()}: {self.content[:50]}'
     
 
 class SubscriptionTier(models.Model):
@@ -449,6 +456,8 @@ class SubscriptionTier(models.Model):
     rate = models.DecimalField(max_digits=10, decimal_places=2)
     overage_rate = models.DecimalField(max_digits=10, decimal_places=2)
     is_popular = models.BooleanField(default=False)
+    is_custom = models.BooleanField(default=False)
+    minimum_employees = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -459,7 +468,7 @@ class SubscriptionTier(models.Model):
 class SubscriptionPlan(models.Model):
     COMPANY_BILLING_CYCLE = [
         ('monthly', 'Monthly'),
-        ('annual', 'Annual'),
+        ('annually', 'Annually'),
     ]
     
     company = models.OneToOneField(Company, on_delete=models.CASCADE, related_name='subscription_plan_company')
@@ -470,7 +479,7 @@ class SubscriptionPlan(models.Model):
     is_active = models.BooleanField(default=True)
     
     def __str__(self):
-        return f"{self.company.name} - {self.get_tier_display()}"
+        return f"{self.company.name} - {self.tier.name}"
     
 
 
@@ -526,7 +535,7 @@ class Billing(models.Model):
         ('pending', 'Pending'),
         ('paid', 'Paid'),
         ('overdue', 'Overdue')
-    ])
+    ], default='pending')
     
     def calculate_total(self):
         return self.base_charge + self.overage_charges

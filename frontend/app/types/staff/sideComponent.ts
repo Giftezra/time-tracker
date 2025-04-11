@@ -27,6 +27,8 @@ export interface LiveEventInterface {
     name: string;
   }>;
   status?: string;
+  latitude?: string;
+  longitude?: string;
 }
 
 export interface CurrentDate {

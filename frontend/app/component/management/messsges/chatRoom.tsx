@@ -37,13 +37,16 @@ const ChatRoomComponent = ({
   ) => void;
   onHandleModalVisibility: (id: string | null) => void;
 }) => {
-  const { chatroomDetails, deleteConversation } = useMessageContext();
-
-  const [search, setSearch] = useState("");
-
+  const { chatRooms, deleteConversation, connectWebSocket } = useMessageContext();
   const secondaryColor = useThemeColor({}, "secondaryColor");
   const text = useThemeColor({}, "text");
   const textinput = useThemeColor({}, "textinput");
+
+  const swipeGesture = Gesture.Pan()
+    .activeOffsetX(-20)
+    .onEnd(() => {
+      deleteConversation();
+    });
 
   return (
     /**
@@ -58,31 +61,23 @@ const ChatRoomComponent = ({
         style={styles.messageContainer}
         showsVerticalScrollIndicator={false}
       >
-        {chatroomDetails.map((chat, index) => {
-          const swipeGesture = Gesture.Pan()
-            .activeOffsetX(-20)
-            .onEnd(() => {
-              deleteConversation();
-            });
-
+        {chatRooms?.map((chat, index) => {
           return (
             <GestureDetector key={index} gesture={swipeGesture}>
               <Pressable
-                style={[
-                  styles.messageRow,
-                  { backgroundColor: textinput },
-                ]}
-                onPress={() =>
-                  onConversationSelect(chat.id, chat.name, chat.time)
-                }
-                onPressIn={() => onHandleModalVisibility(chat.id)}
+                style={[styles.messageRow, { backgroundColor: textinput }]}
+                onPress={() => {
+                  onConversationSelect(chat.id, chat.name, chat.time);
+                  onHandleModalVisibility(chat.id);
+                  connectWebSocket(chat.userId);
+                }}
               >
                 <Image source={user_image} style={styles.image} />
                 <View style={styles.messageDetailsContainer}>
                   <Text style={styles.reciepientText}>{chat.name}</Text>
                   <Text style={styles.text}>{chat.lastMessage}</Text>
                 </View>
-                <Text style={styles.timeText}>{chat.time}</Text>
+                <Text style={styles.timeText}>{chat.time.split("T")[1].split(".")[0]}</Text>
               </Pressable>
             </GestureDetector>
           );

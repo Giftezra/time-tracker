@@ -149,17 +149,25 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-around",
     alignItems: "center",
-    padding: 20,
+    padding: 10,
   },
 
   headerButton: {
     flex: 1,
     alignItems: "center",
     padding: 10,
-    borderRadius: 5,
-    borderWidth: 1,
     borderColor: "gray",
-    marginHorizontal: 10,
+    marginHorizontal: 5,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    backgroundColor: "white",
+    borderRadius: 8,
   },
 
   headerButtonText: {

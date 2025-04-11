@@ -7,6 +7,7 @@ from datetime import datetime, timedelta, timezone
 from django.shortcuts import get_object_or_404
 
 from management.models import Shift, Task
+from management.helpers import get_coordinates_from_address
 from staff.models import Staff
 from staff.tasks import send_shift_cancellation_email, send_shift_application_email
 
@@ -20,26 +21,55 @@ from management.view.main.decorators import staff_required
 @permission_classes([IsAuthenticated])
 @staff_required
 def start_shift(request):
-    """ Method is used to trigger the shift start.
-    Gets the shift id from the request data.
-    and retrieves the shift object using the shift id.
+    """Method is used to trigger the shift start.
+    Gets the shift id from the request data and validates:
+    1. The shift exists
+    2. The shift is assigned to the user
+    3. The shift is not already started
+    4. The shift's scheduled start time is within an acceptable window
     """
-    # Get the shift id from the request data
     shift_id = request.data.get('shift_id')
     try:
         shift = get_object_or_404(Shift, id=shift_id)
-        # Check if the shift is assigned to the user
-        # Check if the shift is assigned
-        if shift.status == 'assigned':
-            # Update the shift status to started
-            shift.status = 'started'
-            shift.start_time = datetime.now()
-            # Save the shift
-            shift.save()
-            # Return a response to the client
-            return Response({'message': 'Shift started successfully'}, status=status.HTTP_200_OK)
-        else:
-            return Response({'error': 'Shift is not assigned'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Check if shift is assigned and not already started
+        if shift.status != 'assigned':
+            return Response(
+                {'error': 'Shift must be assigned before it can be started'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Get current time in UTC
+        current_time = datetime.now(timezone.utc)
+        
+        # Convert shift start time to datetime with date
+        shift_start = datetime.combine(
+            shift.task.start_date,
+            shift.task.start_time
+        ).replace(tzinfo=timezone.utc)
+        
+        # Allow starting shifts up to 15 minutes early or 30 minutes late
+        time_diff = current_time - shift_start
+        if time_diff < timedelta(minutes=-15) or time_diff > timedelta(hours=1):
+            return Response(
+                {'error': 'Shift can only be started within 15 minutes before or 1 hour after scheduled start time. You hae to contact your manager if you need to start the shift earlier.'},
+                status=status.HTTP_200_OK
+            )
+
+        # Update shift status and start time
+        shift.status = 'started'
+        shift.start_time = current_time
+        shift.save()
+
+        return Response({
+            'message': 'Shift started successfully',
+            'shift': {
+                'id': shift.id,
+                'status': shift.status,
+                'start_time': shift.start_time
+            }
+        }, status=status.HTTP_200_OK)
+
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
     
@@ -251,27 +281,27 @@ def get_all_task_dates(request):
 @permission_classes([IsAuthenticated])
 @staff_required
 def get_current_day_shifts(request):
-    """ This method is used to get an array of the users assigned shift given the 
-     current day which is sent from the client.
-      The method uses the current day to filter the shifts and return the shifts based on the task start time, task end time, contract name and the colleagues associated with the shift."""
+    """Get all shifts for a given day, ordered by start time.
+    Returns additional metadata about shift status and eligibility to start."""
     try:
-        # Get timezone-aware current date
         day = request.GET.get('day')
-        print('today', day)
         staff = get_object_or_404(Staff, user=request.user)
+        
         # Check the user company 
         if not staff.company:
-            return Response({'error': 'Staff not associated with company'},status=status.HTTP_403_FORBIDDEN)
-        # Filter the shifts by the staff, today's date, assigned status and the company
-        # Prefetch the staff and task objects and order by the task start time
+            return Response({'error': 'Staff not associated with company'}, status=status.HTTP_403_FORBIDDEN)
+        
+        # Get current time for shift eligibility checks
+        current_time = datetime.now(timezone.utc)
+        
+        # Filter shifts and order by start time
         shifts = Shift.objects.filter(
             staff=staff,
             task__start_date__day=day,
             status__in=['assigned', 'started'],
             task__contract__client__company=staff.company
         ).order_by('task__start_time')
-        # Get shift data and return it in a list
-        # Also get the colleague's associated with the shift
+
         shift_data = []
         for shift in shifts:
           colleagues = shift.staff.exclude(id=staff.id)
@@ -282,7 +312,12 @@ def get_current_day_shifts(request):
               'staff_id': colleague.id,
               'name': colleague.user.get_full_name(),
               })
-            print('colleagues_data', colleagues_data)
+            # Get the latitude and longitude of the shift
+            latitude, longitude = get_coordinates_from_address(shift.task.contract.address, shift.task.contract.postcode)
+
+
+            print('latitude', latitude)
+            print('longitude', longitude)
           shift_data.append({
             'shift_id':shift.id,
             'task_serial':shift.task.task_serial,
@@ -290,7 +325,9 @@ def get_current_day_shifts(request):
             'end_time':shift.task.end_time,
             'contract_name':shift.task.contract.name,
             'team_member':colleagues_data,
-            'status':shift.status
+            'status':shift.status,
+            'latitude':latitude,
+            'longitude':longitude
           })
         return Response({'shifts': shift_data}, status=status.HTTP_200_OK)
     except Staff.DoesNotExist:

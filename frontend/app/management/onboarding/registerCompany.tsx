@@ -46,7 +46,7 @@ const RegisterCompanyComponent = () => {
             <View style={{ padding: 5, flexWrap: "wrap" }}>
               <Text
                 style={{
-                  fontFamily: "SpaceMonoRegular",
+                  fontFamily: "RobotoRegular",
                   fontSize: 15,
                   fontWeight: "400",
                   fontVariant: ["contextual"],

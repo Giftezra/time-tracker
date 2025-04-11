@@ -9,13 +9,11 @@ import {
 } from "react-native";
 import React, { useState } from "react";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import {
-  FlatList,
-} from "react-native-gesture-handler";
+import { FlatList } from "react-native-gesture-handler";
 import ClientDetailsComponent from "@/app/component/management/client/clients";
 import { useClientContext } from "@/app/context/management/client/clientContext";
 import JobDetailsComponent from "@/app/component/management/client/jobDetails";
-import SearchInputContainer from "@/app/component/helper/searchInput";
+import SearchInputContainer from "@/app/component/helper/SearchInput";
 import SubtitleThemedText from "@/app/component/helper/SubtitleThemedText";
 const ClientMobileComponent = () => {
   const {
@@ -164,6 +162,4 @@ const styles = StyleSheet.create({
     marginHorizontal: 0.5,
     borderWidth: 0.4,
   },
-
-
 });

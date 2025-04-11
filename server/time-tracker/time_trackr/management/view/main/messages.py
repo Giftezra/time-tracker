@@ -8,6 +8,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
+from django.db.models import Q
 
 class DirectMessageConsumer(AsyncWebsocketConsumer):
     """
@@ -123,28 +124,62 @@ class DirectMessageConsumer(AsyncWebsocketConsumer):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def get_chat_history(request, user_id):
+def get_chat_history(request):
     """
     Fetch chat history between the authenticated user and another user
     """
     try:
-        participant_ids = sorted([str(request.user.id), str(user_id)])
+        # You need the other user's ID from the request parameters
+        other_user_id = request.GET.get('user_id')
+        print('other_user_id', other_user_id)
+        if not other_user_id:
+            return Response({'error': 'user_id is required'}, status=status.HTTP_400_BAD_REQUEST)
+        # Get the chat room name
+        participant_ids = sorted([str(request.user.id), str(other_user_id)])
         room_name = f'dm_{"_".join(participant_ids)}'
     
         chat_room = get_object_or_404(ChatRoom, name=room_name)
         messages = Message.objects.filter(room=chat_room).order_by('timestamp')
 
-    # Get the char history
-        chat_history = []
-        for msg in messages:
-            chat_history.append({
-                'id': str(msg.id),
-                'content': msg.content,
-                'timestamp': msg.timestamp.isoformat(),
-                'sender_id': str(msg.sender.id),
-                'is_read': msg.is_read
-            })
+        chat_history = [{
+            'id': str(msg.id),
+            'content': msg.content,
+            'timestamp': msg.timestamp.isoformat(),
+            'sender_id': str(msg.sender.id),
+            'is_read': msg.is_read
+        } for msg in messages]
+        print('chat_history', chat_history)
+        return Response({'chat_history': chat_history}, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_chat_rooms(request):
+    """
+    Get all chat rooms where the authenticated user is a participant
+    """
+    try:
+        # Get all chat rooms where the user is a participant
+        chat_rooms = ChatRoom.objects.filter(participants=request.user)
         
-            return Response({'chat_history': chat_history}, status=status.HTTP_200_OK)
+        chat_rooms_data = []
+        for room in chat_rooms:
+            # Get the other participant (not the current user)
+            other_participant = room.participants.exclude(id=request.user.id).first()
+            if not other_participant:
+                continue
+                
+            # Get the last message in this room
+            last_message = Message.objects.filter(room=room).order_by('-timestamp').first()
+            
+            chat_rooms_data.append({
+                'id': str(room.id),
+                'name': other_participant.get_full_name() or other_participant.username,
+                'lastMessage': last_message.content if last_message else "",
+                'time': last_message.timestamp.isoformat() if last_message else "",
+                'userId': str(other_participant.id)
+            })
+        return Response({'chat_rooms': chat_rooms_data}, status=status.HTTP_200_OK)
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)

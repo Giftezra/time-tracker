@@ -36,7 +36,6 @@
     "expo-linear-gradient": "~14.0.2",
     "expo-linking": "~7.0.5",
     "expo-notifications": "~0.29.14",
-    "expo-payments-stripe": "^10.0.1",
     "expo-router": "~4.0.17",
     "expo-splash-screen": "~0.29.21",
     "expo-status-bar": "~2.0.1",
@@ -64,7 +63,9 @@
     "react-native-web": "~0.19.13",
     "react-native-webview": "13.12.5",
     "stripe": "^17.7.0",
-    "watchman": "^1.0.0"
+    "watchman": "^1.0.0",
+    "expo-location": "~18.0.8",
+    "react-native-maps": "1.18.0"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

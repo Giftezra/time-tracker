@@ -13,7 +13,7 @@ import { AntDesign, MaterialIcons } from "@expo/vector-icons";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { Employee } from "@/app/types/management/employee";
 import TextInputComponent from "@/app/component/helper/textInput";
-import CalendarComponent from "@/app/component/helper/customCalendar";
+import CustomCalendar from "@/app/component/helper/customCalendar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import SubmitButtonComponent from "@/app/component/helper/submitButton";
@@ -140,7 +140,7 @@ const AddEmployeeComponent = () => {
             {/* Conditonally render the calender display when the button is clicked */}
             {showCalendar && (
               <View style={{ width: 150, zIndex: 100 }}>
-                <CalendarComponent onSelectDate={toggleCalendar} />
+                <CustomCalendar onSelectDate={toggleCalendar} />
               </View>
             )}
 

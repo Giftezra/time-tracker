@@ -16,12 +16,12 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useLoadedFonts } from "@/hooks/useLoadedFonts";
 import { router } from "expo-router";
 
-import { OwnerOnboardingType } from "@/app/types/management/onboarding";
 import RegistrationTextInputComponent from "@/app/component/helper/registrationTextinput";
 import ArrowButtonComponent from "@/app/component/helper/arrowButton";
 import { useAuth } from "@/app/authentication";
-import CalendarComponent from "@/app/component/helper/customCalendar";
+import CustomCalendar from "@/app/component/helper/customCalendar";
 import { tranY } from "@/app/utils/animations/onboardingAnimation";
+import SubtitleThemedText from "@/app/component/helper/SubtitleThemedText";
 
 /**
  * Component for the main admin registration page
@@ -36,60 +36,48 @@ const RegistrationComponent = () => {
     setDateClicked,
   } = useAuth();
 
+  // Update the date handler
+  const handleDateSelection = (date: string) => {
+    handleUserInput("dob", date);
+    setDateClicked(false); // Close the calendar after selection
+  };
+
+  // Add validation function
+  const isFormValid = () => {
+    return (
+      ownerData?.first_name?.trim() &&
+      ownerData?.last_name?.trim() &&
+      ownerData?.email?.trim() &&
+      ownerData?.phone?.trim() &&
+      ownerData?.dob?.trim() &&
+      // Basic email validation
+      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(ownerData?.email)
+    );
+  };
+
   return (
-    <SafeAreaView style={{ flex: 1 }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#ffffff" }}>
       <KeyboardAvoidingView style={{ flex: 1 }}>
         <GestureHandlerRootView style={{ flex: 1 }}>
           <ScrollView
             style={styles.mainContainer}
             showsVerticalScrollIndicator={false}
           >
-            <View
-              style={{
-                justifyContent: "center",
-                alignItems: "center",
-                padding: 5,
-                marginVertical: 10,
-              }}
-            >
-              <Text style={{ fontFamily: "SpaceMonoRegular" }}>Hello</Text>
+            <View style={styles.welcomeContainer}>
+              <Text style={styles.welcomeText}>Welcome to Time Trackr</Text>
+              <SubtitleThemedText text="Let's set up your company account" />
             </View>
-            <Text
-              style={{
-                fontFamily: "SpaceMonoRegular",
-                fontSize: 20,
-                fontWeight: "400",
-                textTransform: "capitalize",
-              }}
-            >
-              Thank you for using time trackr to manage your company
-            </Text>
-            <View style={{ padding: 2, marginTop: 20, marginVertical: 10 }}>
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  columnGap: 5,
-                }}
-              >
-                <Text
-                  style={{
-                    fontFamily: "RobotoRegular",
-                    fontSize: 14,
-                    fontWeight: "400",
-                    textTransform: "lowercase",
-                    alignItems: "center",
-                  }}
-                >
-                  To continue, provide the details below
-                </Text>
 
-                {/* Animate the dropdown arrow */}
-                <Animated.View style={{ transform: [{ translateY: tranY }] }}>
-                  <AntDesign name="arrowdown" size={12} color="black" />
-                </Animated.View>
-              </View>
+            <View style={styles.instructionContainer}>
+              <Text style={styles.instructionText}>
+                Please fill in your details below
+              </Text>
+              <Animated.View style={{ transform: [{ translateY: tranY }] }}>
+                <AntDesign name="arrowdown" size={16} color="#4B5563" />
+              </Animated.View>
+            </View>
+
+            <View style={styles.formSection}>
               <View style={{ padding: 10, marginTop: 10 }}>
                 <Text style={styles.headerText}>First Name</Text>
                 <RegistrationTextInputComponent
@@ -136,7 +124,7 @@ const RegistrationComponent = () => {
               </View>
 
               {dateClicked && (
-                <CalendarComponent onSelectDate={handleDateInput} />
+                <CustomCalendar onSelectDate={handleDateSelection} />
               )}
 
               <View style={{ padding: 10, marginBottom: 10 }}>
@@ -176,7 +164,8 @@ const RegistrationComponent = () => {
               onPress={() =>
                 router.push("/management/onboarding/registrationAddressPage")
               }
-              title="next"
+              title="Continue"
+              disabled={!isFormValid()}
             />
           </ScrollView>
         </GestureHandlerRootView>
@@ -190,18 +179,64 @@ export default RegistrationComponent;
 const styles = StyleSheet.create({
   mainContainer: {
     flex: 1,
-    padding: 2,
-    marginBottom: 10,
+    padding: 16,
+    backgroundColor: "#ffffff",
   },
 
   headerText: {
     fontSize: 14,
-    fontWeight: "700",
+    fontWeight: "600",
     fontFamily: "BarlowRegular",
     textTransform: "capitalize",
-    textShadowOffset: { width: 0.2, height: 0.2 },
-    textShadowColor: "black",
-    padding: 5,
-    marginStart: 5,
+    color: "#374151",
+    marginBottom: 8,
+  },
+
+  welcomeContainer: {
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 24,
+    marginBottom: 32,
+  },
+
+  welcomeText: {
+    fontSize: 24,
+    fontFamily: "BarlowRegular",
+    fontWeight: "600",
+    color: "#111827",
+    textAlign: "center",
+    lineHeight: 32,
+  },
+
+  instructionContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 32,
+    backgroundColor: "#F3F4F6",
+    padding: 16,
+    borderRadius: 8,
+  },
+
+  instructionText: {
+    fontFamily: "BarlowRegular",
+    fontSize: 16,
+    color: "#4B5563",
+    marginRight: 8,
+  },
+
+  formSection: {
+    backgroundColor: "#ffffff",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 24,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
   },
 });

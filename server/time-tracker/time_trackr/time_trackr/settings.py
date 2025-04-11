@@ -121,6 +121,7 @@ REST_FRAMEWORK = {
     )
 }
 
+
 EMAIL_BACKEND = 'django.core.mail.backends.smpt.EmailBackend'
 
 AUTHENTICATION_BACKENDS = ['django.contrib.auth.backends.ModelBackend']
@@ -128,8 +129,8 @@ AUTHENTICATION_BACKENDS = ['django.contrib.auth.backends.ModelBackend']
 
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(days=1),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=90),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=5),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=120),
     "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,
     "UPDATE_LAST_LOGIN": False,
@@ -218,7 +219,7 @@ CELERY_RESULT_BACKEND = 'django-db'
 CELERY_CACHE_BACKEND = 'django-cache'
 
 
-SUPPORT_EMAIL = 'support@time-trackr.com'
+SUPPORT_EMAIL = 'giftezraifeanyi1@gmail.com'
 IOS_APP_LINK = 'https://apps.apple.com/app/id6444188699'
 ANDROID_APP_LINK = 'https://play.google.com/store/apps/details?id=com.time_trackr.app'
 
@@ -233,7 +234,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'management.User'
 
 # Add ASGI application configuration
-ASGI_APPLICATION = 'time_trackr.asgi.application'
+ASGI_APPLICATION = 'time_trackr.routing.application'
 
 # Add Channel Layers configuration for Redis
 CHANNEL_LAYERS = {
@@ -250,6 +251,5 @@ ADMIN_SITE_HEADER = "Time Trackr Administration"
 ADMIN_SITE_TITLE = "Time Trackr Admin Portal"
 ADMIN_INDEX_TITLE = "Welcome to Time Trackr Admin"
 
-# Stripe settings
-STRIPE_PUBLISHABLE_KEY='pk_test_51NK8SeKs3nf7cE2WBk18TrdJPOLqvJzYyxmlHFFmGNUmk78TsVVimg3YnGSVLkMhYoQWr1yBR21cbdoKfrb8zmmP00QauAcvF1'
 STRIPE_SECRET_KEY='sk_test_51NK8SeKs3nf7cE2WRwSOo4LpE6wazvJczTeW9OLMo2c3zaMTHI1VETCkjkgHONF1U94NjdQllGBAT3nl12NvIcjU00SNCgpfVS'
+STRIPE_WEBHOOK_SECRET = 'whsec_51NK8SeKs3nf7cE2WRwSOo4LpE6wazvJczTeW9OLMo2c3zaMTHI1VETCkjkgHONF1U94NjdQllGBAT3nl12NvIcjU00SNCgpfVS' 

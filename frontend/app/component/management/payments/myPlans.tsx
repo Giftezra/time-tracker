@@ -1,5 +1,5 @@
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import {
   CardType,
@@ -10,22 +10,28 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import SubscriptionHistory from "./SubscriptionHistory";
 import { useCheckout } from "@/app/context/management/payments/paymentContext";
 import { FontAwesome } from "@expo/vector-icons";
-import CheckoutComponent from "./checkout";
+import CheckoutComponent from "./Checkout";
 import InnerThemedText from "../../helper/InnerThemedText";
 import ButtonText from "@/app/component/helper/ButtonText";
 const MySubscriptionPlansComponent = () => {
-  const { currentPage, setCurrentPage } = useCheckout();
-  // This would typically come from your API/backend
-  const [currentPlan] = useState<CurrentPlanDetails>({
-    planName: "Pro",
-    currentEmployees: 120,
-    planLimit: 100,
-    overageCount: 20,
-    overageFees: 100,
-    expiryDate: "2025-04-30",
-    billingPeriod: "monthly",
-    status: "active",
-  });
+  const {
+    currentPage,
+    setCurrentPage,
+    setOveragePlan,
+    overagePlan,
+    currentPlan,
+  } = useCheckout();
+
+  const calculateOveragePlanCost = () => {
+    const overagePlan =
+      (currentPlan?.overage_fees ?? 0) * (currentPlan?.overage_count ?? 0);
+    return Math.round(overagePlan * 100) / 100;
+  };
+
+  useEffect(() => {
+    const overagePlan = calculateOveragePlanCost();
+    setOveragePlan(overagePlan);
+  }, [currentPlan]);
 
   const [subscriptionHistory, setSubscriptionHistory] = useState<
     SubscriptionHistoryInterface[]
@@ -55,7 +61,7 @@ const MySubscriptionPlansComponent = () => {
   const textColor = useThemeColor({}, "highlight");
 
   const daysUntilExpiry = () => {
-    const expiry = new Date(currentPlan.expiryDate);
+    const expiry = new Date(currentPlan?.renewal_date ?? "");
     const today = new Date();
     const diffTime = expiry.getTime() - today.getTime();
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -92,22 +98,18 @@ const MySubscriptionPlansComponent = () => {
   );
 
   /* Display the checkout component when the pay for overage button is pressed */
-  if (payOverage) {
+  if (payOverage && overagePlan) {
     return (
       <View style={styles.container}>
         <CheckoutComponent
-          overagePlan="400"
+          overagePlan={overagePlan}
           onBack={() => setPayOverage(false)}
-          onComplete={() => {
-            setPayOverage(false);
-            setCurrentPage("My Plans");
-          }}
         />
       </View>
     );
   }
 
-  return (
+  return currentPlan ? (
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={[styles.title, { color: textColor }]}>Current Plan</Text>
@@ -116,22 +118,24 @@ const MySubscriptionPlansComponent = () => {
             styles.statusBadge,
             {
               backgroundColor:
-                currentPlan.status === "active" ? "#4CAF50" : warningColor,
+                currentPlan?.status === true ? "#4CAF50" : warningColor,
             },
           ]}
         >
-          <Text style={styles.statusText}>{currentPlan.status}</Text>
+          <Text style={styles.statusText}>
+            {currentPlan?.status ? "Active" : "Expiring"}
+          </Text>
         </View>
       </View>
 
       <View style={[styles.planCard, { backgroundColor: "#ffffff" }]}>
         <View style={styles.planHeaderSection}>
           <Text style={[styles.planName, { color: primaryColor }]}>
-            {currentPlan.planName} Plan
+            {`${currentPlan?.plan_name} Plan`}
           </Text>
           <Text style={styles.periodText}>
-            {currentPlan.billingPeriod.charAt(0).toUpperCase() +
-              currentPlan.billingPeriod.slice(1)}{" "}
+            {(currentPlan?.billing_cycle ?? "").charAt(0).toUpperCase() +
+              (currentPlan?.billing_cycle ?? "").slice(1)}{" "}
             billing
           </Text>
         </View>
@@ -143,22 +147,22 @@ const MySubscriptionPlansComponent = () => {
             <Text style={styles.label}>Employees</Text>
             <View style={styles.valueContainer}>
               <Text style={[styles.value, { color: textColor }]}>
-                {currentPlan.currentEmployees}
+                {currentPlan?.current_employees}
                 <Text style={styles.valueSecondary}>
                   {" "}
-                  / {currentPlan.planLimit}
+                  / {currentPlan?.plan_limit}
                 </Text>
               </Text>
             </View>
           </View>
 
-          {currentPlan.overageCount > 0 && (
+          {(currentPlan?.overage_count ?? 0) > 0 && (
             <View style={styles.overageContainer}>
               <Text style={[styles.overageText, { color: warningColor }]}>
-                Overage: {currentPlan.overageCount} employees
+                Overage: {currentPlan?.overage_count} employees
               </Text>
               <Text style={[styles.overageFees, { color: warningColor }]}>
-                Additional fees: ${currentPlan.overageFees}
+                Additional fees: ${currentPlan?.overage_fees}
               </Text>
             </View>
           )}
@@ -166,7 +170,7 @@ const MySubscriptionPlansComponent = () => {
           <View style={styles.infoRow}>
             <Text style={styles.label}>Plan Expires</Text>
             <Text style={[styles.value, { color: textColor }]}>
-              {currentPlan.expiryDate}
+              {currentPlan?.renewal_date}
             </Text>
           </View>
 
@@ -222,15 +226,20 @@ const MySubscriptionPlansComponent = () => {
 
       <View style={styles.infoContainer}>
         <InnerThemedText
-          text={`You can pay for your overage now, reduce the number of staff to ${currentPlan.planLimit} or increase your plan limit to avoid overage fees`}
+          text={`You can pay for your overage now, reduce the number of staff to ${currentPlan?.plan_limit} or increase your plan limit to avoid overage fees`}
         />
 
         <View style={styles.buttonContainer}>
           <TouchableOpacity
             style={[styles.button, { backgroundColor: primaryColor }]}
-            onPress={() => setPayOverage(true)}
+            onPress={() => {
+              setPayOverage(true);
+              setOveragePlan(calculateOveragePlanCost());
+            }}
           >
-            <ButtonText text="Pay for Overage" />
+            <ButtonText
+              text={`Pay £${calculateOveragePlanCost()} for overage`}
+            />
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.button, { backgroundColor: primaryColor }]}
@@ -241,6 +250,30 @@ const MySubscriptionPlansComponent = () => {
         </View>
       </View>
     </View>
+  ) : (
+    <View style={[styles.container, styles.noPlanContainer]}>
+      <MaterialCommunityIcons
+        name="credit-card-off-outline"
+        size={64}
+        color={primaryColor}
+      />
+      <Text style={[styles.noPlanTitle, { color: textColor }]}>
+        No Active Plan
+      </Text>
+      <Text style={styles.noPlanDescription}>
+        You currently don't have any subscription plan set up
+      </Text>
+      <TouchableOpacity
+        style={[
+          styles.button,
+          styles.noPlanButton,
+          { backgroundColor: primaryColor },
+        ]}
+        onPress={() => setCurrentPage("Plans")}
+      >
+        <ButtonText text="View Available Plans" />
+      </TouchableOpacity>
+    </View>
   );
 };
 
@@ -249,7 +282,6 @@ export default MySubscriptionPlansComponent;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8F9FA",
     padding: 5,
   },
   header: {
@@ -283,9 +315,11 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   planName: {
-    fontSize: 28,
+    fontSize: 20,
     fontWeight: "700",
     marginBottom: 8,
+    fontFamily: "BarlowRegular",
+    textTransform: "capitalize",
   },
   periodText: {
     fontSize: 16,
@@ -441,5 +475,29 @@ const styles = StyleSheet.create({
   cardsList: {
     marginTop: 12,
     gap: 8,
+  },
+
+  noPlanContainer: {
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+    gap: 16,
+  },
+  noPlanTitle: {
+    fontSize: 24,
+    fontWeight: "700",
+    marginTop: 16,
+    fontFamily: "BarlowRegular",
+  },
+  noPlanDescription: {
+    fontSize: 16,
+    color: "#6B7280",
+    textAlign: "center",
+    marginBottom: 8,
+  },
+  noPlanButton: {
+    width: "100%",
+    maxWidth: 300,
+    marginTop: 8,
   },
 });

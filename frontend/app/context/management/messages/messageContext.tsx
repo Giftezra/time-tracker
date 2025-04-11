@@ -4,17 +4,19 @@ import React, {
   useState,
   useCallback,
   ReactNode,
+  useEffect,
 } from "react";
 import {
   ChatRoomInterface,
   Message,
   MessageContextType,
-} from "@/app/types/staff/messages";
+} from "@/app/types/management/messages";
 import { useAuth } from "@/app/authentication";
-import { ChatRoomType } from "@/app/types/management/messgaes";
+import { ChatRoomType } from "@/app/types/management/messages";
 import { Pressable } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
-import { WebSocketMessage } from "@/app/types/staff/messages";
+import { WebSocketMessage } from "@/app/types/management/messages";
+import BASE_URL from "@/app/utils/urls";
 
 // Create the context
 const MessageContext = createContext<MessageContextType | undefined>(undefined);
@@ -24,76 +26,9 @@ interface MessageProviderProps {
   children: ReactNode;
 }
 
-const chatroomDetails: ChatRoomType[] = [
-  {
-    id: "chat_001",
-    lastMessage: "Could you review the latest project proposal?",
-    name: "Sarah Parker",
-    time: "09:45",
-  },
-  {
-    id: "chat_002",
-    lastMessage: "The client meeting is scheduled for tomorrow at 2 PM",
-    name: "John Mitchell",
-    time: "09:32",
-  },
-  {
-    id: "chat_003",
-    lastMessage: "I've updated the design files in Figma",
-    name: "Emma Watson",
-    time: "09:15",
-  },
-  {
-    id: "chat_004",
-    lastMessage: "Thanks for the quick response!",
-    name: "Michael Chen",
-    time: "Yesterday",
-  },
-  {
-    id: "chat_005",
-    lastMessage: "The sprint planning meeting notes are ready",
-    name: "Lisa Rodriguez",
-    time: "Yesterday",
-  },
-  {
-    id: "chat_006",
-    lastMessage: "Can we discuss the budget revisions?",
-    name: "David Kim",
-    time: "Yesterday",
-  },
-  {
-    id: "chat_007",
-    lastMessage: "All unit tests are passing now",
-    name: "Alex Thompson",
-    time: "Monday",
-  },
-  {
-    id: "chat_008",
-    lastMessage: "New feature deployment successful",
-    name: "Rachel Greene",
-    time: "Monday",
-  },
-];
-
 const MessageProvider: React.FC<MessageProviderProps> = ({ children }) => {
   const { axiosInstance } = useAuth();
-
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "1",
-      content: "Hello, how are you?",
-      timestamp: "2023-01-01 12:00:00",
-      is_read: true,
-      sender_id: "1",
-    },
-    {
-      id: "2",
-      content: "I'm good, thank you!",
-      timestamp: "2023-01-01 12:01:00",
-      is_read: false,
-      sender_id: "2",
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [chatDisplay, setChatDisplay] = useState<ChatRoomInterface>({
     chatroomId: "",
     reciepient: "",
@@ -104,6 +39,27 @@ const MessageProvider: React.FC<MessageProviderProps> = ({ children }) => {
 
   const [webSocket, setWebSocket] = useState<WebSocket | null>(null);
 
+  const [chatRooms, setChatRooms] = useState<ChatRoomType[]>([]);
+
+  /**
+   * Call the server side code using the axios instance to fetch the chat rooms from the database.
+   * The chat room where the request user is a participant is fetched from the database and the response is stored in the chatRooms state
+   * @returns
+   */
+  const fetchChatRooms = useCallback(async () => {
+    try {
+      const response = await axiosInstance.get("/api/chat-rooms/");
+      setChatRooms(response.data.chat_rooms);
+      console.log("chatRooms", response.data.chat_rooms);
+    } catch (error) {
+      console.error("Error fetching chat rooms:", error);
+    }
+  }, [axiosInstance]);
+
+  useEffect(() => {
+    fetchChatRooms();
+  }, [fetchChatRooms]);
+
   /**
    * The method is used to send a message to the server.
    * After sending the message to the server, the message is added to the messages state
@@ -113,7 +69,15 @@ const MessageProvider: React.FC<MessageProviderProps> = ({ children }) => {
    * @returns
    */
   const connectWebSocket = (userId: string) => {
-    const ws = new WebSocket(`ws://your-server/ws/dm/${userId}/`);
+    console.log("userId", userId);
+    const baseUrl = BASE_URL().replace(/\/$/, "");
+    const wsUrl = `${baseUrl}/ws/dm/${userId}/`;
+    const ws = new WebSocket(wsUrl);
+
+    ws.onopen = () => {
+      console.log("WebSocket connected");
+      fetchChatHistory();
+    };
 
     ws.onmessage = (event) => {
       const data: WebSocketMessage = JSON.parse(event.data);
@@ -134,6 +98,17 @@ const MessageProvider: React.FC<MessageProviderProps> = ({ children }) => {
     };
 
     setWebSocket(ws);
+  };
+
+  const fetchChatHistory = async () => {
+    try {
+      const response = await axiosInstance.get(`/api/chat-history/`);
+      if (response.data.chat_history) {
+        setMessages(response.data.chat_history);
+      }
+    } catch (error) {
+      console.error("Error fetching chat history:", error);
+    }
   };
 
   const disconnectWebSocket = () => {
@@ -279,7 +254,7 @@ const MessageProvider: React.FC<MessageProviderProps> = ({ children }) => {
 
   const value: MessageContextType = {
     messages,
-    chatroomDetails,
+    chatRooms,
     deleteConversation,
     markAsRead,
     deleteMessage,
@@ -289,6 +264,7 @@ const MessageProvider: React.FC<MessageProviderProps> = ({ children }) => {
     isSentByMe,
     connectWebSocket,
     disconnectWebSocket,
+    fetchChatRooms,
   };
 
   return (

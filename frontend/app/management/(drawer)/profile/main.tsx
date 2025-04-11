@@ -28,9 +28,11 @@ import ProfileProvider, {
 } from "@/app/context/management/profile/profileContext";
 import { useAuth } from "@/app/authentication";
 import SideComponent from "@/app/component/helper/sideComponent";
+import { userData } from "@/app/utils/loadData";
 
 const MainAdminProfile = () => {
   const { windowWidth } = useAuth();
+  const user = userData();
   const { savePreferences, onModalVisible, setOnModalVisible } =
     useProfileContext();
   const secondary = useThemeColor({}, "secondaryColor");
@@ -71,12 +73,19 @@ const MainAdminProfile = () => {
             <UserDetailsComponent />
           </View>
         )}
-
-        <Modal animationType="slide" visible={onModalVisible}>
-          <GestureHandlerRootView style={{ flex: 1 }}>
-            <EditUserDetailsComponent />
-          </GestureHandlerRootView>
-        </Modal>
+        {user?.is_owner ? (
+          <Modal animationType="slide" visible={onModalVisible}>
+            <GestureHandlerRootView style={{ flex: 1 }}>
+              <EditUserDetailsComponent />
+            </GestureHandlerRootView>
+          </Modal>
+        ) : (
+          <>
+            <Text style={{ textAlign: "center", fontSize: 12, fontWeight: "600", color: "#eee" }}>
+              You are not authorized to access this page
+            </Text>
+          </>
+        )}
       </KeyboardAvoidingView>
     </SafeAreaProvider>
   );

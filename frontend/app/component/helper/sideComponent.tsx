@@ -3,6 +3,7 @@ import {
   Platform,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   TouchableOpacity,
   View,
@@ -17,7 +18,8 @@ import UserDetailsComponent from "../management/profile/user details";
 
 const SideComponent = () => {
   const user = userData();
-  const { screenWidth, windowWidth, signOut } = useAuth();
+  const { screenWidth, windowWidth, signOut, role, setPreferredRole } =
+    useAuth();
 
   const [profilePopup, setProfilePopup] = useState<boolean>(false);
   const text = useThemeColor({}, "text");
@@ -25,13 +27,18 @@ const SideComponent = () => {
   const otherText = useThemeColor({}, "otherText");
   const background = useThemeColor({}, "innerBackground");
 
+  const [isAdmin, setIsAdmin] = useState(() => {
+    return role === "admin";
+  });
+
   /** Handles the user profile display route given the user role */
   const handleProfileRoute = () => {
-    if (user?.is_owner) {
-      router.push("/management/(drawer)/profile/main");
-    } else {
-      setProfilePopup(true);
-    }
+    router.push("/management/(drawer)/profile/main");
+  };
+
+  const handleRoleSwitch = (newValue: boolean) => {
+    setIsAdmin(newValue);
+    setPreferredRole(newValue ? "admin" : "staff");
   };
 
   return (
@@ -148,6 +155,21 @@ const SideComponent = () => {
         </View>
       </View>
 
+      {/* Add the role switch component */}
+      {user?.is_admin && user?.is_employee && (
+        <View style={styles.switchContainer}>
+          <Text style={[styles.switchLabel, { color: text }]}>
+            {isAdmin ? "Admin Mode" : "Staff Mode"}
+          </Text>
+          <Switch
+            value={isAdmin}
+            onValueChange={handleRoleSwitch}
+            trackColor={{ false: "#767577", true: "#81b0ff" }}
+            thumbColor={isAdmin ? "#f5dd4b" : "#f4f3f4"}
+          />
+        </View>
+      )}
+
       <TouchableOpacity style={styles.signoutContainer} onPress={signOut}>
         <Text style={styles.signoutText}>
           {user?.first_name
@@ -163,11 +185,6 @@ const SideComponent = () => {
           )}
         </View>
       </TouchableOpacity>
-
-      {/* Display the popup modal when a staff member clicks the profile button */}
-      {profilePopup && (
-        <UserDetailsComponent />
-      )}
     </View>
   );
 };
@@ -233,5 +250,20 @@ const styles = StyleSheet.create({
     fontFamily: "BarlowLight",
     textTransform: "capitalize",
     fontVariant: ["stylistic-eight"],
+  },
+
+  switchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(0,0,0,0.1)",
+  },
+  switchLabel: {
+    fontSize: Platform.OS === "web" ? 12 : 14,
+    fontWeight: "600",
+    fontFamily: "BarlowRegular",
   },
 });

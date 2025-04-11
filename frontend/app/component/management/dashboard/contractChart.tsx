@@ -62,9 +62,7 @@ const ContractChartComponent = ({ width }: { width: number }) => {
   const { windowWidth, screenWidth } = useAuth();
   const highlight = useThemeColor({}, "highlight");
   const {
-    fetchContractStatistics,
     contractStats,
-    isLoading,
     setSelectedYear,
     selectedYear,
   } = useDashboardContext();
@@ -126,7 +124,7 @@ const ContractChartComponent = ({ width }: { width: number }) => {
               ]}
               onPress={() => handleYearChange(year)}
             >
-              <InnerThemedText text={year.toString()} />
+              <Text style={styles.pressableText}>{year.toString()}</Text>
             </Pressable>
           ))}
         </View>

@@ -121,15 +121,6 @@ const DashboardProvider = ({ children }: { children: React.ReactNode }) => {
         await fetchTodayEvents();
       } catch (error) {
         console.error("Error fetching data:", error);
-        // If there's an authentication error, try refreshing the data once
-        if (axios.isAxiosError(error) && error.response?.status === 401) {
-          try {
-            const stats = await fetchContractStatistics(selectedYear);
-            setContractStats(stats);
-          } catch (retryError) {
-            console.error("Error after retry:", retryError);
-          }
-        }
       } finally {
         setIsLoading(false);
       }
@@ -139,15 +130,16 @@ const DashboardProvider = ({ children }: { children: React.ReactNode }) => {
 
   /**
    * Fetches contract statistics from the API for a given year
-   * Transforms the backend data into the required BarData format
-   * @param year - The year for which to fetch statistics
+   * Uses current year if no year is provided
+   * @param year - The year for which to fetch statistics (optional)
    * @returns Promise<BarData[]> - Transformed contract statistics data
    */
-  const fetchContractStatistics = async (year: number) => {
+  const fetchContractStatistics = async (year?: number) => {
     setIsLoading(true);
     try {
+      const yearToUse = year || new Date().getFullYear();
       const response = await axiosInstance.get("api/get/contract/statistics/", {
-        params: { year: year },
+        params: { year: yearToUse },
       });
 
       // Transform the backend data into the BarData format
@@ -202,7 +194,8 @@ const DashboardProvider = ({ children }: { children: React.ReactNode }) => {
   const fetchTaskStatistics = async () => {
     try {
       const response = await axiosInstance.get("api/get/task/statistics/");
-      setTaskStats(response.data.statistics);
+      const statistics: TaskStatistics = response.data.statistics;
+      setTaskStats(statistics);
     } catch (error) {
       console.error("Error fetching task statistics:", error);
     }

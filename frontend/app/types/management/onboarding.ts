@@ -83,7 +83,7 @@ export interface StaffResponseType extends UserResponseType {
 /**
  * This type describes the constraints for the onboarding context and provider.
  */
-export interface AuthContextType {
+export default interface AuthContextType {
   passwordError: boolean;
   token: string | null;
   refreshToken: string | null;
@@ -106,4 +106,18 @@ export interface AuthContextType {
   windowWidth: number;
   axiosInstance: AxiosInstance;
   setPreferredRole: (role: 'admin' | 'staff') => Promise<void>;
+  findAddresses: (postcode: string) => Promise<void>;
+  selectAddress: (address: {
+    address1: string;
+    city: string;
+    postcode: string;
+  }) => void;
+  addresses: {
+    address1: string;
+    city: string;
+    postcode: string;
+  }[];
+  isLoading: boolean;
+  isAddressVisible: boolean;
+  isAddressModalVisible: boolean;
 }

@@ -5,14 +5,16 @@ import {
   Platform,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   View,
+  Pressable,
+  TouchableOpacity,
 } from "react-native";
 import { useThemeColor } from "@/hooks/useThemeColor";
 
 import LiveEventComponent from "./liveEvent";
 import { MaterialIcons } from "@expo/vector-icons";
-import { Pressable, TouchableOpacity } from "react-native-gesture-handler";
 import { user_image } from "@/app/utils/images";
 
 import { act } from "react-test-renderer";
@@ -40,6 +42,15 @@ const StaffSideComponent = () => {
   const activebtn = useThemeColor({}, "activebtn");
 
   const { active, handleActivity } = useSideComponentContext();
+  const { role, setPreferredRole } = useAuth();
+  const [isStaff, setIsStaff] = useState(() => {
+    return role === "staff";
+  });
+
+  const handleRoleSwitch = (newValue: boolean) => {
+    setIsStaff(newValue);
+    setPreferredRole(newValue ? "staff" : "admin");
+  };
 
   // Add navigation handling for sign out
   const handleSignOut = async () => {
@@ -185,6 +196,21 @@ const StaffSideComponent = () => {
           <LiveEventComponent />
         </View>
 
+        {/* Add the role switch component */}
+        {user?.is_employee && user?.is_admin && (
+          <View style={styles.switchContainer}>
+            <Text style={[styles.switchLabel, { color: text }]}>
+              {isStaff ? "Staff Mode" : "Admin Mode"}
+            </Text>
+            <Switch
+              value={isStaff}
+              onValueChange={handleRoleSwitch}
+              trackColor={{ false: "#767577", true: "#81b0ff" }}
+              thumbColor={isStaff ? "#f5dd4b" : "#f4f3f4"}
+            />
+          </View>
+        )}
+
         <TouchableOpacity style={styles.logoutButton} onPress={handleSignOut}>
           <Text style={[styles.logoutText, { color: text }]}>Logout</Text>
           <MaterialIcons name="logout" size={22} color={icon} />
@@ -317,6 +343,21 @@ const styles = StyleSheet.create({
   logoutText: {
     fontSize: 16,
     fontWeight: "600",
+  },
+
+  switchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(0,0,0,0.1)",
+  },
+  switchLabel: {
+    fontSize: Platform.OS === "web" ? 12 : 14,
+    fontWeight: "600",
+    fontFamily: "BarlowRegular",
   },
 });
 

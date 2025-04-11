@@ -6,6 +6,7 @@ import {
   TextInput,
   TouchableOpacity,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import React, { useState } from "react";
 import { useThemeColor } from "@/hooks/useThemeColor";
@@ -15,11 +16,10 @@ import BillingAddressComponent from "./billingAddress";
 import OwnerAddressComponent from "./ownerAddress";
 import { useCheckout } from "@/app/context/management/payments/paymentContext";
 interface CheckoutProps {
-  overagePlan?: string;
+  overagePlan?: number;
   selectedPlan?: SubscriptionPlanTiers;
-  billingPeriod?: "monthly" | "yearly";
+  billingPeriod?: "monthly" | "annually";
   onBack: () => void;
-  onComplete: () => void;
 }
 
 const CheckoutComponent = ({
@@ -27,45 +27,18 @@ const CheckoutComponent = ({
   selectedPlan,
   billingPeriod,
   onBack,
-  onComplete,
 }: CheckoutProps) => {
   const activeBtn = useThemeColor({}, "activebtn");
   const secondary = useThemeColor({}, "secondaryColor");
 
-  const { paymentDetails, setPaymentDetails, useOwnerAddress } = useCheckout();
-
-  // Calculate final price based on billing period and plan
-  const calculateFinalPrice = () => {
-    if (!selectedPlan || !selectedPlan.rate || !selectedPlan.numberOfEmployees)
-      return 0;
-
-    const basePrice = selectedPlan.rate * selectedPlan.numberOfEmployees;
-
-    if (billingPeriod === "yearly") {
-      const yearlyPrice = basePrice * 12;
-      const discount = getYearlyDiscount(selectedPlan.name);
-      return yearlyPrice * discount;
-    }
-
-    return basePrice;
-  };
-
-  const getYearlyDiscount = (planName: string) => {
-    switch (planName.toLowerCase()) {
-      case "basic":
-      case "starter":
-        return 0.96;
-      case "pro":
-      case "enterprise":
-        return 0.92;
-      case "ultimate":
-        return 0.9;
-      default:
-        return 1;
-    }
-  };
-
-  const finalPrice = calculateFinalPrice();
+  const {
+    paymentDetails,
+    setPaymentDetails,
+    useOwnerAddress,
+    openPaymentSheet,
+    isCheckoutLoading,
+    finalPrice,
+  } = useCheckout();
 
   /* Render the pay with native pay button given the platform os the app is running on. */
   const renderNativePayButton = () => {
@@ -99,6 +72,12 @@ const CheckoutComponent = ({
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      {isCheckoutLoading && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color={activeBtn} />
+        </View>
+      )}
+
       {/* Display the order summary when the selected plan is not null */}
       {selectedPlan ? (
         <View style={[styles.summaryContainer, { borderColor: secondary }]}>
@@ -108,7 +87,7 @@ const CheckoutComponent = ({
             <View style={styles.planNameContainer}>
               <Text style={styles.planName}>{selectedPlan?.name}</Text>
               <Text style={styles.billingPeriod}>
-                {billingPeriod === "yearly"
+                {billingPeriod === "annually"
                   ? "Annual Billing"
                   : "Monthly Billing"}
               </Text>
@@ -117,22 +96,26 @@ const CheckoutComponent = ({
             <View style={styles.priceContainer}>
               <Text style={styles.currency}>£</Text>
               <Text style={styles.price}>
-                {billingPeriod === "yearly"
-                  ? (finalPrice / 12).toFixed(2)
-                  : finalPrice.toFixed(2)}
+                {billingPeriod === "annually"
+                  ? finalPrice
+                    ? (finalPrice / 12).toFixed(2)
+                    : "0.00"
+                  : finalPrice
+                  ? finalPrice.toFixed(2)
+                  : "0.00"}
               </Text>
               <Text style={styles.period}>/month</Text>
             </View>
           </View>
 
-          {billingPeriod === "yearly" && (
+          {billingPeriod === "annually" && (
             <>
               <View style={styles.yearlyTotalContainer}>
                 <Text style={styles.yearlyTotalLabel}>
                   Total annual payment:
                 </Text>
                 <Text style={styles.yearlyTotalPrice}>
-                  £{finalPrice.toFixed(2)}
+                  £{finalPrice?.toFixed(2)}
                 </Text>
               </View>
               <View style={styles.savingsContainer}>
@@ -157,7 +140,9 @@ const CheckoutComponent = ({
         </View>
       ) : (
         <View>
-          <Text>No plan selected</Text>
+          <Text style={styles.sectionTitle}>
+            {`Pay £${overagePlan} for overage`}
+          </Text>
         </View>
       )}
 
@@ -166,83 +151,6 @@ const CheckoutComponent = ({
         <Text style={styles.sectionTitle}>Address Information</Text>
         <OwnerAddressComponent />
         {!useOwnerAddress && <BillingAddressComponent />}
-      </View>
-
-      {/* Payment Details Section */}
-      <View style={[styles.paymentContainer, { borderColor: secondary }]}>
-        <Text style={styles.sectionTitle}>Payment Details</Text>
-
-        {/* Add Native Pay Button */}
-        {renderNativePayButton()}
-
-        <View style={styles.dividerContainer}>
-          <View style={styles.divider} />
-          <Text style={styles.dividerText}>Or pay with card</Text>
-          <View style={styles.divider} />
-        </View>
-
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>Card Holder Name</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="John Doe"
-            value={paymentDetails.name}
-            onChangeText={(text) =>
-              setPaymentDetails({ ...paymentDetails, name: text })
-            }
-            importantForAutofill="yes"
-            autoComplete="name"
-          />
-        </View>
-
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>Card Number</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="1234 5678 9012 3456"
-            keyboardType="numeric"
-            maxLength={16}
-            value={paymentDetails.cardNumber}
-            onChangeText={(text) =>
-              setPaymentDetails({ ...paymentDetails, cardNumber: text })
-            }
-            importantForAutofill="yes"
-            autoComplete="cc-number"
-          />
-        </View>
-
-        <View style={styles.row}>
-          <View style={[styles.inputContainer, { flex: 1, marginRight: 10 }]}>
-            <Text style={styles.label}>Expiry Date</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="MM/YY"
-              maxLength={5}
-              value={paymentDetails.expiryDate}
-              onChangeText={(text) =>
-                setPaymentDetails({ ...paymentDetails, expiryDate: text })
-              }
-              importantForAutofill="yes"
-              autoComplete="cc-exp"
-            />
-          </View>
-
-          <View style={[styles.inputContainer, { flex: 1 }]}>
-            <Text style={styles.label}>CVV</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="123"
-              keyboardType="numeric"
-              maxLength={3}
-              value={paymentDetails.cvv}
-              onChangeText={(text) =>
-                setPaymentDetails({ ...paymentDetails, cvv: text })
-              }
-              importantForAutofill="yes"
-              autoComplete="cc-csc"
-            />
-          </View>
-        </View>
       </View>
 
       {/* Action Buttons */}
@@ -260,19 +168,24 @@ const CheckoutComponent = ({
             styles.payButton,
             { backgroundColor: activeBtn },
           ]}
-          onPress={onComplete}
+          onPress={openPaymentSheet}
+          disabled={isCheckoutLoading}
         >
-          {overagePlan ? (
-            <Text style={[styles.buttonText, styles.payButtonText]}>
-              {`Pay £${overagePlan} for overage`}
-            </Text>
+          {isCheckoutLoading ? (
+            <ActivityIndicator size="small" color="#ffffff" />
           ) : (
             <Text style={[styles.buttonText, styles.payButtonText]}>
-              {`Pay ${
-                billingPeriod === "yearly"
-                  ? `£${finalPrice.toFixed(2)} annually`
-                  : `£${finalPrice.toFixed(2)} monthly`
-              }`}
+              {overagePlan
+                ? `Pay £${overagePlan} for overage`
+                : `Pay ${
+                    billingPeriod === "annually"
+                      ? `£${
+                          finalPrice ? finalPrice.toFixed(2) : "0.00"
+                        } annually`
+                      : `£${
+                          finalPrice ? finalPrice.toFixed(2) : "0.00"
+                        } monthly`
+                  }`}
             </Text>
           )}
         </TouchableOpacity>
@@ -322,9 +235,10 @@ const styles = StyleSheet.create({
   },
   planName: {
     fontSize: 18,
-    fontWeight: "600",
+    fontWeight: "700",
     marginBottom: 5,
     fontFamily: "BarlowRegular",
+    textTransform: "capitalize",
   },
   billingPeriod: {
     fontSize: 14,
@@ -506,5 +420,16 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "600",
     fontFamily: "BarlowRegular",
+  },
+  loadingOverlay: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.7)",
+    zIndex: 1000,
   },
 });

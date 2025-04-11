@@ -1,5 +1,5 @@
 from django.urls import path, include, re_path
-from .view.account.authentication import register_owner, onboard_employee
+from .view.account.authentication import register_owner, onboard_employee, lookup_address
 
 from .view.main.dashboard import update_company, delete_company, get_task_statistics, get_top_performers, get_today_events, get_contract_statistics,  get_employees_on_leave, get_today_events
 
@@ -11,20 +11,20 @@ from .view.main.task_manager import get_active_tasks, get_clients_shifts, create
 
 from .view.main.calender import get_shifts, email_shift_report, cancel_shift, update_shift, approve_shift 
 
-from .view.main.payment import create_payment_sheet, get_subscription_tiers
+from .view.main.payment import create_payment_sheet, get_subscription_tiers, get_current_plan, update_subscription_plan
+
+from .view.main.notification import NotificationTokenView, NotificationView
 
 from .view.account.login import CustomTokenObtainPairView
 
 from rest_framework_simplejwt.views import (
-    TokenRefreshView, TokenObtainPairView
+    TokenRefreshView
 )
-
-from .view.main.messages import DirectMessageConsumer
-
-# First define websocket_urlpatterns
-websocket_urlpatterns = [
-    re_path(r'ws/dm/(?P<user_id>\w+)/$', DirectMessageConsumer.as_asgi()),
-]
+from .view.main.messages import (
+    DirectMessageConsumer, 
+    get_chat_rooms,
+    get_chat_history
+)
 
 urlpatterns = [
     # PAth definitions for all reqistration requests on the management app
@@ -74,12 +74,14 @@ urlpatterns = [
     path('get/employee/work/log/', get_employee_work_log, name='get_employee_work_log'),
 
     path('get/subscription/tiers/', get_subscription_tiers, name='get_subscription_tiers'),
-
+    path('get/current/plan/', get_current_plan, name='get_current_plan'),
 
     # The path definitions for the dashboard
     path('get/today/events/', get_today_events, name='get_today_events'),
     path('get/contract/statistics/', get_contract_statistics, name='get_contract_statistics'),
     path('create/payment/sheet/', create_payment_sheet, name='create_payment_sheet'),
+
+    path('lookup/address/', lookup_address, name='lookup_address'),
 
     path('start/shift/', start_shift, name='start_shift'),
     path('terminate/shift/', terminate_shift, name='terminate_shift'),
@@ -90,9 +92,16 @@ urlpatterns = [
     path('update/task/', update_task, name='update_task'),
     path('update/shift/', update_shift, name='update_shift'),
     path('update/client/', update_client, name='update_client'),
+    path('update/subscription/plan/', update_subscription_plan, name='update_subscription_plan'),   
+
+    path('api/notifications/token/', NotificationTokenView.as_view(), name='notification-token'),
+    path('api/notifications/send/', NotificationView.as_view(), name='send-notification'),
     
+
     path('get/task/statistics/', get_task_statistics, name='get_task_statistics'),
     path('get/top/performers/', get_top_performers, name='get_top_performers'),
 
-    path('messages/', include(websocket_urlpatterns)),
+    # Chat related endpoints
+    path('chat-rooms/', get_chat_rooms, name='get_chat_rooms'),
+    path('chat-history/', get_chat_history, name='get_chat_history'),
 ]

@@ -124,6 +124,7 @@ def get_contract_statistics(request):
         # Get the year from query params or use current year
         try:
             year = int(request.GET.get('year'))
+            print('contract year', year)
         except ValueError:
             return Response({
                 'error': 'Invalid year parameter'

@@ -55,7 +55,7 @@ export interface EmployeeDetailsComponentType {
 
 export interface CreateTaskInterface {
   contract_id: string;
-  employee_id: string;
+  employee_id?: string[];
   task_serial?: string;
   description?: string;
   start_time: { hours: number; minutes: number };
@@ -73,7 +73,7 @@ export interface ContractListType {
   client_name?: string;
 }
 
-export interface ActiveTaskContextType {
+export default interface ActiveTaskContextType {
   contractList: ContractListType[] | undefined;
   unassignedTask: OpenTaskProps[] | undefined;
   activeTasks: ActiveTaskType[] | undefined;
@@ -112,7 +112,7 @@ export interface ActiveTaskContextType {
   dateVisible: boolean;
   startTimeVisible: boolean;
   endTimeVisible: boolean;
-  createShift: (params: CreateTaskInterface) => Promise<void>;
+  create_shift: (params: CreateTaskInterface) => Promise<void>;
   create_task: (params: CreateTaskInterface) => Promise<void>;
   startTime: { hours: number; minutes: number };
   endTime: { hours: number; minutes: number };

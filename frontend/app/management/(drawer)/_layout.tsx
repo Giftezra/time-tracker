@@ -20,6 +20,7 @@ import ExpandScreenComponent from "@/app/component/helper/expandScreen";
 import { Stack } from "expo-router";
 import { useAuth } from "@/app/authentication";
 import { userData } from "@/app/utils/loadData";
+import  MessageProvider  from "@/app/context/management/messages/messageContext";
 
 const VersionDisplay = ({ color }: { color: string }) => {
   return (
@@ -98,7 +99,8 @@ export default function MainManagementLayout() {
       <GestureHandlerRootView
         style={[{ flex: 1 }, { backgroundColor: background }]}
       >
-        {/* The drawer is only used for mobile displays but a stack has to be returned for the web display */}
+        <MessageProvider>
+          {/* The drawer is only used for mobile displays but a stack has to be returned for the web display */}
         {Platform.OS !== "web" ? (
           <Drawer
             drawerContent={() => <SideComponent />}
@@ -127,12 +129,24 @@ export default function MainManagementLayout() {
                 width: "70%",
               },
             }}
-          ></Drawer>
+          />
         ) : (
-          <Stack screenOptions={{ headerShown: false }} />
+          <Stack>
+            <Stack.Screen name="calendar" options={{ headerShown: false }} />
+            <Stack.Screen name="clients" options={{ headerShown: false }} />
+            <Stack.Screen name="dashboard" options={{ headerShown: false }} />
+            <Stack.Screen name="employees" options={{ headerShown: false }} />
+            <Stack.Screen name="messages" options={{ headerShown: false }} />
+            <Stack.Screen name="notifications" options={{ headerShown: false }} />
+            <Stack.Screen name="payments" options={{ headerShown: false }} />
+            <Stack.Screen name="tasks" options={{ headerShown: false }} />
+            <Stack.Screen name="profile" options={{ headerShown: false }} />
+            <Stack.Screen name="settings" options={{ headerShown: false }} />
+          </Stack>
         )}
 
         {showVersion && <VersionDisplay color={secondary} />}
+        </MessageProvider>
       </GestureHandlerRootView>
     </SafeAreaView>
   );

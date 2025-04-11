@@ -13,7 +13,7 @@ const TaskChartComponent = ({
   taskStats,
 }: {
   width: number;
-  title: string;
+  title?: string;
   pieData: any[];
   taskStats?: TaskStatistics;
 }) => {
@@ -73,7 +73,7 @@ const TaskChartComponent = ({
 
   return (
     <View style={styles.piechartContainer}>
-      <ThemedHeaderText text={title} />
+      <ThemedHeaderText text={title || "Chart"} />
       <PieChart
         data={pieData}
         donut

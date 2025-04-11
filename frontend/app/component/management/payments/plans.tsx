@@ -4,14 +4,16 @@ import {
   View,
   FlatList,
   TouchableOpacity,
+  Modal,
 } from "react-native";
 import React, { useState } from "react";
-import SubscriptionTierComponent from "@/app/component/management/payments/subscriptionPlan";
+import SubscriptionTierComponent from "@/app/component/management/payments/SubscriptionTier";
 import { id } from "react-native-paper-dates";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { SubscriptionPlanTiers } from "@/app/types/management/payment";
 import { useCheckout } from "@/app/context/management/payments/paymentContext";
-import CheckoutComponent from "./checkout";
+import CustomizePlan from "./CustomizePlan";
+import CheckoutComponent from "./Checkout";
 
 const SubscriptionPlansComponent = () => {
   const {
@@ -22,25 +24,31 @@ const SubscriptionPlansComponent = () => {
     toggleBillingPeriod,
     showCheckout,
     setShowCheckout,
-    handleContinue,
   } = useCheckout();
   const activeBtn = useThemeColor({}, "inactivebtn");
-  const calendarText = ["Monthly", "Yearly"];
+  const calendarText = ["Monthly", "Annually"];
 
-  /* Show the checkout component when the continue button is pressed.
-  Pass the setShowCheckout function to the checkout component to close the checkout component when the back button is pressed */
+  const handleContinue = () => {
+    // Remove this function as we'll handle the logic directly in the component
+  };
+
+  /* Show the checkout component when showCheckout is true and we have a selected plan */
   if (showCheckout && selectedPlan) {
     return (
       <CheckoutComponent
         selectedPlan={selectedPlan}
         billingPeriod={billingPeriod}
-        onBack={() => setShowCheckout(false)}
-        onComplete={() => {
-          // Handle payment completion
-          console.log("Payment completed");
+        onBack={() => {
+          setShowCheckout(false);
+          setSelectedPlan(null);
         }}
       />
     );
+  }
+
+  /* Show the CustomizePlan component when a Custom plan is selected but checkout hasn't started */
+  if (selectedPlan?.name === "Custom" && !showCheckout) {
+    return <CustomizePlan />;
   }
 
   return (
@@ -84,7 +92,12 @@ const SubscriptionPlansComponent = () => {
           <SubscriptionTierComponent
             subscriptionPlan={item}
             isSelected={selectedPlan?.id === item.id}
-            onSelect={() => setSelectedPlan(item)}
+            onSelect={() => {
+              setSelectedPlan(item);
+              if (item.name !== "Custom") {
+                setShowCheckout(true);
+              }
+            }}
             billingPeriod={billingPeriod}
           />
         )}
@@ -92,18 +105,6 @@ const SubscriptionPlansComponent = () => {
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.plansList}
       />
-
-      {/* Display the continue button only when the an item is selected */}
-      {selectedPlan && (
-        <View style={styles.continueButtonContainer}>
-          <TouchableOpacity
-            style={[styles.continueButton, { backgroundColor: activeBtn }]}
-            onPress={handleContinue}
-          >
-            <Text style={styles.continueButtonText}>Continue</Text>
-          </TouchableOpacity>
-        </View>
-      )}
     </View>
   );
 };
@@ -179,5 +180,58 @@ const styles = StyleSheet.create({
   },
   continueButtonContainer: {
     marginVertical: 20,
+  },
+  customPlanSection: {
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  customPlanButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 25,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  customPlanButtonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContent: {
+    flex: 1,
+    width: "100%",
+    backgroundColor: "white",
+    padding: 20,
+    elevation: 5,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+  },
+  closeButton: {
+    padding: 8,
+  },
+  closeButtonText: {
+    fontSize: 20,
+    color: "#666",
   },
 });

@@ -5,7 +5,9 @@ import { GestureHandlerRootView, ScrollView } from "react-native-gesture-handler
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import DashboardOngoingTask from "@/app/component/staff/dashboard/dashboardOngoingTasks";
 import { useStaffDashboard } from "@/app/context/staff/dashboardProvider";
-
+import SubtitleThemedText from "@/app/component/helper/SubtitleThemedText";
+import InnerThemedText from "@/app/component/helper/InnerThemedText";
+import ThemedHeaderText from "@/app/component/helper/ThemedHeaderText";
 interface TaskCardProps {
   title?: string;
   value?: number;
@@ -15,9 +17,9 @@ interface TaskCardProps {
 const TaskCard: React.FC<TaskCardProps> = ({ title, value, unit }) => {
   return (
     <View style={styles.cardContainer}>
-      <Text style={styles.cardTitle}>{title}</Text>
+      <SubtitleThemedText text={title ?? ""} />
       <View style={styles.cardValueContainer}>
-        <Text style={styles.cardValue}>{value}</Text>
+        <InnerThemedText text={value?.toString() ?? ""} />
         {unit && <Text style={styles.cardUnit}>{unit}</Text>}
       </View>
     </View>
@@ -38,7 +40,7 @@ const MainStaffDashboard: React.FC = () => {
         </View>
 
         <ScrollView style={styles.reviewSection}>
-          <Text style={styles.sectionTitle}>Monthly Performance Review</Text>
+          <ThemedHeaderText text="Monthly Performance Review" />
 
           <View style={styles.statsContainer}>
             <TaskCard title="Total Hours" value={completedShifts?.total_hours ?? 0} unit="hrs" />

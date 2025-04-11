@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from "react-native";
-import { StripeProvider } from "@stripe/stripe-react-native";
+import { PaymentSheet, StripeProvider } from "@stripe/stripe-react-native";
 import React from "react";
 import Constants from "expo-constants";
 import * as Linking from "expo-linking";
@@ -17,7 +17,7 @@ if (!publishableKey) {
   console.warn("Missing Stripe publishable key");
 }
 
-export default function MobileStripeProvider(
+export default function ExpoStripeProvider(
   props: Omit<
     React.ComponentProps<typeof StripeProvider>,
     "publishableKey" | "merchantIdentifier"

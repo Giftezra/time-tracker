@@ -17,18 +17,23 @@ export interface CheckoutContextType {
   setUseOwnerAddress: (value: boolean) => void;
   subscriptionTiers: SubscriptionPlanTiers[];
   selectedPlan: SubscriptionPlanTiers | null;
-  setSelectedPlan: (plan: SubscriptionPlanTiers) => void;
-  billingPeriod: "monthly" | "yearly";
+  setSelectedPlan: (plan: SubscriptionPlanTiers | null) => void;
+  billingPeriod: "monthly" | "annually";
   toggleBillingPeriod: () => void;
   showCheckout: boolean;
   setShowCheckout: (show: boolean) => void;
-  handleContinue: () => void;
   billingDetails: BillingDetails;
   setBillingDetails: (details: BillingDetails) => void;
   paymentDetails: PaymentDetails;
   setPaymentDetails: (details: PaymentDetails) => void;
   currentPage: string;
   setCurrentPage: (page: string) => void;
+  openPaymentSheet: () => void;
+  isCheckoutLoading: boolean;
+  finalPrice: number | null;
+  overagePlan: number;
+  setOveragePlan: (plan: number) => void;
+  currentPlan: CurrentPlanDetails | undefined;
 }
 
 export interface BillingAddress {
@@ -67,22 +72,27 @@ export interface SubscriptionPlanTiers {
   name: string;
   description: string;
   features: string[];
-  isPopular?: boolean;
-  numberOfEmployees?: number;
-  rate?: number;
+  isPopular: boolean;
+  numberOfEmployees: number;
+  rate: number;
   overageFee?: number;
+  is_custom?: boolean;
+  employeeCount?: number;
+  overage_rate: number;
+  minimum_employees?: number;
 }
 
+
 export interface CurrentPlanDetails {
-  planName: string;
-  currentEmployees: number;
-  planLimit: number;
-  overageCount: number;
-  overageFees: number;
-  expiryDate: string;
-  overageDuration?: number;
-  billingPeriod: "monthly" | "yearly";
-  status: "active" | "expiring" | "overdue";
+  plan_name: string;
+  current_employees: number;
+  plan_limit: number;
+  overage_count: number;
+  overage_fees: number;
+  renewal_date: string;
+  overage_duration?: number;
+  billing_cycle: "monthly" | "yearly";
+  status: boolean;
 }
 
 export interface SubscriptionHistoryInterface {

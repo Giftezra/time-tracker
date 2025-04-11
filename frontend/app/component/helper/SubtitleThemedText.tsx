@@ -9,12 +9,11 @@ export default SubtitleThemedText;
 
 const styles = StyleSheet.create({
   text: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "600",
-    fontFamily: "RobotoRegular",
+    fontFamily: "RobotoMedium",
     textTransform: "capitalize",
-    lineHeight: 18,
-    letterSpacing: 0.8,
+    letterSpacing: 0.4,
     color: "#000",
   },
 });

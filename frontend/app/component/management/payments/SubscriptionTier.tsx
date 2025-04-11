@@ -11,12 +11,12 @@ import React from "react";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { SubscriptionPlanTiers } from "@/app/types/management/payment";
-
+import CustomizePlan from "./CustomizePlan";
 interface Props {
-  subscriptionPlan: SubscriptionPlanTiers;
+  subscriptionPlan: SubscriptionPlanTiers ;
   isSelected: boolean;
   onSelect: () => void;
-  billingPeriod: "monthly" | "yearly";
+    billingPeriod: "monthly" | "annually";
 }
 
 const SubscriptionTierComponent = ({
@@ -61,7 +61,7 @@ const SubscriptionTierComponent = ({
     const baseMonthlyPrice =
       subscriptionPlan.rate * subscriptionPlan.numberOfEmployees;
 
-    if (billingPeriod === "yearly") {
+    if (billingPeriod === "annually") {
       // First multiply by 12 to get yearly price
       const yearlyPrice = baseMonthlyPrice * 12;
       // Then apply the yearly discount
@@ -95,21 +95,21 @@ const SubscriptionTierComponent = ({
 
       {/* Conditional rendering for savings badge */}
       {subscriptionPlan.name === "ultimate"
-        ? billingPeriod === "yearly" && (
+        ? billingPeriod === "annually" && (
             <View style={[styles.savingsBadge, { backgroundColor: activeBtn }]}>
               <Text style={styles.savingsText}>Save 10%</Text>
             </View>
           )
         : subscriptionPlan.name === "pro" ||
           subscriptionPlan.name === "enterprise"
-        ? billingPeriod === "yearly" && (
+        ? billingPeriod === "annually" && (
             <View style={[styles.savingsBadge, { backgroundColor: activeBtn }]}>
               <Text style={styles.savingsText}>Save 8%</Text>
             </View>
           )
         : (subscriptionPlan.name === "starter" ||
             subscriptionPlan.name === "basic") &&
-          billingPeriod === "yearly" && (
+          billingPeriod === "annually" && (
             <View style={[styles.savingsBadge, { backgroundColor: activeBtn }]}>
               <Text style={styles.savingsText}>Save 4%</Text>
             </View>
@@ -133,7 +133,7 @@ const SubscriptionTierComponent = ({
         <View style={styles.priceContainer}>
           <Text style={styles.currency}>£</Text>
           <Text style={styles.price}>
-            {billingPeriod === "yearly"
+            {billingPeriod === "annually"
               ? (price / 12).toFixed(2)
               : price.toFixed(2)}
           </Text>
@@ -141,7 +141,7 @@ const SubscriptionTierComponent = ({
         </View>
       )}
 
-      {billingPeriod === "yearly" && subscriptionPlan.name !== "Unlimited" && (
+      {billingPeriod === "annually" && subscriptionPlan.name !== "Unlimited" && (
         <View style={styles.billingNoteContainer}>
           <Text style={styles.billingNote}>
             {`Billed £${price.toFixed(2)} annually`}
@@ -216,6 +216,7 @@ const styles = StyleSheet.create({
     display: "flex",
     flexDirection: "column",
     backgroundColor: "#fff",
+    minWidth: 250,
   },
   selectedContainer: {
     borderWidth: 2,

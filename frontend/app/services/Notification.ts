@@ -1,89 +1,162 @@
-// import * as Notifications from "expo-notifications";
-// import { Alert, Platform } from "react-native";
-// import * as Device from "expo-device";
-// import Constants from "expo-constants";
-// import { ExpoPushToken } from "expo-notifications";
+import * as Notifications from "expo-notifications";
+import { Alert, Linking, Platform } from "react-native";
+import * as Device from "expo-device";
+import Constants from "expo-constants";
+import { ExpoPushToken } from "expo-notifications";
 
-// // Set up notification handler
-// Notifications.setNotificationHandler({
-//   handleNotification: async () => ({
-//     shouldShowAlert: true,
-//     shouldPlaySound: false,
-//     shouldSetBadge: false,
-//   }),
-// });
+// Set up notification handler
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+  }),
+});
 
-// export class NotificationService {
-//   static async setupNotifications() {
-//     if (Platform.OS === "android") {
-//       await Notifications.setNotificationChannelAsync("default", {
-//         name: "default",
-//         importance: Notifications.AndroidImportance.MAX,
-//         vibrationPattern: [0, 250, 250, 250],
-//         lightColor: "#FF2315",
-//       });
-//     }
+export class NotificationService {
+  private static notificationListener?: Notifications.EventSubscription;
+  private static responseListener?: Notifications.EventSubscription;
+  static notificationStatus: string | null = null;
 
-//     if (Platform.OS === "web") {
-//       throw new Error("Push notifications are not supported on web");
-//     }
+  static async setupNotifications() {
+    console.log("[NotificationService] Starting setup...");
 
-//     if (!Device.isDevice) {
-//       throw new Error("Must be on physical device for push notifications");
-//     }
+    if (Platform.OS === "android") {
+      console.log("[NotificationService] Android platform detected");
+      try {
+        await Notifications.setNotificationChannelAsync("default", {
+          name: "default",
+          importance: Notifications.AndroidImportance.MAX,
+          vibrationPattern: [0, 250, 250, 250],
+          lightColor: "#FF231F7C",
+        });
+      } catch (error) {
+        console.error(
+          "[NotificationService] Error setting up Android channel:",
+          error
+        );
+        throw new Error("Failed to set up Android notification channel");
+      }
+    }
 
-//     const { status: existingStatus } =
-//       await Notifications.getPermissionsAsync();
-//     let finalStatus = existingStatus;
+    if (Platform.OS === "web") {
+      console.log("[NotificationService] Web platform detected");
+      throw new Error("Push notifications are not supported on web");
+    }
 
-//     if (existingStatus !== "granted") {
-//       const { status } = await Notifications.requestPermissionsAsync();
-//       finalStatus = status;
-//     }
+    if (!Device.isDevice) {
+      console.log("[NotificationService] Not a physical device");
+      throw new Error("Must be on physical device for push notifications");
+    }
 
-//     if (finalStatus !== "granted") {
-//       return new Promise((resolve, reject) => {
-//         Alert.alert(
-//           "Push Notifications",
-//           "Please enable push notifications to use this app",
-//           [
-//             {
-//               text: "Enable",
-//               onPress: async () => {
-//                 const { status } =
-//                   await Notifications.requestPermissionsAsync();
-//                 if (status === "granted") {
-//                   resolve(status);
-//                 } else {
-//                   reject(new Error("Permission not granted"));
-//                 }
-//               },
-//             },
-//             {
-//               text: "Later",
-//               onPress: () => reject(new Error("Permission not granted")),
-//             },
-//           ]
-//         );
-//       });
-//     }
-//   }
+    const { status: existingStatus } =
+      await Notifications.getPermissionsAsync();
+    console.log(
+      "[NotificationService] Existing permission status:",
+      existingStatus
+    );
+    let finalStatus = existingStatus;
 
-//   static async getExpoPushToken(): Promise<ExpoPushToken> {
-//     const projectId = Constants.expoConfig?.extra?.eas?.projectId;
-//     if (!projectId) {
-//       throw new Error("Project ID is not set");
-//     }
+    if (existingStatus !== "granted") {
+      try {
+        if (existingStatus === "denied") {
+          // Direct user to app settings if previously denied
+          return new Promise((resolve, reject) => {
+            Alert.alert(
+              "Notifications Disabled",
+              "Please enable notifications in your device settings",
+              [
+                {
+                  text: "Open Settings",
+                  onPress: async () => {
+                    await Linking.openSettings();
+                    // Re-check permission after returning from settings
+                    const { status: newStatus } =
+                      await Notifications.getPermissionsAsync();
+                    if (newStatus === "granted") {
+                      console.log("[setupNotifications] Token: ", newStatus);
+                      // const token = await this.getExpoPushToken();
+                      // console.log("[setupNotifications] Token: ", token.data);
+                      resolve(newStatus);
+                    } else {
+                      reject(new Error("Permission not granted"));
+                    }
+                  },
+                },
+                {
+                  text: "Cancel",
+                  onPress: () => reject(new Error("Permission not granted")),
+                  style: "cancel",
+                },
+              ]
+            );
+          });
+        } else {
+          // Request permission if status is undetermined
+          const { status } = await Notifications.requestPermissionsAsync();
+          finalStatus = status;
+        }
+      } catch (error: any) {
+        throw new Error("Failed to request permissions: " + error.message);
+      }
+    }
 
-//     const token = await Notifications.getExpoPushTokenAsync({
-//       projectId,
-//     });
+    if (finalStatus !== "granted") {
+      throw new Error("Permission not granted");
+    }
+    this.notificationStatus = finalStatus;
+    console.log(
+      "[NotificationService] Setup completed with status:",
+      finalStatus
+    );
+  }
+  /**
+   * Get the users expo pus notification and set them in the state.
+   * @returns
+   */
+  static async getExpoPushToken(): Promise<ExpoPushToken> {
+    console.log("[NotificationService] Getting push token...");
+    const projectId = Constants.expoConfig?.extra?.eas?.projectId;
+    console.log("[NotificationService] Project ID:", projectId);
 
-//     return token;
-//   }
+    if (!projectId) {
+      throw new Error("Project ID is not set in app config");
+    }
 
-//   static async saveTokenOnServer(token: ExpoPushToken): Promise<void> {
-//     // Implement your server communication logic here
-//     console.log("Saving token:", token);
-//   }
-// }
+    try {
+      const tokenData = await Notifications.getExpoPushTokenAsync({
+        projectId,
+      });
+      console.log("[NotificationService] Token received:", tokenData.data);
+      return tokenData;
+    } catch (error) {
+      console.error("[NotificationService] Error getting token:", error);
+      throw error;
+    }
+  }
+
+  static addNotificationReceivedListener(
+    callback: (notification: Notifications.Notification) => void
+  ) {
+    this.notificationListener =
+      Notifications.addNotificationReceivedListener(callback);
+    return this.notificationListener;
+  }
+
+  static addNotificationResponseReceivedListener(
+    callback: (response: Notifications.NotificationResponse) => void
+  ) {
+    this.responseListener =
+      Notifications.addNotificationResponseReceivedListener(callback);
+    return this.responseListener;
+  }
+
+  static removeSubscriptions() {
+    if (this.notificationListener) {
+      Notifications.removeNotificationSubscription(this.notificationListener);
+    }
+    if (this.responseListener) {
+      Notifications.removeNotificationSubscription(this.responseListener);
+    }
+  }
+}

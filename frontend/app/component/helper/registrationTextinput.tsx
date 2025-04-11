@@ -83,12 +83,16 @@ const RegistrationTextInputComponent = ({
         placeholder={placeholder}
         value={value}
         onChangeText={setValue}
-        style={[styles.input, secureTextEntry && { textTransform: 'capitalize' } ]}
+        style={[
+          styles.input,
+          secureTextEntry && { textTransform: "capitalize" },
+        ]}
         inputMode={inputMode}
         keyboardType={keyboardType}
         secureTextEntry={secureTextEntry}
         autoComplete={autoComplete}
         importantForAutofill={autoComplete ? "yes" : "no"}
+        placeholderTextColor="#9CA3AF"
       />
     </View>
   );
@@ -103,13 +107,22 @@ const styles = StyleSheet.create({
 
   input: {
     flex: 1,
-    padding: 15,
-    backgroundColor: "#fff",
-    borderRadius: 5,
-    fontWeight: "500",
-    fontSize: 15,
-    fontFamily: "BarlowLight",
-    textTransform: "lowercase",
+    padding: 16,
+    backgroundColor: "#F9FAFB",
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    borderRadius: 8,
+    fontSize: 16,
+    fontFamily: "BarlowRegular",
+    color: "#1F2937",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 1,
+    elevation: 1,
   },
 
   placeholderStyle: {

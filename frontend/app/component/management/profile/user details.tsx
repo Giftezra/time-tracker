@@ -1,8 +1,5 @@
 import {
-  Alert,
-  Dimensions,
   Image,
-  Linking,
   Platform,
   Pressable,
   StyleSheet,
@@ -12,22 +9,24 @@ import {
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { ScrollView } from "react-native-gesture-handler";
-import { AntDesign, MaterialIcons } from "@expo/vector-icons";
+import {
+  AntDesign,
+  MaterialCommunityIcons,
+  MaterialIcons,
+} from "@expo/vector-icons";
 import { user_image } from "@/app/utils/images";
 import { useProfileContext } from "@/app/context/management/profile/profileContext";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { userData } from "@/app/utils/loadData";
-import SubtitleThemedText from "../../helper/SubtitleThemedText";
-import ThemedHeaderText from "../../helper/ThemedHeaderText";
-import InnerThemedText from "../../helper/InnerThemedText";
+import { useAuth } from "@/app/authentication";
+import NotificationToggle from "../../helper/profile/NotificationToggle";
+import InfoRow from "../../helper/profile/InfoRow";
+
 const UserDetailsComponent = () => {
-  const user = userData();
+  const { user, role } = useAuth();
 
   const {
-    notificationToggle,
     handleLink,
     handlePhone,
-    handleToggle,
     savePreferences,
     allowEmailNotification,
     allowMarketingEmails,
@@ -38,13 +37,6 @@ const UserDetailsComponent = () => {
     onModalVisible,
     setOnModalVisible,
   } = useProfileContext();
-  const [role, setRole] = useState<string>("");
-
-  useEffect(() => {
-    if (user) {
-      setRole(user.is_owner ? "owner" : "staff");
-    }
-  }, []);
 
   //Call the hooke when the page unmouts to save the user preferences
   // In the server
@@ -64,131 +56,105 @@ const UserDetailsComponent = () => {
   const innerBackground = useThemeColor({}, "innerBackground");
   const otherText = useThemeColor({}, "otherText");
   const headerText = useThemeColor({}, "headerText");
-  const text = useThemeColor({}, "text");
 
   return (
     <ScrollView
       style={[styles.mainContainer, { backgroundColor: innerBackground }]}
       showsVerticalScrollIndicator={false}
     >
-      <View style={styles.headerContainer}>
-        <Image source={user_image} style={styles.image} />
-        <SubtitleThemedText text={role} />
-        {/* Only display the edit button for mobile views */}
+      {/* Header Section */}
+      <View style={styles.header}>
+        <View style={styles.profileSection}>
+          <Image source={user_image} style={styles.profileImage} />
+          <View style={styles.profileInfo}>
+            <Text style={[styles.profileName, { color: headerText }]}>
+              {user?.first_name + " " + user?.last_name}
+            </Text>
+            <Text style={[styles.profileRole, { color: otherText }]}>
+              {role}
+            </Text>
+          </View>
+        </View>
         {Platform.OS !== "web" && (
-          <Pressable onPress={() => setOnModalVisible(true)}>
-            <MaterialIcons name="edit" size={20} color="black" />
+          <Pressable
+            onPress={() => setOnModalVisible(true)}
+            style={styles.editButton}
+          >
+            {role !== "staff" && (
+              <MaterialCommunityIcons
+                name="pencil"
+                size={20}
+                style={{ padding: 8 }}
+              />
+            )}
           </Pressable>
         )}
       </View>
 
-      <View style={{ flex: 1, width: "100%" }}>
-        <ThemedHeaderText text="user information" />
-        <View style={styles.containers}>
-          <View style={styles.textRowContainer}>
-            <SubtitleThemedText text="fullname" />
-            <InnerThemedText text={user?.first_name + " " + user?.last_name} />
-          </View>
-
-          <View style={styles.textRowContainer}>
-            <SubtitleThemedText text="mobile" />
-            <InnerThemedText text={user?.phone} />
-          </View>
-
-          <View style={styles.textRowContainer}>
-            <SubtitleThemedText text="email" />
-            <InnerThemedText text={user?.email} />
-          </View>
-
-          <View style={styles.textRowContainer}>
-            <SubtitleThemedText text="date of birth" />
-            <InnerThemedText text={user?.dob || ""} />
-          </View>
-        </View>
-
-        {/* Organisation details */}
-        <ThemedHeaderText text="company" />
-        <View style={styles.containers}>
-          <View style={styles.textRowContainer}>
-            <SubtitleThemedText text="company name" />
-            <InnerThemedText text={user?.company_name || ""} />
-          </View>
-
-          <View style={styles.textRowContainer}>
-            <SubtitleThemedText text="official address" />
-            <InnerThemedText text={user?.company_address || ""} />
-          </View>
-
-          <View style={styles.textRowContainer}>
-            <SubtitleThemedText text="postcode" />
-            <InnerThemedText text={user?.company_postcode || ""} />
-          </View>
-
-          {/* Made pressable to navigate to the weblink provided */}
-          <Pressable
-            onPress={() =>
-              user?.company_website && handleLink(user.company_website)
-            }
-          >
-            <View style={styles.textRowContainer}>
-              <SubtitleThemedText text="weblink" />
-              <InnerThemedText text={user?.company_website || ""} />
-            </View>
-          </Pressable>
-
-          <View style={styles.textRowContainer}>
-            <SubtitleThemedText text="services" />
-            <InnerThemedText text={user?.company_services || ""} />
-          </View>
-
-          <Pressable
-            onPress={() =>
-              user?.company_helpline && handlePhone(user.company_helpline)
-            }
-          >
-            <View>
-              <SubtitleThemedText text="helpline" />
-              <InnerThemedText text={user?.company_helpline || ""} />
-            </View>
-          </Pressable>
+      {/* Personal Information */}
+      <View style={styles.section}>
+        <Text style={[styles.sectionTitle, { color: headerText }]}>
+          Personal Information
+        </Text>
+        <View style={styles.infoCard}>
+          <InfoRow label="Mobile" value={user?.phone} />
+          <InfoRow label="Email" value={user?.email} />
+          <InfoRow label="Date of Birth" value={user?.dob} />
         </View>
       </View>
 
-      {/* These views defines the alert and notification display toggle */}
-      <View style={styles.mainNotificationtoggleContainer}>
-        <View
-          style={[styles.notificationContainer, { backgroundColor: secondary }]}
-        >
-          <ThemedHeaderText text="allow push notification" />
-          <Switch
+      {/* Company Information */}
+      <View style={styles.section}>
+        <Text style={[styles.sectionTitle, { color: headerText }]}>
+          Company Details
+        </Text>
+        <View style={styles.infoCard}>
+          <InfoRow label="Company Name" value={user?.company_name} />
+          <InfoRow label="Official Address" value={user?.company_address} />
+          <InfoRow label="Postcode" value={user?.company_postcode} />
+          <InfoRow label="Services" value={user?.company_services} />
+          <InfoRow
+            label="Website"
+            value={user?.company_website}
+            isClickable
+            onPress={() =>
+              user?.company_website && handleLink(user.company_website)
+            }
+          />
+          <InfoRow
+            label="Helpline"
+            value={user?.company_helpline}
+            isClickable
+            onPress={() =>
+              user?.company_helpline && handlePhone(user.company_helpline)
+            }
+          />
+        </View>
+      </View>
+
+      {/* Notification Preferences */}
+      <View style={styles.section}>
+        <Text style={[styles.sectionTitle, { color: headerText }]}>
+          Notification Preferences
+        </Text>
+        <View style={styles.infoCard}>
+          <NotificationToggle
+            label="Push Notifications"
             value={allowPushNotification}
-            onValueChange={(value) => setAllowPushNotification(value)}
-            thumbColor={allowPushNotification ? "#fff" : "#DA5"}
-            trackColor={{ true: "#DA5", false: "#fff" }}
+            onValueChange={setAllowPushNotification}
+            color={innerBackground}
           />
-        </View>
-
-        <View
-          style={[styles.notificationContainer, { backgroundColor: secondary }]}
-        >
-          <ThemedHeaderText text="allow email notification" />
-          <Switch
+          <NotificationToggle
+            label="Email Notifications"
             value={allowEmailNotification}
-            onValueChange={(value) => setAllowEmailNotification(value)}
-            thumbColor={allowEmailNotification ? "#fff" : "#DA5"}
-            trackColor={{ true: "#DA5", false: "#fff" }}
+            onValueChange={setAllowEmailNotification}
+            color={innerBackground}
           />
-        </View>
-
-        <View
-          style={[styles.notificationContainer, { backgroundColor: secondary }]}
-        >
-          <ThemedHeaderText text="allow marketing emails" />
-          <Switch
+          <NotificationToggle
+            label="Marketing Emails"
             value={allowMarketingEmails}
-            onValueChange={(value) => setAllowMarketingEmails(value)}
-            thumbColor={allowMarketingEmails ? "#fff" : "#DA5"}
-            trackColor={{ true: "#DA5", false: "#fff" }}
+            onValueChange={setAllowMarketingEmails}
+            color={innerBackground}
           />
         </View>
       </View>
@@ -196,96 +162,71 @@ const UserDetailsComponent = () => {
   );
 };
 
-export default UserDetailsComponent;
-
 const styles = StyleSheet.create({
   mainContainer: {
-    flexDirection: "column",
-    padding: 10,
+    flex: 1,
+    padding: 16,
   },
-
-  containers: {
-    padding: 5,
-    flexDirection: "column",
-    justifyContent: "space-between",
-  },
-
-  headerContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: 5,
-    marginBottom: 20,
-  },
-
-  textRowContainer: {
+  header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    flexWrap: "wrap",
+    paddingBottom: 10,
+    marginBottom: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E5E5E5",
   },
-
-  text: {
-    fontSize: Platform.OS === "web" ? 12 : 14,
-    fontWeight: "400",
-    fontFamily: "BarlowLight",
-    textTransform: "lowercase",
-    marginStart: 20,
+  profileSection: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
   },
-
-  headers: {
-    fontSize: Platform.OS === "web" ? 12 : 15,
-    fontFamily: "BarlowRegular",
-    fontWeight: "700",
-    textTransform: "capitalize",
-    marginTop: 10,
-  },
-
-  roleText: {
-    fontSize: Platform.OS === "web" ? 15 : 18,
-    fontWeight: "bold",
-    fontFamily: "BarlowLight",
-    textTransform: "capitalize",
-    marginVertical: 5,
-  },
-
-  subheader: {
-    fontSize: 13,
-    fontWeight: "600",
-    fontFamily: "RobotoRegular",
-    textTransform: "capitalize",
-    marginVertical: 5,
-  },
-
-  image: {
+  profileImage: {
     width: 50,
     height: 50,
-    borderRadius: 40,
+    borderRadius: 25,
     borderWidth: 1,
-    padding: 5,
+    borderColor: "#E5E5E5",
   },
-
-  mainNotificationtoggleContainer: {
-    flexDirection: "column",
-    justifyContent: "space-between",
-    marginTop: 20,
+  profileInfo: {
+    gap: 5,
   },
-
-  notificationContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: Platform.OS === "web" ? 5 : 10,
-    borderWidth: 1,
-    borderRadius: 5,
-    width: "100%",
-    marginVertical: 5,
+  profileName: {
+    fontSize: 18,
+    fontWeight: "600",
+    fontFamily: "BarlowRegular",
+    letterSpacing: 0.2,
+    textTransform: "capitalize",
   },
-
-  notificationToggleText: {
+  profileRole: {
     fontSize: 14,
-    fontWeight: "bold",
+    fontFamily: "BarlowLight",
+    textTransform: "capitalize",
+  },
+  editButton: {
+    borderRadius: 20,
+    backgroundColor: "#F5F5F5",
+  },
+  section: {
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: 12,
     fontFamily: "BarlowRegular",
     textTransform: "capitalize",
   },
+  infoCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    padding: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
+  },
 });
+
+export default UserDetailsComponent;

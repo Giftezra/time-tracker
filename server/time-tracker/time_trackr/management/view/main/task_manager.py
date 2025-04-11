@@ -25,134 +25,95 @@ Each task is created with a client, contract, task serial, description, start da
 @permission_classes([IsAuthenticated])
 @admin_required
 def create_task(request):
-  # Validate the request data and return an error if the data is not valid 
     if not request.data:
-        return Response({'error': 'Please provide the shift details'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'error': 'Please provide task details'}, status=status.HTTP_400_BAD_REQUEST)
     
+    data = request.data.get('data', {})
     
-    # Retrieve the company id and user id
-    # Retrive the rest of the response data like description , start and end time and amount.
-    contract_id = request.data.get('contract_id')
-    task_serial = request.data.get('task_serial')
-    description = request.data.get('description')
-    start_date = request.data.get('start_date')
-    start_time = request.data.get('start_time')
-    end_time = request.data.get('end_time')
-    amount = request.data.get('amount')
-
-    # Validate the data
-    for field in [contract_id, task_serial, description, start_date, start_time, end_time, amount]:
-      if not field:
-        return Response({'error': f'{field} is required'}, status=status.HTTP_400_BAD_REQUEST)
-      
-
-    
-    # Validate that the user works for the company
-    # Create a new shift object using the company and user id
-    # Save the shift object
-    # Return the response
     try:
-      contract = get_object_or_404(Contracts, id=contract_id)
-    
-      task = Task.objects.create(
-          contract=contract,
-          task_serial = task_serial,
-          description = description,
-          start_date = start_date,
-          start_time = start_time,
-          end_time = end_time,
-          amount = amount,
-          created_by=request.user,
-          status = 'pending',
+        # Validate required fields
+        required_fields = ['contract_id', 'start_time', 'end_time', 'dates', 'amount', 'task_serial', 'description']
+        for field in required_fields:
+            if not data.get(field):
+                return Response({'error': f'{field} is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        contract = get_object_or_404(Contracts, id=data['contract_id'])
+        
+        # Create the task
+        task = Task.objects.create(
+            contract=contract,
+            task_serial=data['task_serial'],
+            description=data['description'],
+            start_date=data['dates'][0],  # First date
+            end_date=data['dates'][-1],   # Last date
+            start_time=f"{data['start_time']['hours']}:{data['start_time']['minutes']}",
+            end_time=f"{data['end_time']['hours']}:{data['end_time']['minutes']}",
+            amount=data['amount'],
+            created_by=request.user,
+            status='pending'
         )
-      task.save()
-      return Response({'success': 'Task created successfully'}, status=status.HTTP_201_CREATED)
+        
+        return Response({
+            'message': 'Task created successfully',
+            'task_id': task.id
+        }, status=status.HTTP_201_CREATED)
+        
     except Exception as e:
-      return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-    
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 @admin_required
 def create_shift(request):
-    """ Method is used to create a new shift and assign it to a staff member."""
     if not request.data:
-        return Response({'error': 'Please provide the shift details'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'error': 'Please provide shift details'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    data = request.data.get('data', {})
     
     try:
-      # Retrieve the data from the request
-      contract_id = request.data.get('contract_id')
-      employee_id = request.data.get('employee_id')
-      task_serial = request.data.get('task_serial')
-      description = request.data.get('description')
-      start_date = request.data.get('start_date')
-      start_time = request.data.get('start_time')
-      end_time = request.data.get('end_time')
-      amount = request.data.get('amount')
-      # Validate the fields and return an error if any of the fields are not provided
-      for field in [contract_id, employee_id, task_serial, description, start_date, start_time, end_time, amount]:
-        if not field:
-          return Response({'error': f'{field} is required'}, status=status.HTTP_400_BAD_REQUEST)
-      
-      # Use the id to retrieve the client, contract and staff objects
-      contract = get_object_or_404(Contracts, id=contract_id)
-      employee = get_object_or_404(Staff, id=employee_id)
-      
-      # Create a new task object with the client, contract and staff details
-      task = Task.objects.create(
-          contract=contract,
-          task_serial = task_serial,
-          description = description,
-          start_date = start_date,
-          start_time = start_time,
-          end_time = end_time,
-          amount = amount,
-          created_by=request.user,
-          status = 'pending',
-        )
-      
-      # After creating the task, assign the task to the staff with the specified id.
-      # The staff to be updated would only be staff member who have open availability for the next 24 hours.
-      # this is to ensure the time frame for the task is covered by the staff availability.
-      # 
-      # Check the staff availability and ensure they are available for the task
-      # If the staff is available, create a new shift object and assign the task to the staff
-      shift = get_object_or_404(Shift, staff=employee, status=['pending', 'assigned'])
-      old_task = shift.task
-      
-      # Returns a boolean value if the new task is conflicting with an existing task
-      is_conflicting_task = (
-        task.start_date <= old_task.start_date or
-        task.end_date <= old_task.end_date or
-        task.start_time <= old_task.start_time or
-        task.end_time <= old_task.end_time
-        )
-      
-      # Throw value error if the shift is conflicting with and existing task
-      if is_conflicting_task:
-        return Response({'error': 'Staff is already assigned to a task within the same time frame'}, status=status.HTTP_400_BAD_REQUEST)
-      else:
-        # If everything is valid, create a new shift object and assign the task to the staff
-        shift = Shift.objects.create(
-            task=task,
-            staff=employee,
-            status='assigned',
-            created_by=request.user
-          )
-        shift.save()
+        # Create task first
+        task_response = create_task(request)
+        if task_response.status_code != status.HTTP_201_CREATED:
+            return task_response
         
-        # Update the staff availability so they become unavailable for the task duration
-        availability = Availability.objects.create(
-            staff=employee,
-            start_date=task.start_date,
-            end_date=task.end_date,
-            start_time=task.start_time,
-            end_time=task.end_time
-          ).first()
-        availability.save()
-        return Response({'success': 'Task created and assigned to staff successfully'}, status=status.HTTP_201_CREATED)
+        task = Task.objects.get(id=task_response.data['task_id'])
+        
+        # Now create shifts for each employee
+        employee_ids = data.get('employee_id', [])
+        if not employee_ids:
+            return Response({'error': 'At least one employee must be selected'}, 
+                          status=status.HTTP_400_BAD_REQUEST)
+        
+        successful_assignments = []
+        failed_assignments = []
+        
+        for emp_id in employee_ids:
+            try:
+                employee = Staff.objects.get(id=emp_id)
+                
+                # Check for availability and create shift
+                shift = Shift.objects.create(
+                    task=task,
+                    status='pending',
+                    created_by=request.user
+                )
+                shift.staff.add(employee)
+                successful_assignments.append(emp_id)
+                
+            except Exception as e:
+                failed_assignments.append({
+                    'employee_id': emp_id,
+                    'error': str(e)
+                })
+        
+        return Response({
+            'message': 'Shift created successfully',
+            'successful_assignments': successful_assignments,
+            'failed_assignments': failed_assignments
+        }, status=status.HTTP_201_CREATED)
+        
     except Exception as e:
-      return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
     
     
 
@@ -406,10 +367,7 @@ def get_active_tasks(request):
 
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-
-
-
+    
 
 @api_view(['PATCH'])
 @permission_classes([IsAuthenticated])
@@ -421,36 +379,45 @@ def terminate_shift(request):
     The shift status is updated to completed.
     """
     shift_id = request.data.get('shift_id')
+    employee_id = request.data.get('employee_id')
     
     # Validate required fields
-    if not shift_id:
+    if not shift_id or not employee_id:
         return Response(
-            {'error': 'shift_id is required'}, 
-            status=status.HTTP_400_BAD_REQUEST
+            {'error': 'shift_id and employee_id are required'}, 
+            status=status.HTTP_400_BAD_REQUEST  
         )
     
     try:
         shift = get_object_or_404(Shift, id=shift_id)
+        employee = get_object_or_404(Staff, id=employee_id)
         
+        # Check if the employee is assigned to the shift
+        if employee not in shift.staff.all():
+            return Response(
+                {'error': 'Employee is not assigned to the shift'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        #Check if the shift is ongoing and return the appropriate message or check if it is completed and return the appropriate message
+        if shift.status == 'completed':
+            return Response(
+                {'message': 'Shift is already completed'}, 
+                status=status.HTTP_200_OK
+            ) 
         # Validate shift can be terminated
         if shift.status != 'started':
             return Response(
                 {'error': 'Shift must be ongoing to terminate'}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
-            
-        # Get and update the associated task
-        task = shift.task
         
-        # Update shift and task status
-        shift.status = 'completed'
-        shift.end_time = timezone.now()
-        # Save both objects
-        shift.save()
-        
-        return Response({
-            'message': 'Shift completed successfully'
-        }, status=status.HTTP_200_OK)
+        # Terminate the shift if the shift is ongoing or started
+        if shift.status == 'started':
+            shift.status = 'completed'
+            shift.end_time = timezone.now()
+            shift.save()
+            return Response({
+            'message': 'Shift completed successfully'}, status=status.HTTP_200_OK)
         
     except Shift.DoesNotExist:
         return Response(

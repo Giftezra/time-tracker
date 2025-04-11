@@ -2,12 +2,9 @@ import {
   ProfileContextType,
   ProfileUpdateType,
 } from "@/app/types/management/profile";
-import { BASE_URL } from "@/app/utils/urls";
 import { useContext, createContext, useState } from "react";
 import { Alert, Linking } from "react-native";
-import { de } from "react-native-paper-dates";
 import { useAuth } from "@/app/authentication";
-import { AxiosResponse } from "axios";
 import { userData } from "@/app/utils/loadData";
 
 const ProfileContext = createContext<ProfileContextType | undefined>(undefined);

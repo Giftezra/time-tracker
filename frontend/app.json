@@ -20,6 +20,7 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
+      "googleServicesFile": "./google-services.json",
       "package": "com.time_tracker"
     },
     "web": {
@@ -28,16 +29,26 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
+      ["expo-router"],
       [
-        "expo-router"
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#ffffff",
+          "sounds": ["./assets/notification-sound.wav"]
+        }
       ],
       [
-        "expo-notifications"
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location."
+        }
       ],
       [
         "@stripe/stripe-react-native",
         {
           "enableGooglePay": true,
+          "enableApplePay": true,
           "merchantIdentifier": "merchant.com.time-tracker",
           "publishableKey": "pk_test_51NK8SeKs3nf7cE2WBk18TrdJPOLqvJzYyxmlHFFmGNUmk78TsVVimg3YnGSVLkMhYoQWr1yBR21cbdoKfrb8zmmP00QauAcvF1"
         }
@@ -48,7 +59,7 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff"
+          "backgroundColor": "#000000"
         }
       ]
     ],

@@ -15,18 +15,18 @@ import {
 import { Alert, Linking } from "react-native";
 import { userData } from "@/app/utils/loadData";
 import { useAuth } from "@/app/authentication";
+import { useLocation } from "../management/LocationProvider";
 
 const SideComponentContext = createContext<
   SideComponentContextType | undefined
 >(undefined);
 
 const SideComponentProvider = ({ children }: { children: ReactNode }) => {
+  const { locationCoordinates } = useLocation();
   const currentDate: CurrentDate = {
     month: new Date().toLocaleString("default", { month: "short" }),
     day: new Date().getDate().toString(),
   };
-
-  const user = userData();
   const { axiosInstance } = useAuth();
 
   const events: LiveEventInterface = {
@@ -45,6 +45,26 @@ const SideComponentProvider = ({ children }: { children: ReactNode }) => {
   const [daysShift, setDaysShift] = useState<LiveEventInterface[]>([]);
   const [event, setEvent] = useState<LiveEventInterface>(events);
   const [currentShiftIndex, setCurrentShiftIndex] = useState<number>(0);
+
+  const calculateDistance = (
+    lat1: number,
+    lon1: number,
+    lat2: number,
+    lon2: number
+  ): number => {
+    const R = 6371e3; // Earth's radius in meters
+    const φ1 = (lat1 * Math.PI) / 180;
+    const φ2 = (lat2 * Math.PI) / 180;
+    const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+    const Δλ = ((lon2 - lon1) * Math.PI) / 180;
+
+    const a =
+      Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+      Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return R * c; // Distance in meters
+  };
 
   /**
    * Method is used to handle the users ability to move to the next shift if there is anyone available.
@@ -150,9 +170,43 @@ const SideComponentProvider = ({ children }: { children: ReactNode }) => {
    * @returns void
    */
   const handleStartShift = async (shiftId: string) => {
+    if (!locationCoordinates) {
+      Alert.alert(
+        "Location not found",
+        "Please enable location services to start the shift"
+      );
+      return;
+    }
+    // Get the latitude and longitude of the user and the current shift
+    // That is about to start. check the latitude and longitude of the shift is provided
+    // If it is, then check if the shift is within 100 meters of the user.
+    // If it is, then start the shift.
+    const lat = locationCoordinates.latitude;
+    const long = locationCoordinates.longitude;
+    const currentShift = daysShift.find((shift) => shift.shift_id === 
+    shiftId);
+
+    if (!currentShift?.latitude || !currentShift?.longitude) {
+      Alert.alert('Error', 'The shift is not available to start');
+      return;
+    }
+
+    const distance = calculateDistance(
+      lat,
+      long,
+      parseFloat(currentShift.latitude),
+      parseFloat(currentShift.longitude)
+    );
+
+    if (distance > 150) {
+      Alert.alert('Error', 'You are too far from the shift location. You need to be within 150 meters to start the shift');
+      return;
+    }
+
+
     try {
       const response = await axiosInstance.patch("/api/begin/shift/", {
-        shift_id: shiftId,
+        shift_id: event.shift_id,
       });
       if (response.data.message) {
         Alert.alert(response.data.message);
@@ -172,9 +226,12 @@ const SideComponentProvider = ({ children }: { children: ReactNode }) => {
    */
   const handleEndShift = async (shiftId: string) => {
     try {
-      const response = await axiosInstance.patch("/api/terminate/current/shift/", {
-        shift_id: shiftId,
-      });
+      const response = await axiosInstance.patch(
+        "/api/terminate/current/shift/",
+        {
+          shift_id: shiftId,
+        }
+      );
       if (response.data.message) {
         Alert.alert(response.data.message);
       } else {
@@ -183,7 +240,7 @@ const SideComponentProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       console.error("Error ending the shift", error);
     }
-  };  
+  };
 
   /**
    * This method is used to  handle the users ability to send call the phone number provided by the company.

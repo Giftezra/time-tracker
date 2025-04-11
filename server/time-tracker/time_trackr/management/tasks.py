@@ -11,7 +11,8 @@ from django.utils import timezone
 from .models import SubscriptionPlan, Company, EmployeeCountHistory, Overage, Billing
 from datetime import timedelta
 from dateutil.relativedelta import relativedelta
-
+from management.models import Shift
+from management.helpers import send_notification
 
 @shared_task
 def send_staff_onboard_email(company_name, first_name, email, temporary_password, role, recipient_email):
@@ -248,4 +249,64 @@ def generate_bills():
                 sub.start_date = sub.renewal_date
                 sub.renewal_date = sub.renewal_date + relativedelta(years=+1)
             sub.save()
-               
+
+@shared_task
+def send_shift_reminder_to_users():
+    """ This method will send a reminder to users that have shifts starting in the next 12 hours """
+    try:
+        # Get shifts starting in next 12 hours that are assigned
+        upcoming_shifts = Shift.objects.filter(
+            task__start_time__lte=timezone.now() + timedelta(hours=12),
+            task__start_time__gte=timezone.now(),
+            status='assigned'
+        )
+
+        for shift in upcoming_shifts:
+            staff_members = shift.staff.all()
+            for staff_member in staff_members:
+                # Send notification to each staff member
+                send_notification(
+                    staff_member.user.id,
+                    'Upcoming Shift Reminder',
+                    f'You have a shift starting at {shift.task.start_time.strftime("%I:%M %p")}',
+                    'shift_reminder'
+                )
+    except Exception as e:
+        print(f"Error sending shift reminders: {e}")
+        return False
+
+@shared_task 
+def check_late_shift_signins():
+    """ Check for shifts that should have started but staff haven't signed in """
+    try:
+        # Get shifts that should have started in last hour but still in assigned status
+        current_time = timezone.now()
+        late_shifts = Shift.objects.filter(
+            task__start_time__lte=current_time,
+            task__start_time__gte=current_time - timedelta(minutes=30),
+            status='assigned'
+        )
+
+        for shift in late_shifts:
+            staff_members = shift.staff.all()
+            for staff_member in staff_members:
+                # Send notification about missed shift start
+                send_notification(
+                    staff_member.user.id,
+                    'Missed Shift Start',
+                    f'Your shift was scheduled to start at {shift.task.start_time.strftime("%I:%M %p")}. Please sign in immediately.',
+                    'shift_late'
+                )
+
+            # Also notify shift creator/supervisor
+            if shift.created_by:
+                send_notification(
+                    shift.created_by.id,
+                    'Late Shift Sign-in',
+                    f'Staff have not signed in for shift scheduled at {shift.task.start_time.strftime("%I:%M %p")}',
+                    'shift_late_supervisor'
+                )
+
+    except Exception as e:
+        print(f"Error checking late shift sign-ins: {e}")
+        return False

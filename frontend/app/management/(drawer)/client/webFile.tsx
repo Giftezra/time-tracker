@@ -5,7 +5,7 @@ import {
   GestureHandlerRootView,
   ScrollView,
 } from "react-native-gesture-handler";
-import SearchInputContainer from "@/app/component/helper/searchInput";
+import SearchInputContainer from "@/app/component/helper/SearchInput";
 import { useClientContext } from "@/app/context/management/client/clientContext";
 import ClientDetailsComponent from "@/app/component/management/client/clients";
 import JobDetailsComponent from "@/app/component/management/client/jobDetails";

@@ -15,6 +15,8 @@ import { Platform } from "react-native";
 import Constants from "expo-constants";
 import { ExpoPushToken } from "expo-notifications";
 import Device from "expo-device";
+import { NotificationService } from "../../../services/Notification";
+import { useAuth } from "@/app/authentication";
 
 /**
  * Context for managing application-wide notifications
@@ -38,6 +40,7 @@ const NotificationContext = createContext<NotificationContextType | undefined>(
 const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
+  const { axiosInstance } = useAuth();
   const [expoPushToken, setExpoPushToken] = useState<ExpoPushToken | null>(
     null
   );
@@ -83,72 +86,100 @@ const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     },
   ]);
 
-  // useEffect(() => {
-  //   const initializeNotifications = async () => {
-  //     try {
-  //       // Check if running on a device
-  //       if (!Device.isDevice) {
-  //         setError("Must use physical device for Push Notifications");
-  //         return;
-  //       }
+  useEffect(() => {
+    const initializeNotifications = async () => {
+      console.log("[NotificationProvider] Starting initialization...");
 
-  //       // Request permission first
-  //       const { status: existingStatus } =
-  //         await Notifications.getPermissionsAsync();
-  //       let finalStatus = existingStatus;
+      try {
+        // Setup notifications and get token
+        await NotificationService.setupNotifications();
+        console.log(
+          "[NotificationProvider] Setup completed, status:",
+          NotificationService.notificationStatus
+        );
 
-  //       if (existingStatus !== "granted") {
-  //         const { status } = await Notifications.requestPermissionsAsync();
-  //         finalStatus = status;
-  //       }
+        if (NotificationService.notificationStatus === "granted") {
+          try {
+            // const token = await NotificationService.getExpoPushToken();
+            // console.log("[NotificationProvider] Received token:", token);
+            // setExpoPushToken(token);
+            // setTokenRegistered(true);
+          } catch (tokenError) {
+            console.error("[NotificationProvider] Token error:", tokenError);
+          }
+        } else {
+          console.log("[NotificationProvider] Notifications not granted");
+          setError("Notification permissions not granted");
+        }
 
-  //       if (finalStatus !== "granted") {
-  //         setError("Failed to get push token for push notification!");
-  //         return;
-  //       }
+        // Set up notification handlers
+        notificationListener.current =
+          NotificationService.addNotificationReceivedListener(
+            (notification) => {
+              console.log(
+                "[NotificationProvider] Received notification:",
+                notification
+              );
+              setNotification(notification);
+            }
+          );
 
-  //       // Get the token
-  //       const projectId = Constants.expoConfig?.extra?.eas?.projectId;
-  //       if (!projectId) {
-  //         setError("Project ID is not configured");
-  //         return;
-  //       }
+        responseListener.current =
+          NotificationService.addNotificationResponseReceivedListener(
+            (response) => {
+              console.log(
+                "[NotificationProvider] Notification response:",
+                response
+              );
+            }
+          );
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : "Unknown error occurred";
+        console.error(
+          "[NotificationProvider] Initialization error:",
+          errorMessage
+        );
+        setError(errorMessage);
+      }
+    };
 
-  //       const token = await Notifications.getExpoPushTokenAsync({
-  //         projectId: projectId,
-  //       });
+    initializeNotifications();
 
-  //       setExpoPushToken(token);
-  //       setTokenRegistered(true);
+    return () => {
+      console.log("[NotificationProvider] Cleaning up subscriptions");
+      NotificationService.removeSubscriptions();
+    };
+  }, []);
 
-  //       // Set up notification handlers
-  //       notificationListener.current =
-  //         Notifications.addNotificationReceivedListener((notification) => {
-  //           setNotification(notification);
-  //         });
+  /**
+   * Call the hook to send the token to the server for storage.
+   */
+  useEffect(() => {
+    if (expoPushToken) {
+      const sendTokenToServer = async () => {
+        try {
+          const response = await axiosInstance.post(
+            "/api/notifications/token/",
+            {
+              token: expoPushToken.data,
+            }
+          );
 
-  //       responseListener.current =
-  //         Notifications.addNotificationResponseReceivedListener((response) => {
-  //           console.log(response);
-  //         });
-  //     } catch (err) {
-  //       setError(err instanceof Error ? err.message : "Unknown error occurred");
-  //     }
-  //   };
+          if (response.status === 200) {
+            console.log("Token registered successfully");
+            setTokenRegistered(true);
+          }
+        } catch (error) {
+          console.error("Error sending token to server:", error);
+          setError("Failed to register notification token");
+          setTokenRegistered(false);
+        }
+      };
 
-  //   initializeNotifications();
-
-  //   return () => {
-  //     if (notificationListener.current) {
-  //       Notifications.removeNotificationSubscription(
-  //         notificationListener.current
-  //       );
-  //     }
-  //     if (responseListener.current) {
-  //       Notifications.removeNotificationSubscription(responseListener.current);
-  //     }
-  //   };
-  // }, []);
+      sendTokenToServer();
+    }
+  }, [expoPushToken]);
 
   /**
    * Marks a specific notification as read

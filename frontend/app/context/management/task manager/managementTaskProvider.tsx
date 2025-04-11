@@ -1,13 +1,11 @@
 import PopupButton from "@/app/component/helper/popupButton";
 import { EmployeeType } from "@/app/types/management/employee";
-import {
-  ActiveTaskContextType,
+import ActiveTaskContextType, {
   ActiveTaskType,
   ContractListType,
   CreateTaskInterface,
   OpenTaskProps,
 } from "@/app/types/management/task";
-import axios from "axios";
 import { router } from "expo-router";
 import {
   useContext,
@@ -67,8 +65,8 @@ const ManagementTaskProvider = ({
     ActiveTaskType | undefined
   >();
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isCreating, setIsCreating] = useState<boolean>(false);
 
-  const [modalVisible, setModalVisible] = useState(false);
   const [assignTaskModalVisible, setAssignTaskModalVisible] = useState(false);
 
   const [selectedTask, setSelectedTask] = useState<OpenTaskProps | null>(null);
@@ -300,7 +298,7 @@ const ManagementTaskProvider = ({
       if (!task) {
         throw new Error("Task is undefined");
       }
-      const response = await axiosInstance.post("/api/terminate/task/", {
+      const response = await axiosInstance.patch("/api/terminate/shift/", {
         shift_id: task.shift_id,
         employee_id: task.employee_id,
       });
@@ -308,14 +306,25 @@ const ManagementTaskProvider = ({
         status: response.status,
         data: response.data,
       });
-      return response.data;
+      Alert.alert("Task Terminated", "Task has been terminated", [
+        {
+          text: "OK",
+          onPress: () => {
+            setIsModalVisible(false);
+          },
+        },
+      ]);
+      const updatedActiveTasks = await getActiveTasks();
+      setActiveTasks(updatedActiveTasks);
     } catch (error: any) {
-      console.error("[terminate_task] Error:", {
-        status: error.response?.status,
-        message: error.message,
-        details: error.response?.data,
-      });
-      return error;
+      Alert.alert("Task Termination Error", "Task has not been terminated", [
+        {
+          text: "OK",
+          onPress: () => {
+            setIsModalVisible(false);
+          },
+        },
+      ]);
     }
   };
 
@@ -447,6 +456,7 @@ const ManagementTaskProvider = ({
    */
   const handleTaskCreation = async (taskData: CreateTaskInterface) => {
     try {
+      setIsCreating(true);
       if (!taskData) {
         throw new Error("Task data is undefined");
       }
@@ -479,7 +489,7 @@ const ManagementTaskProvider = ({
       });
 
       if (hasPastDate) {
-        Alert.alert("Task dates cannot be in the past");
+        Alert.alert("Invalid Dates", "Task dates cannot be in the past");
         return;
       }
 
@@ -500,39 +510,50 @@ const ManagementTaskProvider = ({
         taskData.end_time.hours * 60 + taskData.end_time.minutes;
 
       if (endMinutes <= startMinutes) {
-        Alert.alert("End time must be after start time");
+        Alert.alert("Invalid Times", "End time must be after start time");
         return;
       }
 
-      // Check if we have employee IDs
-      const hasEmployees =
-        taskData.employee_id && taskData.employee_id.length > 0;
+      // Format dates for API
+      const formattedDates = taskData.dates.map(
+        (date) => date.toISOString().split("T")[0]
+      );
+      const formattedData = {
+        ...taskData,
+        dates: formattedDates,
+        start_date: formattedDates[0], // Use first date as start date
+        end_date: formattedDates[formattedDates.length - 1], // Use last date as end date
+      };
 
-      // Call appropriate creation method
-      const response = hasEmployees
-        ? await create_shift(taskData)
-        : await create_task(taskData);
+      // Call appropriate creation method based on whether employees are selected
+      console.log("[handleTaskCreation] Formatted Data:", formattedData);
+      const response = await axiosInstance.post(
+        taskData.employee_id && taskData.employee_id.length > 0
+          ? "/api/create/shift/"
+          : "/api/create/task/",
+        { data: formattedData }
+      );
 
-      console.log("[handleTaskCreation] Success:", {
-        type: hasEmployees ? "shift" : "task",
-        response: response,
-      });
-
-      return response;
-    } catch (error: any) {
-      // Show error alert to user
       Alert.alert(
-        "Task Creation Error",
-        error.message || "An error occurred while creating the task",
+        "Success",
+        `${taskData.employee_id ? "Shift" : "Task"} created successfully`,
         [{ text: "OK" }]
       );
 
-      console.error("[handleTaskCreation] Error:", {
-        status: error.response?.status,
-        message: error.message,
-        details: error.response?.data,
-      });
+      // Refresh data after creation
+      const unassignedTasks = await getOpenTasks();
+      setUnassignedTask(unassignedTasks);
+
+      return response.data;
+    } catch (error: any) {
+      Alert.alert(
+        "Error",
+        error.response?.data?.error || "Failed to create task/shift",
+        [{ text: "OK" }]
+      );
       throw error;
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -563,7 +584,7 @@ const ManagementTaskProvider = ({
     dateVisible,
     startTimeVisible,
     endTimeVisible,
-    createShift: create_shift,
+    create_shift,
     create_task,
     startTime,
     endTime,

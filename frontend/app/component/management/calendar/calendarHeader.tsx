@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import React, { useState } from "react";
 import { AntDesign, MaterialCommunityIcons } from "@expo/vector-icons";
-import SearchInputContainer from "../../helper/searchInput";
+import SearchInputContainer from "../../helper/SearchInput";
 import { useCalendar } from "@/app/context/management/calendar/calendarContext";
 
 const CalendarHeader = () => {
@@ -96,18 +96,14 @@ const CalendarHeader = () => {
   };
 
   return (
-    <View
-      style={[
-        styles.mainContainer,
-        { padding: 5, justifyContent: "space-between" },
-      ]}
-    >
-      <View>
+    <View style={[styles.mainContainer, { padding: 5 }]}>
+      <View style={styles.searchContainer}>
         <SearchInputContainer
           onPress={() => console.log("search")}
           value={search}
           setValue={setSearch}
-          placeholder="Search"
+          placeholder="Search shifts..."
+          text="Search Shifts"
         />
       </View>
 
@@ -156,7 +152,7 @@ const CalendarHeader = () => {
             { justifyContent: "center", columnGap: 10 },
           ]}
         >
-          <Pressable style={{ padding: 10}}>
+          <Pressable style={{ padding: 10 }}>
             <AntDesign
               name="left"
               size={12}
@@ -174,7 +170,7 @@ const CalendarHeader = () => {
           >
             {weekRange}
           </Text>
-          <Pressable style={{ padding: 10,}}>
+          <Pressable style={{ padding: 10 }}>
             <AntDesign
               name="right"
               size={12}
@@ -477,7 +473,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: "BarlowLight",
     fontWeight: "400",
-
   },
   selectedText: {
     fontWeight: "800",
@@ -505,5 +500,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: "BarlowRegular",
     fontWeight: "500",
+  },
+  searchContainer: {
+    marginBottom: 10,
+    width: "100%",
   },
 });

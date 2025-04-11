@@ -13,24 +13,25 @@ import {
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import SearchInputContainer from "../../helper/searchInput";
 import { useManagementTask } from "@/app/context/management/task manager/managementTaskProvider";
 import ThemedHeaderText from "@/app/component/helper/ThemedHeaderText";
+import SearchInputContainer from "@/app/component/helper/SearchInput";
 const OpenTaskComponents = () => {
   // Get the methods from the context
-  const { unassignedTask, openAssignTaskModal, setEditTask, setIsEditTaskModalVisible } = useManagementTask();
+  const {
+    unassignedTask,
+    openAssignTaskModal,
+    setEditTask,
+    setIsEditTaskModalVisible,
+  } = useManagementTask();
 
-  const inactivebtn = useThemeColor({}, "inactivebtn");
   const innerBackground = useThemeColor({}, "innerBackground");
-  const text = useThemeColor({}, "text");
-  const textinput = useThemeColor({}, "textinput");
   const highlight = useThemeColor({}, "otherText");
-  const background = useThemeColor({}, "background");
 
   return (
     <View style={styles.maincontainer}>
       <View style={styles.header}>
-        <SearchInputContainer placeholder="Search by task ID or status" />
+        <SearchInputContainer placeholder="Search by task ID or status" text="Search"/>
       </View>
 
       <ScrollView

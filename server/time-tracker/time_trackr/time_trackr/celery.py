@@ -16,11 +16,19 @@ app.config_from_object('django.conf:settings', namespace='CELERY')
 app.conf.beat_schedule = {
     'generate_bills': {
         'task': 'management.tasks.generate_bills',
-        'schedule': crontab(hour=0, minute=0),
+        'schedule': crontab(hour=6, minute=0),
     },
     'calculate_overage': {
         'task': 'management.tasks.calculate_overage',
-        'schedule': crontab(hour=0, minute=0),
+        'schedule': crontab(hour=12, minute=0),
+    },
+    'send-shift-reminders': {
+        'task': 'management.tasks.send_shift_reminder_to_users',
+        'schedule': 3600.0,  # Run every hour
+    },
+    'check-late-signins': {
+        'task': 'management.tasks.check_late_shift_signins',
+        'schedule': 900.0,  # Run every 15 minutes
     },
 }
 

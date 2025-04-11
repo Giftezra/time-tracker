@@ -3,57 +3,47 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  Touchable,
   TouchableOpacity,
   View,
 } from "react-native";
-import React, { useState } from "react";
-import {
-  AntDesign,
-  MaterialCommunityIcons,
-  MaterialIcons,
-} from "@expo/vector-icons";
+import React from "react";
 import { useThemeColor } from "@/hooks/useThemeColor";
+import TextInputComponent from "./textInput";
 
 const SearchInputContainer = ({
   onPress,
   value,
   setValue,
   placeholder,
+  text,
 }: {
   onPress?: () => void;
   value?: string;
   setValue?: (value: string) => void;
   placeholder?: string;
+  text?: string;
 }) => {
-  const text = useThemeColor({}, "text");
-  const textinput = useThemeColor({}, "textinput");
   const inactivebtn = useThemeColor({}, "inactivebtn");
-  const highlight = useThemeColor({}, "highlight");
-  const secondaryColor = useThemeColor({}, "secondaryColor");
-
-  const [isFocused, setIsFocused] = useState(false);
 
   return (
-    <View style={[styles.maincontainr]}>
-      <View style={[styles.iconheader]}>
-        <Text style = {[styles.headerText, {color:'black'}]}>{isFocused && 'search'}</Text>
-      </View>
+    <View style={styles.maincontainr}>
       <View style={styles.inputContainer}>
+        <View style={styles.overlayTextContainer}>
+          <Text style={styles.overlayText}>{text}</Text>
+        </View>
         <TextInput
+          style={styles.textinput}
+          placeholder={placeholder}
           value={value}
           onChangeText={setValue}
-          placeholder={placeholder}
-          style={[styles.textinput, {backgroundColor:textinput}]}
-          onFocus={() => setIsFocused(true)}
         />
-
         <TouchableOpacity
           onPress={onPress}
           style={[styles.buttons, { backgroundColor: inactivebtn }]}
         >
-          <Text style={[styles.buttontext,{ color: 'text' }]}>Search</Text>
+          <Text style={styles.buttontext}>Search</Text>
         </TouchableOpacity>
+
       </View>
     </View>
   );
@@ -64,58 +54,50 @@ export default SearchInputContainer;
 const styles = StyleSheet.create({
   maincontainr: {
     width: "100%",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginVertical: 2,
+    marginVertical: 10,
     borderRadius: 5,
-    paddingTop: 10,
-  },
-
-  iconheader: {
-    position: "absolute",
-    top: 2,
-    left: 10,
-    zIndex: 100,
-    marginTop: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 2
-  },
-
-  headerText: {
-    fontSize: Platform.OS === "web" ? 10 : 12,
-    fontWeight: "700",
-    fontFamily: "BarlowLight",
-    textTransform: "capitalize",
   },
 
   inputContainer: {
-    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     borderWidth: 1,
+    borderRadius: 5,
+    borderColor: "#ddd",
   },
 
   textinput: {
-    flexGrow: 1,
-    padding: Platform.OS === "web" ? 5 : 10,
-    fontSize: Platform.OS === "web" ? 10 : 14,
-    textTransform: "lowercase",
+    flex: 1,
+    padding: Platform.OS === "web" ? 8 : 10,
+    fontSize: Platform.OS === "web" ? 12 : 14,
     fontFamily: "BarlowRegular",
     fontWeight: "500",
   },
 
   buttons: {
     alignItems: "center",
-    padding: Platform.OS === "web" ? 5 : 10,
+    padding: Platform.OS === "web" ? 8 : 10,
+    borderTopRightRadius: 5,
+    borderBottomRightRadius: 5,
   },
 
-  buttontext:{
-    fontSize: Platform.OS === "web" ? 10 : 14,
+  buttontext: {
+    fontSize: Platform.OS === "web" ? 12 : 14,
     textTransform: "capitalize",
     fontFamily: "BarlowRegular",
     fontWeight: "500",
-  }
+    color: "#fff",
+  },
+  overlayText:{
+    fontFamily: "BarlowRegular",
+    fontWeight: "500",
+    fontSize: 14,
+    letterSpacing: 0.5,
+  },
+  overlayTextContainer: {
+    position: "absolute",
+    left: 30,
+    top: -10,
+  },
 });

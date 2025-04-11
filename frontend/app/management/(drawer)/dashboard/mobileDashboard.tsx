@@ -41,6 +41,19 @@ const MobileDashboard = () => {
       },
     ];
 
+    const overageData = [
+      {
+        value: (taskStats.completed / total) * 100,
+        color: "#4CAF50",
+        gradientCenterColor: "#81C784",
+      },
+      {
+        value: (taskStats.ongoing / total) * 100,
+        color: "#2196F3",
+        gradientCenterColor: "#64B5F6",
+      },
+    ];
+
   const white = useThemeColor({}, "white");
   const [width, setWidth] = useState(0);
   const [isLeaveVisible, setIsLeaveVisible] = useState(false);
@@ -86,7 +99,12 @@ const MobileDashboard = () => {
         </View>
 
         <View style={styles.section}>
-          <TaskChartComponent width={width} title="Total Tasks" pieData={pieData} taskStats={taskStats} />
+          <TaskChartComponent
+            width={width}
+            title="Total Tasks"
+            pieData={pieData}
+            taskStats={taskStats}
+          />
         </View>
 
         <View style={styles.section}>
@@ -95,7 +113,17 @@ const MobileDashboard = () => {
         </View>
 
         <View style={styles.section}>
-          <TaskChartComponent width={width} title="Employee overage" pieData={pieData} />
+          {overageData.length > 0 ? (
+            <View>
+              <ThemedHeaderText text="Employee Overage" />
+              <TaskChartComponent width={width} pieData={pieData} />
+            </View>
+          ) : (
+            <View>
+              <ThemedHeaderText text="Employee Overage" />
+              <Text>No data available</Text>
+            </View>
+          )}
         </View>
       </ScrollView>
     </SafeAreaProvider>

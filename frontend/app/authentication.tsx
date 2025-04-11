@@ -20,14 +20,14 @@ import { router } from "expo-router";
 import axios, { AxiosError } from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+import AuthContextType from "@/app/types/management/onboarding";
 import {
   UserResponseType,
-  AuthContextType,
   OwnerOnboardingType,
 } from "@/app/types/management/onboarding";
 
 import { storeData, loadUserData } from "@/app/utils/loadData";
-import { BASE_URL } from "@/app/utils/urls";
+import BASE_URL from "@/app/utils/urls";
 
 /**
  * AuthContext provides authentication state and methods throughout the application.
@@ -40,7 +40,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
  * This instance is configured with interceptors for token management.
  */
 const axiosInstance = axios.create({
-  baseURL: BASE_URL,
+  baseURL: BASE_URL(),
   withCredentials: true,
 });
 
@@ -48,7 +48,7 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
-const PREFERRED_ROLE_KEY = 'preferred_role';
+const PREFERRED_ROLE_KEY = "preferred_role";
 
 /**
  * AuthProvider component manages authentication state and provides authentication-related
@@ -91,6 +91,18 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     email: "",
     password: "",
   });
+
+  // Address state
+  const [addresses, setAddresses] = useState<
+    Array<{
+      address1: string;
+      city: string;
+      postcode: string;
+    }>
+  >([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const[isAddressVisible, setIsAddressVisible] = useState<boolean>(false);
+  const[isAddressModalVisible, setIsAddressModalVisible] = useState<boolean>(false);
 
   // Responsive design state
   const [screenWidth, setScreenWidth] = useState(
@@ -240,9 +252,9 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             router.replace("/management/(drawer)/dashboard/main");
           } else if (storedUser.is_admin && storedUser.is_employee) {
             // Check for preferred role before showing bridge
-            if (preferredRole === 'admin') {
+            if (preferredRole === "admin") {
               router.replace("/management/(drawer)/dashboard/main");
-            } else if (preferredRole === 'staff') {
+            } else if (preferredRole === "staff") {
               router.replace("/staff/(drawer)/dashboard/main");
             } else {
               router.replace("/management/bridge");
@@ -265,8 +277,6 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     initializeAuth();
   }, []);
 
-  
-
   /**
    * Authenticates a user with their email and password.
    * On successful authentication:
@@ -281,7 +291,7 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     email = email.toLowerCase();
     const loginData = { email, password };
     try {
-      const response = await axios.post(`${BASE_URL}/api/token/`, loginData);
+      const response = await axios.post(`${BASE_URL()}/api/token/`, loginData);
 
       const data = response.data;
       if (!data) {
@@ -340,6 +350,9 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           case 401:
             setPasswordError(true);
             break;
+          case 404:
+            Alert.alert("Error", "User not found");
+            break;
           default:
             console.error("Error: ", error);
             Alert.alert("Error", "An unexpected error occurred");
@@ -395,7 +408,7 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
    */
   const onboardOwner = async (Data: OwnerOnboardingType) => {
     try {
-      const response = await axios.post(`${BASE_URL}/api/register/user/`, Data);
+      const response = await axios.post(`${BASE_URL()}/api/register/user/`, Data);
 
       console.log("User registered successfully");
       router.replace("/management/onboarding/login");
@@ -415,30 +428,67 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   /**
+   * Look up user address using the postcode provided by the user. 
+   * populate the address fields in the registration form.
+   */
+  const findAddresses = async (postcode: string) => {
+    setIsLoading(true);
+    try {
+      // Replace this with your actual API endpoint
+      const response = await axios.post(`${BASE_URL()}/api/lookup/address/`, {
+        postcode: postcode,
+      });
+      const data = response.data;
+      console.log('Addresses', data);
+      setAddresses(data);
+      setIsAddressModalVisible(true);
+    } catch (error) {
+      console.error("Error fetching addresses:", error);
+      // Handle error appropriately
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const selectAddress = (address: {
+    address1: string;
+    city: string;
+    postcode: string;
+  }) => {
+    handleUserInput("address1", address.address1);
+    handleUserInput("city", address.city);
+    handleUserInput("postcode", address.postcode);
+    setIsAddressModalVisible(false);
+  };
+
+  /**
    * Signs out the current user:
    * - Clears authentication state
    * - Removes stored tokens
    * - Redirects to login page
    */
   const signOut = async () => {
-    // Remove the authorization header
     delete axiosInstance.defaults.headers.common["Authorization"];
-
     setToken(null);
     setRefreshToken(null);
     setIsAuthenticated(false);
     setRole(null);
     setUser(null);
     // Clear all stored auth data
-    await AsyncStorage.multiRemove(["token", "refresh", "user", PREFERRED_ROLE_KEY]);
+    await AsyncStorage.multiRemove([
+      "token",
+      "refresh",
+      "user",
+      PREFERRED_ROLE_KEY,
+    ]);
     router.replace("/management/onboarding/login");
   };
 
   // Add function to set preferred role
-  const setPreferredRole = async (role: 'admin' | 'staff') => {
+  const setPreferredRole = async (role: "admin" | "staff") => {
     try {
       await AsyncStorage.setItem(PREFERRED_ROLE_KEY, role);
-      if (role === 'admin') {
+      if (role === "admin") {
         router.replace("/management/(drawer)/dashboard/main");
       } else {
         router.replace("/staff/(drawer)/dashboard/main");
@@ -448,7 +498,7 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const value = {
+  const value: AuthContextType = {
     token,
     refreshToken,
     isAuthenticated,
@@ -471,6 +521,12 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     windowWidth,
     axiosInstance,
     setPreferredRole,
+    findAddresses,
+    selectAddress,
+    addresses,
+    isLoading,
+    isAddressVisible,
+    isAddressModalVisible,
   };
 
   return (

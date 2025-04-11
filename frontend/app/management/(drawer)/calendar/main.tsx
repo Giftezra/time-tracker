@@ -11,7 +11,7 @@ import {
 import React, { useState } from "react";
 import TextInputComponent from "@/app/component/helper/textInput";
 import ButtonComponent from "@/app/component/helper/buttons";
-import SearchInputContainer from "@/app/component/helper/searchInput";
+import SearchInputContainer from "@/app/component/helper/SearchInput";
 import WeeklyShiftCalendar from "@/app/component/management/calendar/calendarHeader";
 import CalendarHeader from "@/app/component/management/calendar/calendarHeader";
 import CalendarContextProvider, {
@@ -99,7 +99,7 @@ const MainManagementCalendarComponent = () => {
           </Modal>
         </GestureHandlerRootView>
       </KeyboardAvoidingView>
-    </SafeAreaProvider>   
+    </SafeAreaProvider>
   );
 };
 

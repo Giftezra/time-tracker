@@ -30,7 +30,7 @@ interface Response {
   message: string;
 }
 
-export interface TaskProviderInterface {
+export default interface TaskProviderInterface {
   isModalVisible: boolean;
   handleTaskDetails: (id: string) => Promise<void>;
   handleModalDisplay: () => void;

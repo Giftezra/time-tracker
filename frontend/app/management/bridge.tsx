@@ -1,26 +1,28 @@
 import React from "react";
 import { View, StyleSheet, TouchableOpacity, Text } from "react-native";
 import { router } from "expo-router";
-import ButtonText from "../component/helper/ButtonText";
-import {
-  GestureHandlerRootView,
-} from "react-native-gesture-handler";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { useAuth } from "@/app/authentication";
 
 export default function BridgeScreen() {
+  const { setPreferredRole } = useAuth();
+
+  const handleAdminPress = () => {
+    setPreferredRole("admin");
+  };
+
+  const handleStaffPress = () => {
+    setPreferredRole("staff");
+  };
+
   return (
     <GestureHandlerRootView style={styles.container}>
       <View style={styles.content}>
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => router.replace("/management/(drawer)/dashboard/main")}
-        >
+        <TouchableOpacity style={styles.button} onPress={handleAdminPress}>
           <Text style={styles.buttonText}>Enter as Admin</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => router.replace("/staff/(drawer)/dashboard/main")}
-        >
+        <TouchableOpacity style={styles.button} onPress={handleStaffPress}>
           <Text style={styles.buttonText}>Enter as Staff</Text>
         </TouchableOpacity>
       </View>

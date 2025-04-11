@@ -245,7 +245,7 @@ const CreateTaskComponent = () => {
             onPress={() => handleToggleSites("employees")}
             style={styles.button}
           >
-            <Text style={[styles.buttonText]}>
+            <Text style={[styles.buttonText, {color:text}]}>
               {selectedEmployees.length > 0
                 ? `Selected Employees (${selectedEmployees.length})`
                 : "Select Employees"}
@@ -469,61 +469,73 @@ const styles = StyleSheet.create({
     flexDirection: "column",
     width: "100%",
     flex: 1,
+    padding: 5,
   },
 
   container: {
     flexDirection: "column",
     width: "100%",
-    borderWidth: 0.1,
-    marginBottom: 10,
-    elevation: 10,
-    shadowRadius: 10,
-    borderRadius: 5,
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.1)",
+    marginBottom: 16,
+    borderRadius: 8,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
 
   headerText: {
-    fontSize: Platform.OS === "web" ? 12 : 16,
-    fontWeight: "400",
+    fontSize: Platform.OS === "web" ? 14 : 18,
+    fontWeight: "600",
     fontFamily: "BarlowRegular",
     textTransform: "capitalize",
+    marginBottom: 8,
   },
 
   button: {
-    padding: Platform.OS === "web" ? 5 : 10,
+    padding: Platform.OS === "web" ? 12 : 16,
     alignItems: "center",
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(0,0,0,0.1)",
   },
 
   buttonText: {
-    fontSize: Platform.OS === "web" ? 12 : 15,
-    fontWeight: "400",
-    fontFamily: "BarlowRegular",
+    fontSize: Platform.OS === "web" ? 13 : 16,
+    fontWeight: "500",
+    fontFamily: "BarlowMedium",
     textTransform: "capitalize",
   },
 
   scrollviewContainer: {
     width: "100%",
-    maxHeight: 200,
-    marginVertical: 10,
+    maxHeight: 250,
+    marginVertical: 8,
+    paddingHorizontal: 12,
   },
 
   pressable: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: Platform.OS === "web" ? 5 : 10,
-    marginVertical: 2,
-    marginHorizontal: 3,
-    borderRadius: 10,
-    shadowRadius: 10,
-    elevation: 10,
-    shadowOpacity: 0.4,
+    padding: Platform.OS === "web" ? 12 : 16,
+    marginVertical: 6,
+    borderRadius: 12,
+    backgroundColor: "rgba(0,0,0,0.02)",
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.05)",
   },
 
   text: {
     fontFamily: "RobotoRegular",
-    fontSize: Platform.OS === "web" ? 10 : 15,
+    fontSize: Platform.OS === "web" ? 12 : 15,
     fontWeight: "500",
-    textTransform: "lowercase",
+    color: "#333",
+    marginBottom: 4,
   },
 
   input: {
@@ -542,15 +554,17 @@ const styles = StyleSheet.create({
   },
 
   contractTeXtContainer: {
-    marginHorizontal: 10,
-    marginVertical: 2,
+    flex: 1,
+    marginHorizontal: 12,
+    marginVertical: 4,
   },
 
   image: {
-    width: 20,
-    height: 20,
-    borderRadius: 30,
-    marginEnd: 10,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    marginEnd: 12,
+    backgroundColor: "rgba(0,0,0,0.05)",
   },
 
   selectedText: {
@@ -577,24 +591,24 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    gap: 10,
-    marginVertical: 10,
+    gap: 12,
+    marginVertical: 12,
   },
 
   dateTimeButton: {
     flex: 1,
-    padding: Platform.OS === "web" ? 12 : 15,
+    padding: Platform.OS === "web" ? 14 : 16,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 5,
+    borderRadius: 8,
     elevation: 2,
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
-      height: 1,
+      height: 2,
     },
-    shadowOpacity: 0.22,
-    shadowRadius: 2.22,
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
   },
 
   dateTimeButtonText: {
@@ -614,51 +628,73 @@ const styles = StyleSheet.create({
   },
 
   selectedDetailsContainer: {
-    padding: 10,
-    borderRadius: 5,
-    marginHorizontal: 5,
-    marginVertical: 5,
-    borderWidth: 0.5,
+    padding: 16,
+    borderRadius: 12,
+    marginHorizontal: 12,
+    marginVertical: 8,
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.1)",
+    backgroundColor: "rgba(0,0,0,0.02)",
   },
 
   detailText: {
     fontFamily: "BarlowRegular",
-    fontSize: Platform.OS === "web" ? 12 : 14,
-    marginVertical: 2,
+    fontSize: Platform.OS === "web" ? 13 : 15,
+    marginVertical: 4,
+    lineHeight: 22,
   },
 
   selectedTimeContainer: {
-    padding: 10,
-    marginVertical: 10,
-    borderRadius: 5,
-    borderWidth: 0.5,
+    padding: 16,
+    marginVertical: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.1)",
+    backgroundColor: "rgba(0,0,0,0.02)",
   },
 
   selectedEmployeesContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
-    padding: 5,
-    gap: 5,
-    marginHorizontal: 10,
+    padding: 12,
+    gap: 8,
+    backgroundColor: "rgba(0,0,0,0.02)",
+    borderRadius: 12,
+    marginHorizontal: 12,
+    marginVertical: 8,
   },
 
   selectedEmployeeChip: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 5,
-    borderRadius: 5,
-    marginRight: 5,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 20,
+    marginRight: 8,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
 
   chipText: {
-    fontSize: Platform.OS === "web" ? 10 : 14,
+    fontSize: Platform.OS === "web" ? 12 : 14,
     fontFamily: "BarlowRegular",
+    fontWeight: "500",
+    color: "#fff",
   },
 
   errorText: {
     fontFamily: "BarlowRegular",
-    fontSize: Platform.OS === "web" ? 12 : 14,
-    marginVertical: 10,
+    fontSize: Platform.OS === "web" ? 13 : 15,
+    marginVertical: 12,
     textAlign: "center",
+    padding: 8,
+    borderRadius: 4,
+    backgroundColor: "rgba(255,0,0,0.1)",
   },
 });

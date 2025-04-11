@@ -19,13 +19,19 @@ import { ScrollView, TextInput } from "react-native-gesture-handler";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { ActiveTaskType } from "@/app/types/management/task";
 import { useManagementTask } from "@/app/context/management/task manager/managementTaskProvider";
-import SearchInputContainer from "../../helper/searchInput";
+import SearchInputContainer from "@/app/component/helper/SearchInput";
 import { AntDesign, MaterialCommunityIcons } from "@expo/vector-icons";
-import SubtitleThemedText from "../../helper/SubtitleThemedText";
-
+import SubtitleThemedText from "@/app/component/helper/SubtitleThemedText";
+import ActiveTask from "@/app/component/helper/tasks/ActiveTask";
 /* Constant value for the sub headers representing each mapped item */
 const subHeaders = ["task serial", "employees", "contract", "start time"];
 
+/**
+ * Method is used to format the time string to a more readable format.
+ * The new date is used to ensure that the time is displayed in the local timezone.
+ * @param timeString - The time string to format.
+ * @returns The formatted time string.
+ */
 const formatTime = (timeString: string) => {
   try {
     // If timeString is already in HH:mm format, just parse it
@@ -55,51 +61,29 @@ const formatTime = (timeString: string) => {
     return timeString; // Return original string if any error occurs
   }
 };
-
+/* Import the useManagementTask context and destructure the necessary values */
 const ActiveTaskComponent = () => {
   const {
-    gotoMessageScreen,
     handleIsTaskClicked,
     isTaskClicked,
     isModalVisible,
     activeTaskClicked,
-    hideModal,
     render_popup_button: renderPopupButton,
-    isLoading,
     activeTasks,
-    terminateTask,
   } = useManagementTask();
 
-  const [search, setSearch] = useState<string>("");
   const [isPopupVisible, setIsPopupVisible] = useState(false);
-  const [isTerminating, setIsTerminating] = useState(false);
-  const [terminationError, setTerminationError] = useState<string>("");
 
   const inactivebtn = useThemeColor({}, "inactivebtn");
-  const icon = useThemeColor({}, "icon");
-  const textinput = useThemeColor({}, "textinput");
+  const text = useThemeColor({}, "text");
 
-  /**
-   * Method is used to handle the task termination process, and also handles any errors
-   * that may occur during the process.
-   */
-  const handleTaskTermination = async () => {
-    setIsTerminating(true);
-    try {
-      await terminateTask(activeTaskClicked);
-    } catch (error) {
-      console.log(error);
-      setTerminationError("An error occurred while terminating the task");
-    } finally {
-      setIsTerminating(false);
-    }
-  };
+
 
   return (
-    <View style={[styles.maincontainer, { backgroundColor: "white" }]}>
+    <View style={[styles.maincontainer, ]}>
       <Text style={[styles.headerText, { color: "black" }]}>active tasks</Text>
       {/* Handles the task filter view */}
-      <SearchInputContainer placeholder="staff name" />
+      <SearchInputContainer placeholder="Search by task ID or Staff name" text="Search Active Tasks" />
       {/* Display the subheaders */}
       <View style={styles.subheadercontainer}>
         {subHeaders.map((header, index) => (
@@ -124,25 +108,24 @@ const ActiveTaskComponent = () => {
               { backgroundColor: inactivebtn, shadowColor: inactivebtn },
             ]}
             onPress={() => handleIsTaskClicked(task)}
-            onLongPress={() => setIsPopupVisible(true)}
           >
             <Text
               style={[
                 styles.text,
-                { color: "black", textTransform: "uppercase" },
+                { color: text, textTransform: "uppercase" },
               ]}
             >
               {task.task_serial}
             </Text>
 
-            <Text style={[styles.text, { color: "black" }]}>
+            <Text style={[styles.text, { color: text }]}>
               {task.employee_name}
             </Text>
 
-            <Text style={[styles.text, { color: "black" }]}>
+            <Text style={[styles.text, { color: text }]}>
               {task.contract_name}
             </Text>
-            <Text style={[styles.text, { color: "black" }]}>
+            <Text style={[styles.text, { color: text }]}>
               {formatTime(task.start_time)}
             </Text>
             {isPopupVisible &&
@@ -158,66 +141,8 @@ const ActiveTaskComponent = () => {
           animationType="slide"
           transparent={true}
         >
-          <View style={styles.mainModalContainer}>
-            <Pressable
-              onPress={hideModal}
-              style={[styles.modalCloseButton, { backgroundColor: textinput }]}
-            >
-              <Text style={styles.modalCloseButtonText}>Close</Text>
-            </Pressable>
-            <View
-              style={[styles.modalContainer, { backgroundColor: textinput }]}
-            >
-              {/* Conditionally render the active task that was clicked, to display information to enable the user message the employee or call them. */}
-              {activeTaskClicked && (
-                <View style={styles.modalDetails}>
-                  {/* Display the shift detials and buttons to terminate the shift, send a message to the staff */}
-                  <View style={styles.modalInnerContainer}>
-                    <Text style={styles.modalText}>shift id</Text>
-                    <Text style={styles.modalText}>
-                      {activeTaskClicked.shift_id}
-                    </Text>
-                  </View>
-
-                  <View style={styles.modalInnerContainer}>
-                    <Text style={styles.modalText}>employee details</Text>
-                    <Text style={styles.modalText}>
-                      {activeTaskClicked.employee_name}
-                    </Text>
-                    <Text style={styles.modalText}>
-                      {activeTaskClicked.employee_id}
-                    </Text>
-                  </View>
-
-                  {/* Navigate to the message screen when clicked to send the staff member a message. */}
-                  <View>
-                    <TouchableOpacity
-                      style={styles.modalButton}
-                      onPress={() => gotoMessageScreen(activeTaskClicked)}
-                    >
-                      <Text style={styles.modalBtnText}>message</Text>
-                      <AntDesign name="message1" size={24} color={icon} />
-                    </TouchableOpacity>
-                  </View>
-
-                  {/* Terminate the task when clicked */}
-                  <View>
-                    <TouchableOpacity
-                      style={styles.modalButton}
-                      onPress={handleTaskTermination}
-                    >
-                      <Text style={styles.modalBtnText}>terminate shift</Text>
-                      <MaterialCommunityIcons
-                        name="cancel"
-                        size={24}
-                        color={icon}
-                      />
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              )}
-            </View>
-          </View>
+          <ActiveTask activeTaskClicked={activeTaskClicked as ActiveTaskType} />
+         
         </Modal>
       )}
     </View>
@@ -243,21 +168,22 @@ const styles = StyleSheet.create({
   scrollButton: {
     marginVertical: 2,
     borderRadius: 5,
-    padding: Platform.OS === "web" ? 5 : 12,
-    shadowRadius: 10,
-    elevation: 10,
+    padding: Platform.OS === "web" ? 5 : 10,
+    shadowRadius: 5,
+    elevation: 5,
     shadowOpacity: 0.5,
   },
 
   headerText: {
     fontSize: Platform.OS === "web" ? 14 : 16,
-    fontWeight: "bold",
+    fontWeight: "700",
     fontFamily: "BarlowRegular",
     textTransform: "capitalize",
     padding: 2,
-    marginVertical: 2,
+    marginVertical: 10,
     borderRadius: 20,
     textShadowRadius: 10,
+    letterSpacing: 0.4,
   },
 
   subHeadersText: {
@@ -277,16 +203,15 @@ const styles = StyleSheet.create({
   },
 
   text: {
-    fontFamily: "BarlowLight",
+    fontFamily: "BarlowMedium",
     fontSize: Platform.OS === "web" ? 10 : 15,
     fontWeight: "600",
     textTransform: "capitalize",
   },
 
   scrollview: {
-    padding: 5,
+    padding: 2,
     width: "100%",
-    flexGrow: 1,
   },
 
   activeTask: {
@@ -311,66 +236,4 @@ const styles = StyleSheet.create({
     borderRadius: 30,
   },
 
-  mainModalContainer: {
-    flex: 1,
-    justifyContent: "center",
-  },
-
-  modalCloseButton: {
-    alignSelf: "center",
-    padding: 10,
-    marginVertical: 10,
-    borderRadius: 20,
-    borderWidth: 1,
-  },
-
-  modalCloseButtonText: {
-    fontSize: 15,
-    fontFamily: "RobotoRegular",
-    fontWeight: "800",
-    textTransform: "uppercase",
-  },
-
-  modalContainer: {
-    maxWidth: Platform.OS === "web" ? "50%" : "100%",
-    padding: 5,
-    borderRadius: 5,
-    borderWidth: 0.5,
-    elevation: 5,
-    shadowRadius: 5,
-    opacity: 0.8,
-    shadowOpacity: 0.8,
-  },
-
-  modalDetails: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 5,
-    marginVertical: 2,
-  },
-
-  modalText: {
-    fontSize: Platform.OS === "web" ? 10 : 15,
-    fontFamily: "BarlowRegular",
-    fontWeight: "600",
-    textTransform: "capitalize",
-  },
-
-  modalButton: {
-    alignItems: "center",
-    padding: 5,
-    rowGap: 5,
-  },
-
-  modalBtnText: {
-    fontSize: Platform.OS === "web" ? 10 : 15,
-    fontFamily: "BarlowRegular",
-    fontWeight: "600",
-    textTransform: "capitalize",
-  },
-
-  modalInnerContainer: {
-    rowGap: 5,
-  },
 });

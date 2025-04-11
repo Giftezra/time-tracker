@@ -7,7 +7,7 @@ from django import forms
 # Register your models here.
 
 class UserAdmin(BaseUserAdmin):
-    list_display = ('email', 'first_name', 'last_name', 'is_employee', 'is_admin', 'is_owner', 'is_active')
+    list_display = ('email', 'first_name', 'last_name', 'is_employee', 'is_admin', 'is_owner')
     list_filter = ('is_employee', 'is_admin', 'is_owner', )
     search_fields = ('email', 'first_name', 'last_name')
     ordering = ('email',)
@@ -16,7 +16,7 @@ class UserAdmin(BaseUserAdmin):
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
         ('Personal Info', {'fields': ('first_name', 'last_name', 'phone', 'dob', 'address', 'city', 'postcode', 'country')}),
-        ('Permissions', {'fields': ('is_active', 'is_employee', 'is_admin', 'is_owner', 'is_superuser')}),
+        ('Permissions', {'fields': ('is_employee', 'is_admin', 'is_owner', 'is_superuser')}),
         ('Notifications', {'fields': ('allow_push_notification', 'allow_email_notification', 'allow_marketing_emails')}),
         ('Important Dates', {'fields': ('last_login', 'created_at')}),
     )
@@ -25,7 +25,7 @@ class UserAdmin(BaseUserAdmin):
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('email', 'password1', 'password2', 'first_name', 'last_name', 'is_employee', 'is_admin', 'is_owner', 'is_active'),
+            'fields': ('email', 'password1', 'password2', 'first_name', 'last_name', 'is_employee', 'is_admin', 'is_owner'),
         }),
     )
 

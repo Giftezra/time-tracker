@@ -1,19 +1,19 @@
 import { FlatList, StyleSheet, Text, View } from "react-native";
 import React from "react";
-import NotificationDetailsComponent from "@/app/component/staff/notification/notification";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import {
   GestureHandlerRootView,
   Pressable,
 } from "react-native-gesture-handler";
 import { useNotifications } from "@/app/context/management/notifications/notificationContext";
+import NotificationComponent from "../../../component/management/notifications/notification";
 /**
  * The main notification component enables the staff to view all of ther notifitcations in on place. When the use clicks the
  * @returns
  */
 
 const MainStaffNotificationComponent = () => {
-
+  const { notifications } = useNotifications();
   return (
     <SafeAreaProvider style={styles.container}>
       <GestureHandlerRootView style={{ flex: 1 }}>
@@ -36,12 +36,14 @@ const MainStaffNotificationComponent = () => {
           </Pressable>
         </View>
 
-        {/* <FlatList
-          data={[]}
-          renderItem={({ item }) => <NotificationDetailsComponent {} />}
+        <FlatList
+          data={notifications}
+          renderItem={({ item }) => (
+            <NotificationComponent notification={item} />
+          )}
           keyExtractor={(item) => item.id.toString()}
           contentContainerStyle={styles.listContainer}
-        /> */}
+        />
       </GestureHandlerRootView>
     </SafeAreaProvider>
   );

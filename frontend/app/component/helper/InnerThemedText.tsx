@@ -18,6 +18,6 @@ const styles = StyleSheet.create({
     fontFamily: "BarlowLight",
     textTransform: "capitalize",
     lineHeight: 18,
-    letterSpacing: 0.5,
+    letterSpacing: 0.2,
   },
 });

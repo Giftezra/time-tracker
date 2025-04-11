@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "107112532269",
+    "project_id": "time-tracker-22d9e",
+    "storage_bucket": "time-tracker-22d9e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:107112532269:android:6013809fe8e87fdd372ba4",
+        "android_client_info": {
+          "package_name": "com.time_tracker"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA_ZUEQunkVnQ1qrA8Kex9J0z7XkufZcFY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -31,7 +31,7 @@ import { useMessageContext } from "@/app/context/management/messages/messageCont
 import {
   Message,
   MesssageComponentInterface,
-} from "@/app/types/management/messgaes";
+} from "@/app/types/management/messages";
 import { user_image } from "@/app/utils/images";
 
 /**
@@ -92,8 +92,6 @@ const MessageComponent: React.FC<MesssageComponentInterface> = (props) => {
     messages,
     isSentByMe,
     sendMessage,
-    connectWebSocket,
-    disconnectWebSocket,
   } = useMessageContext();
 
   const secondaryColor = useThemeColor({}, "secondaryColor");
@@ -102,17 +100,12 @@ const MessageComponent: React.FC<MesssageComponentInterface> = (props) => {
   const highlightColor = useThemeColor({}, "highlight");
   const textinput = useThemeColor({}, "textinput");
 
-  useEffect(() => {
-    // Connect to WebSocket when component mounts
-    if (props.conversation_id) {
-      connectWebSocket?.(props.conversation_id);
+  const handleSendMessage = async () => {
+    if (text.trim()) {
+      await sendMessage(props.conversation_id, text.trim());
+      setText(""); // Clear input after sending
     }
-
-    // Cleanup on unmount
-    return () => {
-      disconnectWebSocket?.();
-    };
-  }, [props.conversation_id]);
+  };
 
   return (
     <GestureHandlerRootView
@@ -156,10 +149,7 @@ const MessageComponent: React.FC<MesssageComponentInterface> = (props) => {
           multiline={true}
           numberOfLines={2}
         />
-        <Pressable
-          style={styles.sendButton}
-          onPress={() => sendMessage(props.conversation_id, text)}
-        >
+        <Pressable style={styles.sendButton} onPress={handleSendMessage}>
           <AntDesign name="arrowright" size={24} color={textcolor} />
         </Pressable>
       </View>
