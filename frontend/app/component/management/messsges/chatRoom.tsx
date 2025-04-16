@@ -25,6 +25,7 @@ import { AntDesign } from "@expo/vector-icons";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { user_image } from "@/app/utils/images";
 import { useMessageContext } from "@/app/context/management/messages/messageContext";
+import { FontAwesome } from "@expo/vector-icons";
 
 const ChatRoomComponent = ({
   onConversationSelect,
@@ -37,7 +38,8 @@ const ChatRoomComponent = ({
   ) => void;
   onHandleModalVisibility: (id: string | null) => void;
 }) => {
-  const { chatRooms, deleteConversation, connectWebSocket } = useMessageContext();
+  const { chatRooms, deleteConversation, connectWebSocket, setActiveChatRoom } =
+    useMessageContext();
   const secondaryColor = useThemeColor({}, "secondaryColor");
   const text = useThemeColor({}, "text");
   const textinput = useThemeColor({}, "textinput");
@@ -48,36 +50,55 @@ const ChatRoomComponent = ({
       deleteConversation();
     });
 
+  /* Return a message when there is no conversation   */
+  if (chatRooms.length === 0) {
+    return (
+      <View style={styles.noConversationContainer}>
+        <Text style={styles.noConversationText}>
+          Click on an employee to start data and start a conversation
+        </Text>
+        <FontAwesome name="commenting" size={50} color="gray" />
+      </View>
+    );
+  }
+
   return (
     /**
         Main container */
 
     <View style={[styles.maincontainer, { backgroundColor: secondaryColor }]}>
       {/* Renders all of the users conversations.
-          All components are wrapped in a scroll view to enable scrolling.
+          All components are wrapped in a scroll  view to enable scrolling.
           The swipeable component is used to delete a conversation when swiped left to present the delete icon
        */}
       <ScrollView
         style={styles.messageContainer}
         showsVerticalScrollIndicator={false}
       >
-        {chatRooms?.map((chat, index) => {
+        {chatRooms.map((chat, index) => {
           return (
             <GestureDetector key={index} gesture={swipeGesture}>
               <Pressable
                 style={[styles.messageRow, { backgroundColor: textinput }]}
                 onPress={() => {
-                  onConversationSelect(chat.id, chat.name, chat.time);
+                  onConversationSelect(chat.id, chat.name, chat.time || "");
                   onHandleModalVisibility(chat.id);
                   connectWebSocket(chat.userId);
+                  setActiveChatRoom({
+                    ...chat,
+                  });
                 }}
               >
                 <Image source={user_image} style={styles.image} />
                 <View style={styles.messageDetailsContainer}>
                   <Text style={styles.reciepientText}>{chat.name}</Text>
-                  <Text style={styles.text}>{chat.lastMessage}</Text>
+                  {chat.lastMessage && (
+                    <Text style={styles.text}>
+                      {chat.lastMessage.slice(0, 20)}
+                    </Text>
+                  )}
                 </View>
-                <Text style={styles.timeText}>{chat.time.split("T")[1].split(".")[0]}</Text>
+                <Text style={styles.timeText}>{chat.time?.split("T")[0]}</Text>
               </Pressable>
             </GestureDetector>
           );
@@ -148,5 +169,20 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#999999",
     marginLeft: 8,
+  },
+
+  noConversationContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 10,
+  },
+
+  noConversationText: {
+    fontSize: 16,
+    fontFamily: "RobotoRegular",
+    color: "#666666",
+    marginBottom: 10,
+    letterSpacing: 0.5,
   },
 });

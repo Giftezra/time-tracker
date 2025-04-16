@@ -6,7 +6,9 @@ import { Stack } from "expo-router";
 const StaffEventLayout = () => {
   return (
     <EventProvider>
-      <Stack screenOptions={{ headerShown: false }} />
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="StaffEvent" />
+      </Stack>
     </EventProvider>
   );
 };

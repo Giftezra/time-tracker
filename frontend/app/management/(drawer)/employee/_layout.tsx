@@ -6,7 +6,9 @@ import EmployeeProvider from "@/app/context/management/employee/employeeContext"
 const EmployeeLayout = () => {
   return (
     <EmployeeProvider>
-      <Stack screenOptions={{ headerShown: false }} />
+      <Stack screenOptions={{ headerShown: false }} >
+        <Stack.Screen name="ManagementEmployee" />
+      </Stack>
     </EmployeeProvider>
   );
 };

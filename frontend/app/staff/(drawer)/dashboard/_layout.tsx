@@ -7,7 +7,9 @@ import StaffDashboardProvider from "@/app/context/staff/dashboardProvider";
 const MainStaffDashboardLayout = () => {
     return (
       <StaffDashboardProvider>
-        <Stack screenOptions={{ headerShown: false }} />
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="StaffDashboard" />
+        </Stack>
       </StaffDashboardProvider>
     );
 };

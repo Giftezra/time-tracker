@@ -6,11 +6,7 @@ import React, {
   ReactNode,
   useEffect,
 } from "react";
-import {
-  ChatRoomInterface,
-  Message,
-  MessageContextType,
-} from "@/app/types/management/messages";
+import MessageContextType, { Message } from "@/app/types/management/messages";
 import { useAuth } from "@/app/authentication";
 import { ChatRoomType } from "@/app/types/management/messages";
 import { Pressable } from "react-native";
@@ -27,19 +23,14 @@ interface MessageProviderProps {
 }
 
 const MessageProvider: React.FC<MessageProviderProps> = ({ children }) => {
-  const { axiosInstance } = useAuth();
+  const { axiosInstance, token } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
-  const [chatDisplay, setChatDisplay] = useState<ChatRoomInterface>({
-    chatroomId: "",
-    reciepient: "",
-    time: "",
-  });
-
   const [isSentByMe, setIsSentByMe] = useState<boolean>(false);
-
   const [webSocket, setWebSocket] = useState<WebSocket | null>(null);
-
   const [chatRooms, setChatRooms] = useState<ChatRoomType[]>([]);
+  const [activeChatRoom, setActiveChatRoom] = useState<
+    ChatRoomType | undefined
+  >(undefined);
 
   /**
    * Call the server side code using the axios instance to fetch the chat rooms from the database.
@@ -69,14 +60,17 @@ const MessageProvider: React.FC<MessageProviderProps> = ({ children }) => {
    * @returns
    */
   const connectWebSocket = (userId: string) => {
-    console.log("userId", userId);
     const baseUrl = BASE_URL().replace(/\/$/, "");
-    const wsUrl = `${baseUrl}/ws/dm/${userId}/`;
+    const cleanUserId = userId.toString().trim();
+    const wsUrl = `${baseUrl}/ws/dm/${cleanUserId}/?token=${token}`;
     const ws = new WebSocket(wsUrl);
+    // Fetch the chat history when the WebSocket connection is opened
+    ws.onopen = async () => {
+      await fetchChatHistory(cleanUserId);
+    };
 
-    ws.onopen = () => {
-      console.log("WebSocket connected");
-      fetchChatHistory();
+    ws.onerror = (error) => {
+      console.error("WebSocket error:", error);
     };
 
     ws.onmessage = (event) => {
@@ -84,13 +78,13 @@ const MessageProvider: React.FC<MessageProviderProps> = ({ children }) => {
       setMessages((prev) => [
         ...prev,
         {
-          id: data.message_id,
+          id: data.message_id || `msg_${Date.now()}_${Math.random()}`,
           content: data.message,
           timestamp: data.timestamp,
-          is_read: false,
-          sender_id: data.sender_id,
+          is_read: true,
         },
       ]);
+      setIsSentByMe(false);
     };
 
     ws.onclose = () => {
@@ -100,9 +94,19 @@ const MessageProvider: React.FC<MessageProviderProps> = ({ children }) => {
     setWebSocket(ws);
   };
 
-  const fetchChatHistory = async () => {
+  /**
+   * The method is used to fetch the chat history from the server.
+   * The chat history is fetched from the server and the response is stored in the messages state
+   * @param userId is the id of the user to fetch the chat history for
+   * @returns
+   */
+  const fetchChatHistory = async (userId: string) => {
     try {
-      const response = await axiosInstance.get(`/api/chat-history/`);
+      const response = await axiosInstance.get(`/api/chat-history/`, {
+        params: {
+          user_id: userId,
+        },
+      });
       if (response.data.chat_history) {
         setMessages(response.data.chat_history);
       }
@@ -118,14 +122,21 @@ const MessageProvider: React.FC<MessageProviderProps> = ({ children }) => {
     }
   };
 
+  /**
+   * The method is used to send a message to the server.
+   * After sending the message to the server, the message is added to the messages state
+   * which will be used to display the message in the message component
+   * @param recipientId is the id of the recipient
+   * @param content is the message content
+   * @returns
+   */
   const sendMessage = async (
-    chatRoomId: string,
+    recipientId: string,
     content: string
   ): Promise<Message> => {
     if (!webSocket) {
       throw new Error("WebSocket not connected");
     }
-
     webSocket.send(
       JSON.stringify({
         message: content,
@@ -136,31 +147,15 @@ const MessageProvider: React.FC<MessageProviderProps> = ({ children }) => {
 
     // Create and return a new message object
     const newMessage: Message = {
-      id: Date.now().toString(), // Temporary ID until server responds
+      id: `msg_${Date.now()}_${Math.random()}`,
       content: content,
       timestamp: new Date().toISOString(),
-      is_read: true,
-      sender_id: "current_user_id", // You might want to get this from your auth context
+      is_read: false,
     };
 
-    // Update messages state
     setMessages((prev) => [...prev, newMessage]);
 
     return newMessage;
-  };
-
-  /**
-   * Method is used to set the conversation id in the state,
-   * so that is can be used to display messages associated with the chatroom
-   * @param chatRoomId is the id of the chatroom
-   * @param reciepient is the name of the reciepient
-   */
-  const handleChatDisplay = (chatRoomId: string, reciepient: string) => {
-    setChatDisplay({
-      chatroomId: chatRoomId,
-      reciepient: reciepient,
-      time: "",
-    });
   };
 
   /**
@@ -201,21 +196,6 @@ const MessageProvider: React.FC<MessageProviderProps> = ({ children }) => {
     );
   };
 
-  /**
-   * The method is used to fetch the messages from the server
-   * @param conversationId
-   * @returns
-   */
-  const fetchMessages = async (conversationId: string) => {
-    try {
-      const response = await axiosInstance.get("/api/management/messages/");
-
-      setMessages(response.data);
-    } catch (error) {
-      console.error("Error fetching messages:", error);
-      throw error;
-    }
-  };
 
   /**
    * The method is used to update the message
@@ -259,12 +239,13 @@ const MessageProvider: React.FC<MessageProviderProps> = ({ children }) => {
     markAsRead,
     deleteMessage,
     sendMessage,
-    chatDisplay,
-    handleChatDisplay,
     isSentByMe,
     connectWebSocket,
     disconnectWebSocket,
     fetchChatRooms,
+    activeChatRoom,
+    setActiveChatRoom,
+    fetchChatHistory,
   };
 
   return (

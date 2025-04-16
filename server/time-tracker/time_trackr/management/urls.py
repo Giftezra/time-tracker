@@ -1,4 +1,4 @@
-from django.urls import path, include, re_path
+from django.urls import path
 from .view.account.authentication import register_owner, onboard_employee, lookup_address
 
 from .view.main.dashboard import update_company, delete_company, get_task_statistics, get_top_performers, get_today_events, get_contract_statistics,  get_employees_on_leave, get_today_events

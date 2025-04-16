@@ -6,7 +6,9 @@ import TimeSheetProvider from "@/app/context/staff/timeSheetProvider";
 const MainTimesheetLayout = () => {
   return (
     <TimeSheetProvider>
-      <Stack screenOptions={{ headerShown: false }} />
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="StaffTimesheet" />
+      </Stack>
     </TimeSheetProvider>
   );
 };

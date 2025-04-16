@@ -6,11 +6,11 @@ import MessageProvider from '@/app/context/management/messages/messageContext'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 const StaffMessagesLayout = () => {
   return (
-    <GestureHandlerRootView style={{flex: 1}}>
     <MessageProvider>  
-        <Stack screenOptions={{headerShown: false}}/>
+        <Stack screenOptions={{headerShown: false}}>
+          <Stack.Screen name="StaffMessages" />
+        </Stack>
     </MessageProvider>
-    </GestureHandlerRootView>
   )
 }
 

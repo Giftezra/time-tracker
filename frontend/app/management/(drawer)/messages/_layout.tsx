@@ -6,9 +6,11 @@ import { Stack } from 'expo-router'
 const MessagesLayout = () => {
   return (
     <MessageProvider>
-        <Stack screenOptions={{headerShown: false}}/>
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="ManagementMessages" />
+      </Stack>
     </MessageProvider>
-  )
+  );
 }
 
 export default MessagesLayout

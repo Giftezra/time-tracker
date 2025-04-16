@@ -9,7 +9,10 @@ export default function PaymentLayout() {
   return (
     <ExpoStripeProvider>
       <PaymentContext>
-        <Stack screenOptions={{ headerShown: false }} />
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="ManagementPayment" />
+          <Stack.Screen name="ExpoStripeProvider" />
+        </Stack>
       </PaymentContext>
     </ExpoStripeProvider>
   );

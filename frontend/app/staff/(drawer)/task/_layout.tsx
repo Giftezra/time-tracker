@@ -6,7 +6,9 @@ import StaffTaskProvider from "@/app/context/staff/staffTaskProvider";
 const StaffTaskManagerLayout = () => {
   return (
     <StaffTaskProvider>
-      <Stack screenOptions={{headerShown:false}}/>
+      <Stack screenOptions={{headerShown:false}}>
+        <Stack.Screen name="StaffTask" />
+      </Stack>
     </StaffTaskProvider>
   );
 };

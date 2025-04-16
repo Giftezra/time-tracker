@@ -21,9 +21,6 @@ import ButtonText from "../../helper/ButtonText";
 import InnerThemedText from "../../helper/InnerThemedText";
 const LeaderBoardComponent = () => {
   const { topPerformers, setIsModalVisible } = useDashboardContext();
-
-  const background = useThemeColor({}, "white");
-  const otherText = useThemeColor({}, "otherText");
   const innerBackground = useThemeColor({}, "innerBackground");
 
   const [topEmployeeData, setTopEmployeeData] = useState<LeaderBoardData[]>([]);

@@ -6,7 +6,9 @@ import ManagementTaskProvider from "@/app/context/management/task manager/manage
 const TaskManagementLayout = () => {
   return (
     <ManagementTaskProvider>
-      <Stack screenOptions={{ headerShown: false }} />
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="ManagementTask" />
+      </Stack>
     </ManagementTaskProvider>
   );
 };

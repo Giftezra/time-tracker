@@ -9,6 +9,10 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from django.db.models import Q
+from rest_framework_simplejwt.tokens import AccessToken
+from django.contrib.auth import get_user_model
+from urllib.parse import parse_qs
+from channels.db import database_sync_to_async
 
 class DirectMessageConsumer(AsyncWebsocketConsumer):
     """
@@ -16,20 +20,53 @@ class DirectMessageConsumer(AsyncWebsocketConsumer):
     Designed to work with React Native frontend.
     """
     
+    @database_sync_to_async
+    def get_user_from_token(self, token_key):
+        try:
+            # Verify and decode the token
+            access_token = AccessToken(token_key)
+            user_id = access_token.payload.get('user_id')
+            User = get_user_model()
+            return User.objects.get(id=user_id)
+        except Exception as e:
+            print(f"Token authentication error: {str(e)}")
+            return None
+
     async def connect(self):
         """
         Called when a client attempts to open a WebSocket connection.
         Sets up the direct message channel between two users.
         """
-        # Get the IDs of both participants
-        self.user1_id = self.scope["user"].id
-        self.user2_id = self.scope['url_route']['kwargs']['user_id']
+        # Get token from query string
+        query_string = parse_qs(self.scope['query_string'].decode())
+        token = query_string.get('token', [None])[0]
+
+        if not token:
+            print("No token provided")
+            await self.close()
+            return
+
+        # Authenticate user with token
+        user = await self.get_user_from_token(token)
+        if not user:
+            print("Invalid token or user not found")
+            await self.close()
+            return
+
+        # Set authenticated user in scope
+        self.scope['user'] = user
         
-        # Create a unique channel name for these two users (sorted to ensure consistency)
+        # Get the IDs of both participants
+        self.user1_id = user.id
+        self.user2_id = self.scope['url_route']['kwargs']['user_id']
+        print('Authenticated user:', self.user1_id)
+        print('Target user:', self.user2_id)
+        
+        # Create a unique channel name for these two users
         participant_ids = sorted([str(self.user1_id), str(self.user2_id)])
         self.room_group_name = f'dm_{"_".join(participant_ids)}'
 
-        # Add this connection to the direct message group
+        # Add this connection to the channel group
         await self.channel_layer.group_add(
             self.room_group_name,
             self.channel_name
@@ -103,9 +140,9 @@ class DirectMessageConsumer(AsyncWebsocketConsumer):
         sender = get_user_model().objects.get(id=sender_id)
         recipient = get_user_model().objects.get(id=recipient_id)
         
-        # Get or create a private chat room for these two users
-        participant_ids = sorted([sender_id, recipient_id])
-        room_name = f'dm_{"_".join(map(str, participant_ids))}'
+        # Convert IDs to strings before sorting
+        participant_ids = sorted([str(sender_id), str(recipient_id)])
+        room_name = f'dm_{"_".join(participant_ids)}'
         
         chat_room, _ = ChatRoom.objects.get_or_create(
             name=room_name,
@@ -129,16 +166,31 @@ def get_chat_history(request):
     Fetch chat history between the authenticated user and another user
     """
     try:
-        # You need the other user's ID from the request parameters
         other_user_id = request.GET.get('user_id')
-        print('other_user_id', other_user_id)
         if not other_user_id:
             return Response({'error': 'user_id is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Verify the other user exists
+        User = get_user_model()
+        try:
+            other_user = User.objects.get(id=other_user_id)
+        except User.DoesNotExist:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+
         # Get the chat room name
         participant_ids = sorted([str(request.user.id), str(other_user_id)])
         room_name = f'dm_{"_".join(participant_ids)}'
     
-        chat_room = get_object_or_404(ChatRoom, name=room_name)
+        # Get or create the chat room
+        chat_room, created = ChatRoom.objects.get_or_create(
+            name=room_name,
+            defaults={'is_private': True}
+        )
+        
+        if created:
+            chat_room.participants.add(request.user, other_user)
+            return Response({'chat_history': []}, status=status.HTTP_200_OK)
+
         messages = Message.objects.filter(room=chat_room).order_by('timestamp')
 
         chat_history = [{
@@ -148,10 +200,15 @@ def get_chat_history(request):
             'sender_id': str(msg.sender.id),
             'is_read': msg.is_read
         } for msg in messages]
-        print('chat_history', chat_history)
+
         return Response({'chat_history': chat_history}, status=status.HTTP_200_OK)
+
     except Exception as e:
-        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        print(f"Error in get_chat_history: {str(e)}")  # Add better logging
+        return Response(
+            {'error': 'An error occurred while fetching chat history'}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -175,7 +232,7 @@ def get_chat_rooms(request):
             
             chat_rooms_data.append({
                 'id': str(room.id),
-                'name': other_participant.get_full_name() or other_participant.username,
+                'name': other_participant.get_full_name(),
                 'lastMessage': last_message.content if last_message else "",
                 'time': last_message.timestamp.isoformat() if last_message else "",
                 'userId': str(other_participant.id)
@@ -183,3 +240,9 @@ def get_chat_rooms(request):
         return Response({'chat_rooms': chat_rooms_data}, status=status.HTTP_200_OK)
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_messages(request):
+    pass

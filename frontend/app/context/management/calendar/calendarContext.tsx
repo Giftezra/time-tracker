@@ -3,7 +3,6 @@ import {
   CalendarShiftType,
 } from "@/app/types/management/calendars";
 import { EmployeeType } from "@/app/types/management/employee";
-import { BASE_URL } from "@/app/utils/urls";
 import dayjs from "dayjs";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
@@ -152,9 +151,12 @@ const CalendarContextProvider: React.FC<{ children: ReactNode }> = ({
       });
       if (response.status === 200) {
         Alert.alert("Shift cancellation status", response.data.message);
-        await getAllShifts();
+        const shifts = await getAllShifts();
+        setShifts(shifts)
+        setShifts(shifts);
         setShowEditShiftModal(false);
       }
+
     } catch (error) {
       console.error("Error cancelling shift:", error);
       throw error;

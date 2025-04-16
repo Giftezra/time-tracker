@@ -131,7 +131,7 @@ export default function MainManagementLayout() {
             }}
           />
         ) : (
-          <Stack>
+          <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="calendar" options={{ headerShown: false }} />
             <Stack.Screen name="clients" options={{ headerShown: false }} />
             <Stack.Screen name="dashboard" options={{ headerShown: false }} />

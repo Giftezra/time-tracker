@@ -6,7 +6,9 @@ import NotificationProvider from "@/app/context/management/notifications/notific
 const MainStaffNotificationLayout = () => {
   return (
     <NotificationProvider>
-      <Stack screenOptions={{ headerShown: false }} />
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="StaffNotification" />
+      </Stack>
     </NotificationProvider>
   );
 };

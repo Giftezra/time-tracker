@@ -317,6 +317,9 @@ def cancel_shift(request):
                 {'message': f'Cannot remove employee - shift is {shift.status}'}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
+        # Check if the shift is already started
+        if shift.status == 'started':
+            return Response({'message': 'Shift is already started'}, status=status.HTTP_400_BAD_REQUEST)
 
         # Remove the employee from the shift
         shift.staff.remove(employee)

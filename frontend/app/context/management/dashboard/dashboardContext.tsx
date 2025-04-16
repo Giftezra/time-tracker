@@ -133,7 +133,7 @@ const DashboardProvider = ({ children }: { children: React.ReactNode }) => {
    * Uses current year if no year is provided
    * @param year - The year for which to fetch statistics (optional)
    * @returns Promise<BarData[]> - Transformed contract statistics data
-   */
+   */     
   const fetchContractStatistics = async (year?: number) => {
     setIsLoading(true);
     try {

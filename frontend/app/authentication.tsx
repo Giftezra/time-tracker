@@ -6,27 +6,17 @@ import {
   useState,
   useEffect,
 } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  Dimensions,
-  Platform,
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-} from "react-native";
+import { ActivityIndicator, Alert, Dimensions, Platform } from "react-native";
 import { router } from "expo-router";
 import axios, { AxiosError } from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
 import AuthContextType from "@/app/types/management/onboarding";
 import {
   UserResponseType,
   OwnerOnboardingType,
 } from "@/app/types/management/onboarding";
-
 import { storeData, loadUserData } from "@/app/utils/loadData";
+import Constants from "expo-constants";
 import BASE_URL from "@/app/utils/urls";
 
 /**
@@ -34,7 +24,12 @@ import BASE_URL from "@/app/utils/urls";
  * This context handles user authentication, token management, and user registration.
  */
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
+// const API_URL =
+//   Constants.expoConfig?.extra?.API_URL ||
+//   Constants.expoConfig?.plugins?.find(
+//     (plugin: any) => plugin[0] === "API_URL"
+//   )?.[1]?.API_URL ||
+//   "";
 /**
  * Axios instance for making authenticated HTTP requests.
  * This instance is configured with interceptors for token management.
@@ -101,8 +96,9 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }>
   >([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const[isAddressVisible, setIsAddressVisible] = useState<boolean>(false);
-  const[isAddressModalVisible, setIsAddressModalVisible] = useState<boolean>(false);
+  const [isAddressVisible, setIsAddressVisible] = useState<boolean>(false);
+  const [isAddressModalVisible, setIsAddressModalVisible] =
+    useState<boolean>(false);
 
   // Responsive design state
   const [screenWidth, setScreenWidth] = useState(
@@ -249,20 +245,26 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
           // Redirect based on user role and preferences
           if (storedUser.is_owner) {
-            router.replace("/management/(drawer)/dashboard/main");
+            router.replace(
+              "/management/(drawer)/dashboard/ManagementDashboard"
+            );
           } else if (storedUser.is_admin && storedUser.is_employee) {
             // Check for preferred role before showing bridge
             if (preferredRole === "admin") {
-              router.replace("/management/(drawer)/dashboard/main");
+              router.replace(
+                "/management/(drawer)/dashboard/ManagementDashboard"
+              );
             } else if (preferredRole === "staff") {
-              router.replace("/staff/(drawer)/dashboard/main");
+              router.replace("/staff/(drawer)/dashboard/StaffDashboard");
             } else {
               router.replace("/management/bridge");
             }
           } else if (storedUser.is_employee) {
-            router.replace("/staff/(drawer)/dashboard/main");
+            router.replace("/staff/(drawer)/dashboard/StaffDashboard");
           } else if (storedUser.is_admin) {
-            router.replace("/management/(drawer)/dashboard/main");
+            router.replace(
+              "/management/(drawer)/dashboard/ManagementDashboard"
+            );
           } else if (storedUser.is_superuser) {
             Alert.alert("Error", "Superuser Not Allowed");
             await signOut();
@@ -327,16 +329,16 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       // Handle routing based on user role
       if (user.is_owner) {
-        router.replace("/management/(drawer)/dashboard/main");
+        router.replace("/management/(drawer)/dashboard/ManagementDashboard");
       } else if (user.is_admin && user.is_employee) {
         // Show bridge screen only when user has both admin and employee roles
         router.replace("/management/bridge");
       } else if (user.is_employee) {
         // Regular employee goes directly to staff dashboard
-        router.replace("/staff/(drawer)/dashboard/main");
+        router.replace("/staff/(drawer)/dashboard/StaffDashboard");
       } else if (user.is_admin) {
         // Admin-only goes directly to management dashboard
-        router.replace("/management/(drawer)/dashboard/main");
+        router.replace("/management/(drawer)/dashboard/ManagementDashboard");
       }
     } catch (error) {
       console.error("Login error:", error);
@@ -408,7 +410,10 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
    */
   const onboardOwner = async (Data: OwnerOnboardingType) => {
     try {
-      const response = await axios.post(`${BASE_URL()}/api/register/user/`, Data);
+      const response = await axios.post(
+        `${BASE_URL()}/api/register/user/`,
+        Data
+      );
 
       console.log("User registered successfully");
       router.replace("/management/onboarding/login");
@@ -428,7 +433,7 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   /**
-   * Look up user address using the postcode provided by the user. 
+   * Look up user address using the postcode provided by the user.
    * populate the address fields in the registration form.
    */
   const findAddresses = async (postcode: string) => {
@@ -439,7 +444,7 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         postcode: postcode,
       });
       const data = response.data;
-      console.log('Addresses', data);
+      console.log("Addresses", data);
       setAddresses(data);
       setIsAddressModalVisible(true);
     } catch (error) {
@@ -489,9 +494,9 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       await AsyncStorage.setItem(PREFERRED_ROLE_KEY, role);
       if (role === "admin") {
-        router.replace("/management/(drawer)/dashboard/main");
+        router.replace("/management/(drawer)/dashboard/ManagementDashboard");
       } else {
-        router.replace("/staff/(drawer)/dashboard/main");
+        router.replace("/staff/(drawer)/dashboard/StaffDashboard");
       }
     } catch (error) {
       console.error("Error saving preferred role:", error);

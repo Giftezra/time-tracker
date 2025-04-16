@@ -370,7 +370,7 @@ def get_top_performers(request):
         # and the number of task not cancelled  
         top_performers = shifts.values('staff').annotate(
             task_completed=Count('id')
-        ).order_by('-task_completed' )[:10]
+        ).order_by('-task_completed' )[:5]
 
         # Get the data for the top performers
         performers_data = []

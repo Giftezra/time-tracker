@@ -5,15 +5,18 @@ import { Stack } from "expo-router";
 import ProfileProvider from "@/app/context/management/profile/profileContext";
 import NotificationProvider from "@/app/context/management/notifications/notificationContext";
 import LocationProvider from "../context/management/LocationProvider";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 const MainStaffMainLayout = () => {
   return (
     <AuthProvider>
       <LocationProvider>
         <NotificationProvider>
           <ProfileProvider>
-            <Stack screenOptions={{ headerShown: false }}>
-              <Stack.Screen name="(drawer)" />
-            </Stack>
+            <GestureHandlerRootView style={{ flex: 1 }}>
+              <Stack screenOptions={{ headerShown: false }}>
+                <Stack.Screen name="(drawer)" />
+              </Stack>
+            </GestureHandlerRootView>
           </ProfileProvider>
         </NotificationProvider>
       </LocationProvider>

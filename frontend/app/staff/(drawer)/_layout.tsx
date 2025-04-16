@@ -1,7 +1,8 @@
 import { Pressable, SafeAreaView, StyleSheet, Text, View } from "react-native";
 import React from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import Drawer from "expo-router/drawer";
+import { Drawer } from "expo-router/drawer";
+import { Stack } from "expo-router";
 
 import StaffSideComponent from "@/app/component/staff/helper/sideComponent";
 import { useThemeColor } from "@/hooks/useThemeColor";
@@ -16,26 +17,33 @@ const MainStaffMainLayout = () => {
   return (
     <SideComponentProvider>
       <StaffTaskProvider>
-        <SafeAreaView style={[{ flex: 1, backgroundColor: backgroundColor }]}>
-          <GestureHandlerRootView style={{ flex: 1 }}>
-            <Drawer
-              drawerContent={() => <StaffSideComponent />}
-              screenOptions={{
-                headerShown: true,
-                title: "",
-                headerStyle: {
-                  backgroundColor: backgroundColor,
-                },
-                headerTintColor: tint,
-                drawerStyle: {
-                  width: "80%",
-                  borderTopEndRadius: 5,
-                  borderBottomEndRadius: 5,
-                },
-              }}
-            ></Drawer>
-          </GestureHandlerRootView>
-        </SafeAreaView>
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <Drawer
+            drawerContent={() => <StaffSideComponent />}
+            screenOptions={{
+              headerShown: true,
+              title: "",
+              headerStyle: {
+                backgroundColor: backgroundColor,
+              },
+              headerTintColor: tint,
+              drawerStyle: {
+                width: "80%",
+                borderTopEndRadius: 5,
+                borderBottomEndRadius: 5,
+              },
+            }}
+          />
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="avaliability" />
+            <Stack.Screen name="dashboard" />
+            <Stack.Screen name="events" />
+            <Stack.Screen name="messages" />
+            <Stack.Screen name="notifications" />
+            <Stack.Screen name="task" />
+            <Stack.Screen name="timesheet" />
+          </Stack>
+        </GestureHandlerRootView>
       </StaffTaskProvider>
     </SideComponentProvider>
   );

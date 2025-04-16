@@ -6,7 +6,9 @@ import ProfileProvider from '@/app/context/management/profile/profileContext'
 const MainProfileLayout = () => {
   return (
     <ProfileProvider>
-      <Stack screenOptions={{ headerShown: false }} />
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="ManagementProfile" />
+      </Stack>
     </ProfileProvider>
   )
 }

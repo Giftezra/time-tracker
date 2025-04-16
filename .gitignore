@@ -11,3 +11,4 @@ server/time-tracker/env/
 
 # Ignore Redis database files
 *.rdb
+.env

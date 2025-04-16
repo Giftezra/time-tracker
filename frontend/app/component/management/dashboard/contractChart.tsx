@@ -10,12 +10,7 @@ import React, { useState, useEffect } from "react";
 import { BarChart } from "react-native-gifted-charts";
 
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { Colors } from "react-native/Libraries/NewAppScreen";
-import { transform } from "@babel/core";
-import { useThemeColor } from "@/hooks/useThemeColor";
-import { useAuth } from "@/app/authentication";
 import { useDashboardContext } from "@/app/context/management/dashboard/dashboardContext";
-import { BarDat, BarData } from "@/app/types/management/dashboard";
 import ThemedHeaderText from "../../helper/ThemedHeaderText";
 import InnerThemedText from "../../helper/InnerThemedText";
 const renderTitle = () => {
@@ -31,16 +26,7 @@ const renderTitle = () => {
             marginRight: 8,
           }}
         />
-        <Text
-          style={{
-            color: "black",
-            fontSize: 12,
-            fontFamily: "BarlowLight",
-            fontWeight: "400",
-          }}
-        >
-          Clients
-        </Text>
+        <InnerThemedText text="Clients" />
       </View>
       <View style={styles.renderContainer}>
         <View
@@ -59,13 +45,8 @@ const renderTitle = () => {
 };
 
 const ContractChartComponent = ({ width }: { width: number }) => {
-  const { windowWidth, screenWidth } = useAuth();
-  const highlight = useThemeColor({}, "highlight");
-  const {
-    contractStats,
-    setSelectedYear,
-    selectedYear,
-  } = useDashboardContext();
+  const { contractStats, setSelectedYear, selectedYear } =
+    useDashboardContext();
   const [showOverlay, setShowOverlay] = useState(false);
 
   const currentYear = new Date().getFullYear();
@@ -82,14 +63,6 @@ const ContractChartComponent = ({ width }: { width: number }) => {
       setShowOverlay(false);
     }
   };
-
-  // Calculate bar width based on screen size
-  const calcBarWidth = () => {
-    return windowWidth < screenWidth * 0.5
-      ? Math.max(5, width * 0.01, 10)
-      : Math.max(5, width * 0.01, 5);
-  };
-  const barWidth = calcBarWidth();
 
   // Transform the data for the BarChart component
   const transformedData: any = [];

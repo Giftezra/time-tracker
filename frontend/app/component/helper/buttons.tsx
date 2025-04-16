@@ -49,8 +49,6 @@ const styles = StyleSheet.create({
     padding: Platform.OS === "web" ? 5 : 10,
   },
 
-  
-
   buttonText: {
     fontSize: Platform.OS === "web" ? 12 : 14,
     fontFamily: "BarlowRegular",

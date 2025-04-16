@@ -18,8 +18,9 @@ import {
   TouchableOpacity,
   View,
   FlatList,
+  RefreshControl,
 } from "react-native";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { AntDesign, MaterialIcons } from "@expo/vector-icons";
 import {
   GestureHandlerRootView,
@@ -27,11 +28,9 @@ import {
 } from "react-native-gesture-handler";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useMessageContext } from "@/app/context/management/messages/messageContext";
+import { useAuth } from "@/app/authentication";
 
-import {
-  Message,
-  MesssageComponentInterface,
-} from "@/app/types/management/messages";
+import { Message, ChatRoomType } from "@/app/types/management/messages";
 import { user_image } from "@/app/utils/images";
 
 /**
@@ -42,23 +41,23 @@ import { user_image } from "@/app/utils/images";
  */
 const renderMessage = ({
   item,
-  isSentByMe,
+  sentByMe,
 }: {
   item: Message;
-  isSentByMe: boolean;
+  sentByMe: boolean;
 }) => {
   return (
     <Pressable style={styles.messageWrapper}>
       <View
         style={[
           styles.messageItem,
-          isSentByMe ? styles.sentMessage : styles.receivedMessage,
+          sentByMe ? styles.sentMessage : styles.receivedMessage,
         ]}
       >
         <Text
           style={[
             styles.messageText,
-            { color: isSentByMe ? "#FFFFFF" : "#000000" },
+            { color: sentByMe ? "#FFFFFF" : "#000000" },
           ]}
         >
           {item.content}
@@ -67,16 +66,16 @@ const renderMessage = ({
           <Text
             style={[
               styles.timestamp,
-              { color: isSentByMe ? "rgba(255,255,255,0.7)" : "#666666" },
+              { color: sentByMe ? "rgba(255,255,255,0.7)" : "#666666" },
             ]}
           >
-            {item.timestamp}
+            {item.timestamp.split("T")[1].slice(0, 5)}
           </Text>
           {item.is_read && (
             <MaterialIcons
               name="done-all"
               size={16}
-              color={isSentByMe ? "rgba(255,255,255,0.9)" : "#34B7F1"}
+              color={sentByMe ? "rgba(255,255,255,0.9)" : "#34B7F1"}
               style={{ marginLeft: 5 }}
             />
           )}
@@ -86,13 +85,16 @@ const renderMessage = ({
   );
 };
 
-const MessageComponent: React.FC<MesssageComponentInterface> = (props) => {
+const MessageComponent = ({
+  messgaeInterface,
+  closeModal,
+}: {
+  messgaeInterface: ChatRoomType;
+  closeModal: () => void;
+}) => {
   const [text, setText] = useState("");
-  const {
-    messages,
-    isSentByMe,
-    sendMessage,
-  } = useMessageContext();
+  const { messages, isSentByMe, sendMessage, fetchChatHistory } =
+    useMessageContext();
 
   const secondaryColor = useThemeColor({}, "secondaryColor");
   const innerBackgroundColor = useThemeColor({}, "innerBackground");
@@ -100,9 +102,18 @@ const MessageComponent: React.FC<MesssageComponentInterface> = (props) => {
   const highlightColor = useThemeColor({}, "highlight");
   const textinput = useThemeColor({}, "textinput");
 
+  const [refreshing, setRefreshing] = useState(false);
+  /* Trigger the refresh and get the chat history from the server given the user id */
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchChatHistory(messgaeInterface.userId);
+    setRefreshing(false);
+  }, [messgaeInterface.userId, fetchChatHistory]);
+
   const handleSendMessage = async () => {
     if (text.trim()) {
-      await sendMessage(props.conversation_id, text.trim());
+      // Use the userId from props when sending the message
+      await sendMessage(messgaeInterface.userId, text.trim());
       setText(""); // Clear input after sending
     }
   };
@@ -115,14 +126,14 @@ const MessageComponent: React.FC<MesssageComponentInterface> = (props) => {
       <View
         style={[styles.rowContainer, { backgroundColor: innerBackgroundColor }]}
       >
-        <Pressable style={styles.headerBackButton} onPress={props.closeModal}>
+        <TouchableOpacity style={styles.headerBackButton} onPress={closeModal}>
           <AntDesign name="arrowleft" size={24} color={textcolor} />
-        </Pressable>
+        </TouchableOpacity>
 
         <Image source={user_image} style={styles.image} />
         <View style={styles.reciepientandCallcontainer}>
           <Text style={[styles.reciepientText, { color: highlightColor }]}>
-            {props.reciepient}
+            {messgaeInterface.name}
           </Text>
         </View>
       </View>
@@ -130,10 +141,13 @@ const MessageComponent: React.FC<MesssageComponentInterface> = (props) => {
       {/* This view contains the messages sent betweeen the user and the reciepient */}
       <FlatList
         data={messages}
-        renderItem={({ item }) => renderMessage({ item, isSentByMe })}
-        keyExtractor={(item) => item.id?.toString() ?? ""}
+        renderItem={({ item }) => renderMessage({ item, sentByMe: isSentByMe })}
+        keyExtractor={(item, index) => item.id?.toString() ?? index.toString()}
         style={{ flex: 1 }}
         contentContainerStyle={{ padding: 10 }}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
       />
 
       {/* The view contains the message inputs to be sent */}
@@ -144,6 +158,7 @@ const MessageComponent: React.FC<MesssageComponentInterface> = (props) => {
           placeholder="Enter your message here....."
           value={text}
           onChangeText={setText}
+          onSubmitEditing={handleSendMessage}
           style={styles.messageInput}
           autoCorrect={true}
           multiline={true}
@@ -235,26 +250,37 @@ const styles = StyleSheet.create({
 
   messageWrapper: {
     flexDirection: "column",
-    marginVertical: 2,
+    marginVertical: 4,
     paddingHorizontal: 8,
   },
 
   messageItem: {
+    minWidth: "25%",
     maxWidth: "75%",
     padding: 12,
-    borderRadius: 18,
+    borderRadius: 20,
   },
 
   sentMessage: {
     alignSelf: "flex-end",
     backgroundColor: "#0084FF",
     borderBottomRightRadius: 4,
+    marginLeft: "auto",
   },
 
   receivedMessage: {
     alignSelf: "flex-start",
-    backgroundColor: "#F0F2F5",
+    backgroundColor: "#FFFFFF",
     borderBottomLeftRadius: 4,
+    marginRight: "auto",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 1,
+    elevation: 1,
   },
 
   messageText: {
@@ -267,6 +293,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "flex-end",
+    marginTop: 2,
   },
 
   timestamp: {
