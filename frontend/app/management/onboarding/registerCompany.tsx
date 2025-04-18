@@ -8,9 +8,8 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import RegistrationTextInputComponent from "@/app/component/helper/registrationTextinput";
-import { useAuth } from "@/app/authentication";
 import {
   GestureHandlerRootView,
   ScrollView,
@@ -22,16 +21,37 @@ import {
   bounceText,
   textbounce,
 } from "@/app/utils/animations/onboardingAnimation";
+import { useProfileContext } from "@/app/context/management/profile/profileContext";
 
-const RegisterCompanyComponent = () => {
-  const { ownerData, handleUserInput } = useAuth();
+const RegisterCompanyComponent = ({ onClose }: { onClose?: () => void }) => {
+  const {companyDetails, setCompanyDetails, createCompany} = useProfileContext();
+  const [error, setError] = useState<string[]>([]);
 
-  const backgroundColor = useThemeColor({}, "textinput");
+  const backgroundColor = useThemeColor({}, "background");
   const buttonColor = useThemeColor({}, "inactivebtn");
 
   useEffect(() => {
     bounceText();
   }, []);
+
+  const handleSubmit = async () => {
+    const newErrors: string[] = [];
+    if (!companyDetails?.company_name) newErrors.push("Company name is required");
+    if (!companyDetails?.company_email) newErrors.push("Company email is required");
+    if (!companyDetails?.company_helpline || !companyDetails?.company_helpline.includes('+')) newErrors.push("Company helpline is required with country code");
+    if (!companyDetails?.company_address) newErrors.push("Company address is required");
+    if (!companyDetails?.company_postcode) newErrors.push("Postcode is required");
+    if (!companyDetails?.company_city) newErrors.push("City is required");
+    if (!companyDetails?.company_country) newErrors.push("Country is required");
+    if (!companyDetails?.company_website || !companyDetails?.company_website.includes('https://')) newErrors.push("Company website is required with https://");
+    if (!companyDetails?.company_services) newErrors.push("Company services are required");
+
+    if (newErrors.length > 0) {
+      setError(newErrors);
+    } else {
+      createCompany(companyDetails);
+    }
+  };
 
   return (
     <SafeAreaProvider
@@ -40,201 +60,166 @@ const RegisterCompanyComponent = () => {
       <KeyboardAvoidingView style={{ flex: 1 }}>
         <GestureHandlerRootView style={{ flex: 1 }}>
           <ScrollView
-            style={{ flexGrow: 1, padding: 10 }}
+            style={{ flexGrow: 1 }}
+            contentContainerStyle={styles.scrollContainer}
             showsVerticalScrollIndicator={false}
           >
-            <View style={{ padding: 5, flexWrap: "wrap" }}>
-              <Text
-                style={{
-                  fontFamily: "RobotoRegular",
-                  fontSize: 15,
-                  fontWeight: "400",
-                  fontVariant: ["contextual"],
-                  padding: 1,
-                }}
-              >
-                thank you for choosing to manage your staffs on time trackr. for
-                the best expierience, simply add your organisations details
-                below or skip to register later.
+            <View style={styles.headerContainer}>
+              <Text style={styles.title}>Company Registration</Text>
+              <Text style={styles.subtitle}>
+                Complete your organization's profile to get started with Time
+                Trackr
               </Text>
-
-              <Text
-                style={{
-                  padding: 2,
-                  fontSize: 12,
-                  fontFamily: "RobotoLight",
-                  fontVariant: ["oldstyle-nums"],
-                  marginTop: 5,
-                }}
-              >
-                please note that all fields are required as this would help us
-                serve you better. enter n/a for fields that you do not have.
-              </Text>
-
-              <Text
-                style={{
-                  padding: 2,
-                  fontSize: 12,
-                  fontFamily: "RobotoLight",
-                  fontVariant: ["oldstyle-nums"],
-                  marginTop: 5,
-                }}
-              >
-                to complete this form in a later time, scroll down and click
-                continue later
+              <Text style={styles.description}>
+                All fields are required to ensure we can provide you with the
+                best service. Use 'N/A' for fields that don't apply to your
+                organization.
               </Text>
             </View>
 
-            <View style={styles.containers}>
-              <Text style={styles.headerText}>company name</Text>
-              <RegistrationTextInputComponent
-                placeholder="Vhotis.inc"
-                value={ownerData?.company_name}
-                setValue={(value) => handleUserInput("company_name", value)}
-                inputMode="text"
-              />
-            </View>
+            {/* Display the error messages */}
+            {error.map((err, index) => (
+              <Text key={index} style={styles.errorText}>{err}</Text>
+            ))}
 
-            <View style={styles.containers}>
-              <Text style={styles.headerText}>company reg no</Text>
-              <RegistrationTextInputComponent
-                placeholder="Rc123456"
-                value={ownerData?.company_registration_number}
-                setValue={(value) =>
-                  handleUserInput("company_registration_number", value)
-                }
-                inputMode="text"
-              />
-            </View>
-
-            <View style={styles.containers}>
-              <Text style={styles.headerText}>company email</Text>
-              <RegistrationTextInputComponent
-                placeholder="Email"
-                value={ownerData?.comapny_email}
-                setValue={(value) => handleUserInput("company_email", value)}
-                inputMode="text"
-              />
-            </View>
-
-            <View style={styles.containers}>
-              <Text style={styles.headerText}>company address</Text>
-              <RegistrationTextInputComponent
-                placeholder="Email"
-                value={ownerData?.company_address}
-                setValue={(value) => handleUserInput("company_address", value)}
-                inputMode="text"
-              />
-            </View>
-
-            <View style={{ padding: 5, justifyContent: "center" }}>
-              <Text
-                style={{
-                  fontFamily: "RobotoRegular",
-                  fontSize: 12,
-                  fontWeight: "300",
-                  textTransform: "lowercase",
-                  color: "gray",
-                  marginVertical: 5,
-                }}
-              >
-                enter your current office address or enter n/a if you currently
-                do not have an office space
-              </Text>
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
-                <View style={styles.containers}>
-                  <Text style={styles.headerText}>office address</Text>
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Company Information</Text>
+              <View style={styles.infoCard}>
+                <View style={styles.inputContainer}>
+                  <Text style={styles.labelText}>Company Name</Text>
                   <RegistrationTextInputComponent
-                    placeholder="21 vhotis street"
-                    value={ownerData?.company_address}
+                    placeholder="Enter company name"
+                    value={companyDetails?.company_name}
+                    setValue={(value) => setCompanyDetails({...companyDetails, company_name: value})}
+                    inputMode="text"
+                  />
+                </View>
+
+                <View style={styles.inputContainer}>
+                  <Text style={styles.labelText}>Registration Number</Text>
+                  <RegistrationTextInputComponent
+                    placeholder="e.g. RC123456"
+                    value={companyDetails?.company_registration_number}
                     setValue={(value) =>
-                      handleUserInput("company_address", value)
+                      setCompanyDetails({...companyDetails, company_registration_number: value})
                     }
                     inputMode="text"
                   />
                 </View>
-                <Pressable style={styles.findAddressBtn}>
-                  <Text style={styles.findAddressText}>find address</Text>
-                </Pressable>
               </View>
             </View>
 
-            <View style={styles.containers}>
-              <Text style={styles.headerText}>company helpline</Text>
-              <RegistrationTextInputComponent
-                placeholder="08012345678"
-                value={ownerData?.company_helpline}
-                setValue={(value) => handleUserInput("company_helpline", value)}
-                inputMode="text"
-              />
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Contact Details</Text>
+              <View style={styles.infoCard}>
+                <View style={styles.inputContainer}>
+                  <Text style={styles.labelText}>Company Email</Text>
+                  <RegistrationTextInputComponent
+                    placeholder="contact@company.com"
+                    value={companyDetails?.company_email}
+                    setValue={(value) => setCompanyDetails({...companyDetails, company_email: value})}
+                    inputMode="email"
+                  />
+                </View>
+
+                <View style={styles.inputContainer}>
+                  <Text style={styles.labelText}>Helpline</Text>
+                  <RegistrationTextInputComponent
+                    placeholder="Enter company helpline"
+                    value={companyDetails?.company_helpline}
+                    setValue={(value) =>
+                      setCompanyDetails({...companyDetails, company_helpline: value})
+                    }
+                    inputMode="tel"
+                  />
+                </View>
+              </View>
             </View>
 
-            <View style={styles.containers}>
-              <Text style={styles.headerText}>company website</Text>
-              <RegistrationTextInputComponent
-                placeholder="www.vhotis.com"
-                value={ownerData?.company_website}
-                setValue={(value) => handleUserInput("company_website", value)}
-                inputMode="text"
-              />
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Location</Text>
+              <View style={styles.infoCard}>
+                <View style={styles.inputContainer}>
+                  <Text style={styles.labelText}>Company Address</Text>
+                  <RegistrationTextInputComponent
+                    placeholder="Enter company address"
+                    value={companyDetails?.company_address}
+                    setValue={(value) => setCompanyDetails({...companyDetails, company_address: value})}
+                    inputMode="text"
+                  />
+                </View>
+
+                <View style={styles.inputContainer}>
+                  <Text style={styles.labelText}>Postcode</Text>
+                  <RegistrationTextInputComponent
+                    placeholder="Enter postcode"
+                    value={companyDetails?.company_postcode}
+                    setValue={(value) => setCompanyDetails({...companyDetails, company_postcode: value})}
+                    inputMode="text"
+                  />
+                </View>
+
+                <View style={styles.inputContainer}>
+                  <Text style={styles.labelText}>City</Text>
+                  <RegistrationTextInputComponent
+                    placeholder="Enter city"
+                    value={companyDetails?.company_city}
+                    setValue={(value) => setCompanyDetails({...companyDetails, company_city: value})}
+                    inputMode="text"
+                  />
+                </View>
+
+                <View style={styles.inputContainer}>
+                  <Text style={styles.labelText}>Country</Text>
+                  <RegistrationTextInputComponent
+                    placeholder="Enter country"
+                    value={companyDetails?.company_country}
+                    setValue={(value) => setCompanyDetails({...companyDetails, company_country: value})}
+                    inputMode="text"
+                  />
+                </View>
+              </View>
             </View>
 
-            <View style={styles.containers}>
-              <Text style={styles.headerText}>company services</Text>
-              <RegistrationTextInputComponent
-                placeholder="services"
-                value={ownerData?.company_services}
-                setValue={(value) => handleUserInput("company_services", value)}
-                inputMode="text"
-              />
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Additional Information</Text>
+              <View style={styles.infoCard}>
+                <View style={styles.inputContainer}>
+                  <Text style={styles.labelText}>Website</Text>
+                  <RegistrationTextInputComponent
+                    placeholder="www.company.com"
+                    value={companyDetails?.company_website}
+                    setValue={(value) => setCompanyDetails({...companyDetails, company_website: value})}
+                    inputMode="url"
+                  />
+                </View>
+
+                <View style={styles.inputContainer}>
+                  <Text style={styles.labelText}>Services</Text>
+                  <RegistrationTextInputComponent
+                    placeholder="Describe your company services"
+                    value={companyDetails?.company_services}
+                    setValue={(value) =>
+                      setCompanyDetails({...companyDetails, company_services: value})
+                    }
+                    inputMode="text"
+                  />
+                </View>
+              </View>
             </View>
 
-            {/* Use the expo router to replace the screen and route the user to the login page */}
-            <Pressable
-              onPress={() => router.replace("/management/onboarding/login")}
-              style={{
-                padding: 10,
-              }}
-            >
-              <Animated.Text
-                style={{
-                  fontFamily: "BarlowRegular",
-                  fontSize: 15,
-                  fontWeight: "400",
-                  textTransform: "lowercase",
-                  color: "blue",
-                }}
+            <View style={styles.buttonContainer}>
+              <TouchableOpacity
+                style={[styles.primaryButton, { backgroundColor: buttonColor }]}
+                onPress={handleSubmit}
               >
-                continue later
-              </Animated.Text>
-            </Pressable>
-
-            {/* Submit button saves the user details if provided. and routes the user to the login page*/}
-            <TouchableOpacity
-              style={[
-                styles.submitBtn,
-                { backgroundColor: buttonColor, shadowColor: backgroundColor },
-              ]}
-            >
-              <Animated.Text
-                style={[
-                  {
-                    transform: [{ translateY: textbounce }],
-                    ...styles.submitText,
-                    color: backgroundColor,
-                    shadowColor: buttonColor,
-                  },
-                ]}
-              >
-                submit
-              </Animated.Text>
-            </TouchableOpacity>
+                <Text
+                  style={[styles.primaryButtonText, { color: backgroundColor }]}
+                >
+                  Submit Registration
+                </Text>
+              </TouchableOpacity>
+            </View>
           </ScrollView>
         </GestureHandlerRootView>
       </KeyboardAvoidingView>
@@ -245,53 +230,110 @@ const RegisterCompanyComponent = () => {
 export default RegisterCompanyComponent;
 
 const styles = StyleSheet.create({
-  headerText: {
-    fontSize: 15,
-    fontFamily: "BarlowRegular",
-    fontWeight: "400",
-    fontVariant: ["contextual"],
-    padding: 1,
-    textShadowOffset: { width: 0.2, height: 0.1 },
-    textTransform: "capitalize",
-    marginBottom: 5,
+  scrollContainer: {
+    padding: 15,
   },
-
-  containers: {
+  headerContainer: {
+    marginBottom: 15,
+  },
+  title: {
+    fontSize: 24,
+    fontFamily: "BarlowMedium",
+    marginBottom: 10,
+  },
+  subtitle: {
+    fontSize: 16,
+    fontFamily: "RobotoRegular",
+    color: "#666",
+    marginBottom: 8,
+  },
+  description: {
+    fontSize: 14,
+    fontFamily: "RobotoLight",
+    color: "#888",
+  },
+  section: {
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: 12,
+    fontFamily: "BarlowRegular",
+    textTransform: "capitalize",
+    color: "#333",
+  },
+  infoCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    padding: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
+    gap: 16,
+  },
+  inputContainer: {
+    gap: 8,
+  },
+  labelText: {
+    fontSize: 14,
+    fontFamily: "RobotoRegular",
+    color: "#666",
+  },
+  addressContainer: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  addressInput: {
     flex: 1,
-    padding: 2,
-    marginVertical: 5,
   },
-
   findAddressBtn: {
-    padding: 10,
+    backgroundColor: "#f0f0f0",
+    padding: 12,
+    borderRadius: 6,
     justifyContent: "center",
     alignItems: "center",
+    alignSelf: "flex-end",
   },
-
   findAddressText: {
-    textTransform: "capitalize",
     fontFamily: "BarlowRegular",
-    fontSize: 15,
+    fontSize: 14,
+    color: "#666",
   },
-
-  submitBtn: {
-    padding: Platform.OS === "web" ? 10 : 15,
-    justifyContent: "center",
+  buttonContainer: {
+    marginTop: 32,
+    gap: 16,
+  },
+  primaryButton: {
+    padding: 16,
+    borderRadius: 8,
     alignItems: "center",
-    borderRadius: 5,
-    marginVertical: 10,
-    elevation: 10,
-    shadowRadius: 10,
-    shadowOpacity: 0.5,
+    justifyContent: "center",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
-
-  submitText: {
-    textTransform: "capitalize",
+  primaryButtonText: {
+    fontSize: 16,
+    fontFamily: "BarlowMedium",
+  },
+  secondaryButton: {
+    padding: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  secondaryButtonText: {
+    fontSize: 16,
     fontFamily: "BarlowRegular",
-    fontSize: 15,
-    fontWeight: 600,
-    elevation: 5,
-    shadowRadius: 5,
-    shadowOpacity: 0.8,
+    color: "#666",
+  },
+  errorText: {
+    fontSize: 14,
+    fontFamily: "RobotoRegular",
+    color: "#FF0000",
   },
 });

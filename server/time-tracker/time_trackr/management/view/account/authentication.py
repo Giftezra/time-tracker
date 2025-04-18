@@ -6,11 +6,10 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.throttling import AnonRateThrottle
 from django.core.cache import cache
+from django_ratelimit.decorators import ratelimit
 import requests
 from time import sleep
-
 from ..main.decorators import admin_required, owner_required
-
 from ...models import User, Identity
 from management.models import Company
 from staff.models import Staff
@@ -21,48 +20,59 @@ from ...tasks import send_staff_onboard_email, send_owner_onboarding_email
 Post request to the endpoint /api/v1/register/owner
 permissions: AllowAny
 """
+@ratelimit(key='ip', rate='10/h', block=True, method=['POST'])
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def register_owner(request):
-  # Check if the request data is empty
-  if not request.data:
-    return Response({'error': 'Please provide the user details'}, status=status.HTTP_400_BAD_REQUEST)
-  
-  # Create a new user with the request data
-  # Return a success message if the user is created successfully
-  try:
-    required_fields = ['first_name', 'last_name', 'email', 'phone', 'password', 'dob', 'address', 'city', 'postcode']
-    for field in required_fields:
-      if not request.data.get(field):
-        return Response({'error': f'{field} is required'}, status=status.HTTP_400_BAD_REQUEST)
-      
-    validated_data = {
-      'first_name': request.data.get('first_name'),
-      'last_name': request.data.get('last_name'),
-      'email': request.data.get('email'),
-      'phone': request.data.get('phone'),
-      'password': request.data.get('password'),
-      'dob': request.data.get('dob'),
-      'address': request.data.get('address'),
-      'city': request.data.get('city'),
-      'postcode': request.data.get('postcode')
-      
-    }
+    # Check if the request data is empty
+    if not request.data:
+        return Response({'error': 'Please provide the user details'}, status=status.HTTP_400_BAD_REQUEST)
     
-    # Create the user
-    user = User.objects.create_owner(**validated_data)
-    user.save()
-    
-    # Send a welcome email to the owner after user is created
-    send_owner_onboarding_email.delay(validated_data['email'])
+    try:
+        # Map frontend field names to backend field names
+        required_fields = ['first_name', 'last_name', 'email', 'phone', 'password', 'dob', 'address1', 'city', 'postcode']
+        
+        # Print missing fields for debugging
+        missing_fields = [field for field in required_fields if not request.data.get(field)]
+        if missing_fields:
+            return Response({'error': f'Missing required fields: {", ".join(missing_fields)}'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        validated_data = {
+            'first_name': request.data.get('first_name'),
+            'last_name': request.data.get('last_name'),
+            'email': request.data.get('email').lower(),  
+            'phone': request.data.get('phone'),
+            'password': request.data.get('password'),
+            'dob': request.data.get('dob'),
+            'address': request.data.get('address1'),  
+            'city': request.data.get('city'),
+            'postcode': request.data.get('postcode')
+        }
+        
+        # Create the user
+        user = User.objects.create_owner(
+            email=validated_data['email'],
+            password=validated_data['password'],
+            first_name=validated_data['first_name'],
+            last_name=validated_data['last_name'],
+            phone=validated_data['phone'],
+            dob=validated_data['dob'],
+            address=validated_data['address'],
+            city=validated_data['city'],
+            postcode=validated_data['postcode']
+        )
+        user.save()
+        
+        # Send a welcome email to the owner after user is created
+        send_owner_onboarding_email.delay(validated_data['email'])
 
-    return Response({'message': 'User created successfully'}, status=status.HTTP_201_CREATED)
-  except Exception as e:
-    print(f"Error: {e}")
-    return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'message': 'User created successfully'}, status=status.HTTP_201_CREATED)
+    except Exception as e:
+        print(f"Error: {e}")
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
   
   
-  
+@ratelimit(key='ip', rate='100/h', block=True, method=['POST'])
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 @admin_required

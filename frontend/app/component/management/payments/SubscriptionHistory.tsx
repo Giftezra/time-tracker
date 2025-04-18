@@ -35,7 +35,7 @@ const SubscriptionHistory = ({
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={[styles.planName, { color: primaryColor }]}>
-          {props.planName} Plan
+          {props.tier}
         </Text>
         <View
           style={[
@@ -45,17 +45,22 @@ const SubscriptionHistory = ({
         >
           <Text style={styles.statusText}>{props.status}</Text>
         </View>
+        <View style={styles.billingCycle}>
+          <Text style={styles.billingCycleText}>
+            {props.billing_cycle}
+          </Text>
+        </View>
       </View>
 
       <View style={styles.dateContainer}>
         <View style={styles.dateItem}>
           <Text style={styles.dateLabel}>Start Date</Text>
-          <Text style={styles.dateValue}>{formatDate(props.startDate)}</Text>
+          <Text style={styles.dateValue}>{formatDate(props.start_date)}</Text>
         </View>
         <Text style={styles.dateSeparator}>-</Text>
         <View style={styles.dateItem}>
           <Text style={styles.dateLabel}>End Date</Text>
-          <Text style={styles.dateValue}>{formatDate(props.endDate)}</Text>
+          <Text style={styles.dateValue}>{formatDate(props.renewal_date)}</Text>
         </View>
       </View>
     </View>
@@ -70,6 +75,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     marginVertical: 8,
+    borderWidth: 2,
+    borderColor: "#E5E7EB",
   },
   header: {
     flexDirection: "row",
@@ -80,6 +87,9 @@ const styles = StyleSheet.create({
   planName: {
     fontSize: 16,
     fontWeight: "600",
+    fontFamily: "BarlowMedium",
+    letterSpacing: 1,
+    textTransform: "capitalize",
   },
   statusBadge: {
     paddingHorizontal: 8,
@@ -113,5 +123,29 @@ const styles = StyleSheet.create({
   dateSeparator: {
     marginHorizontal: 12,
     color: "#6B7280",
+  },
+  billingCycle: {
+    position: "absolute",
+    right: 100,
+    top: -25,
+    fontSize: 12,
+    color: "#6B7280",
+    marginBottom: 4,
+    padding:2,
+    backgroundColor: "#E5E7EB",
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    minWidth: 100,
+    alignItems: "center",
+  },
+  billingCycleText: {
+    fontSize: 14,
+    color: "red",
+    marginBottom: 4,
+    fontFamily: "BarlowMedium",
+    fontWeight: "500",
+    textTransform: "capitalize",
+    letterSpacing: 1,
   },
 });

@@ -20,6 +20,7 @@ const MySubscriptionPlansComponent = () => {
     setOveragePlan,
     overagePlan,
     currentPlan,
+    fetchSubscriptionHistory,
   } = useCheckout();
 
   const calculateOveragePlanCost = () => {
@@ -35,30 +36,37 @@ const MySubscriptionPlansComponent = () => {
 
   const [subscriptionHistory, setSubscriptionHistory] = useState<
     SubscriptionHistoryInterface[]
-  >([
-    {
-      id: "1",
-      planName: "Pro",
-      startDate: "2025-04-30",
-      endDate: "2025-05-30",
-      status: "overdue",
-    },
-    {
-      id: "2",
-      planName: "Pro",
-      startDate: "2025-04-30",
-      endDate: "2025-05-30",
-      status: "active",
-    },
-  ]);
+  >([]);
 
   const [payOverage, setPayOverage] = useState(false);
   const [showSubscriptionHistory, setShowSubscriptionHistory] = useState(false);
   const [showCards, setShowCards] = useState(false);
+  const [isSubscriptionHistoryLoading, setIsSubscriptionHistoryLoading] =
+    useState(false);
 
   const warningColor = useThemeColor({}, "primaryColor");
   const primaryColor = useThemeColor({}, "primaryColor");
   const textColor = useThemeColor({}, "highlight");
+
+  /* Load the subscription history from the database when the component is mounted */
+  useEffect(() => {
+    const loadSubscriptionHistory = async () => {
+      try {
+        setIsSubscriptionHistoryLoading(true);
+        const history = await fetchSubscriptionHistory();
+        if (history) {
+          setSubscriptionHistory(history);
+        } else {
+          setSubscriptionHistory([]);
+        }
+      } catch (error) {
+        console.error("Error fetching subscription history:", error);
+      } finally {
+        setIsSubscriptionHistoryLoading(false);
+      }
+    };
+    loadSubscriptionHistory();
+  }, []);
 
   const daysUntilExpiry = () => {
     const expiry = new Date(currentPlan?.renewal_date ?? "");
@@ -184,7 +192,7 @@ const MySubscriptionPlansComponent = () => {
 
       <View style={styles.divider} />
 
-      <View style={[styles.planCard, { backgroundColor: "#ffffff" }]}>
+      <View style={[styles.planCard,]}>
         <TouchableOpacity
           style={styles.historyHeader}
           onPress={() => setShowSubscriptionHistory(!showSubscriptionHistory)}
@@ -206,7 +214,7 @@ const MySubscriptionPlansComponent = () => {
 
       <View style={styles.divider} />
 
-      <View style={[styles.planCard, { backgroundColor: "#ffffff" }]}>
+      <View style={[styles.planCard,]}>
         <TouchableOpacity
           style={styles.historyHeader}
           onPress={() => setShowCards(!showCards)}
@@ -231,7 +239,7 @@ const MySubscriptionPlansComponent = () => {
 
         <View style={styles.buttonContainer}>
           <TouchableOpacity
-            style={[styles.button, { backgroundColor: primaryColor }]}
+            style={[styles.button,]}
             onPress={() => {
               setPayOverage(true);
               setOveragePlan(calculateOveragePlanCost());
@@ -306,10 +314,9 @@ const styles = StyleSheet.create({
     textTransform: "capitalize",
   },
   planCard: {
-    borderRadius: 16,
-    padding: 15,
+    borderRadius: 5,
+    padding: 5,
     marginBottom: 5,
-    shadowColor: "#000",
   },
   planHeaderSection: {
     marginBottom: 20,
@@ -426,7 +433,7 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
   },
   historyTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "600",
     fontFamily: "BarlowRegular",
     color: "#374151",

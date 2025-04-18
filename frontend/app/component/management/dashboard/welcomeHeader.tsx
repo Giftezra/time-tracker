@@ -36,7 +36,7 @@ const DashboardWelcomeHeader = () => {
               styles.subscriptionButton,
               pressed && styles.buttonPressed,
             ]}
-            onPress={() => router.push("/management/(drawer)/payment/main")}
+            onPress={() => router.push("/management/(drawer)/payment/ManagementPayment")}
           >
             <InnerThemedText text="Manage Subscription" />
           </Pressable>
@@ -56,7 +56,7 @@ const DashboardWelcomeHeader = () => {
             styles.calendarButton,
             pressed && styles.buttonPressed,
           ]}
-          onPress={() => router.navigate("/management/calendar/main")}
+          onPress={() => router.navigate("/management/(drawer)/calendar/ManagementCalendar")}
         >
           <ButtonText text="View Calendar" />
         </Pressable>

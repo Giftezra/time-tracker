@@ -4,15 +4,15 @@ import { Stack } from "expo-router";
 
 const MainOnboardingLayout = () => {
   return (
-    <Stack>
-      <Stack.Screen name="login" options={{ headerShown: false }} />
-      <Stack.Screen name="registration" options={{ headerShown: false }} />
+    <Stack screenOptions={{ headerShown: true }}>
+      <Stack.Screen name="login" options={{ headerShown: true }} />
+      <Stack.Screen name="registration" options={{ headerShown: true }} />
       <Stack.Screen
         name="registrationAddressPage"
-        options={{ headerShown: false }}
+        options={{ headerShown: true }}
       />
-      <Stack.Screen name="onboard" options={{ headerShown: false }} />
-      <Stack.Screen name="registerCompany" options={{ headerShown: false }} />
+      <Stack.Screen name="onboard" options={{ headerShown: true }} />
+      <Stack.Screen name="registerCompany" options={{ headerShown: true }} />
     </Stack>
   );
 };

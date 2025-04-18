@@ -1,23 +1,14 @@
 import {
-  ActivityIndicator,
-  KeyboardAvoidingView,
   Platform,
   Pressable,
-  SafeAreaView,
   StyleSheet,
-  Text,
-  TextInput,  
   TouchableOpacity,
   View,
   Modal,
 } from "react-native";
-import React, { useEffect, useState } from "react";
 import {
   GestureHandlerRootView,
-  ScrollView,
 } from "react-native-gesture-handler";
-import { Dimensions } from "react-native";
-
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import WebClientComponent from "./WebFile";

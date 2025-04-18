@@ -3,58 +3,59 @@ from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-
-from django.shortcuts import get_object_or_404
-
+from django_ratelimit.decorators import ratelimit
 from ...models import Company
-
 from .decorators import owner_required
 from ...tasks import send_create_company_email
 
 
+@ratelimit(key='ip', rate='5/h', block=True, method=['POST'])
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 @owner_required
 def create_company(request):
+    """ Create a company for the owner and send an email to the user with the company details to confirm the creation of the company. 
+     The method is set to limit the number of requests to 5 per hour to prevent abuse. """
     try:
         if not request.data:
             return Response({'error': 'No data provided'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        required_fields = ['company_name', 'company_email', 'company_address', 'company_postcode', 
+                         'company_city', 'company_country', 'company_website', 'company_services', 
+                         'company_helpline', 'company_registration_number']
         
-        required_fields = ['name', 'email', 'address', 'postcode', 'city', 'country', 'website', 'services', 'helpline']
-
-        # Get the request user email
-        user_email = request.user.email
-
-        # Check if all required fields are provided
-        for field in required_fields:
-            data = {}
-            data[field] = request.data.get(field)
-            if not data[field]:
-                return Response({'error': f'{field} is required'}, status=status.HTTP_400_BAD_REQUEST)
+        # Check if all required fields are provided in the request data
+        missing_fields = [field for field in required_fields if not request.data.get(field)]
+        if missing_fields:
+            return Response({'error': f'Missing required fields: {", ".join(missing_fields)}'}, 
+                          status=status.HTTP_400_BAD_REQUEST)
         
-        # Create the company
+        # Create the company and save it to the database
         company = Company.objects.create(
             owner=request.user,
-            name=data['name'],
-            email=data['email'],
-            address=data['address'],
-            postcode=data['postcode'],
-            city=data['city'],
-            country=data['country'],
-            website=data['website'],
-            services=data['services'],
-            helpline=data['helpline'],
+            name=request.data['company_name'],
+            email=request.data['company_email'],
+            address=request.data['company_address'],
+            postcode=request.data['company_postcode'],
+            city=request.data['company_city'],
+            country=request.data['company_country'],
+            website=request.data['company_website'],
+            services=request.data['company_services'],
+            helpline=request.data['company_helpline'],
+            registration_number=request.data['company_registration_number'],
         )
-        company.save()
-        # Send an email to the user with the company details to confirm the creation of the company
-        send_create_company_email.delay(company.name, company.registration_number, company.email, company.helpline, user_email)
         
-        # Return a success message if the company is created successfully
+        # Send an email to the user with the company details
+        # send_create_company_email.delay(company.name, company.registration_number, 
+        #                               company.email, company.helpline, request.user.email)
+        
         return Response({'message': 'Company created successfully'}, status=status.HTTP_201_CREATED)
+        
     except Exception as e:
+        print('Error creating company:', str(e))  # Add logging for debugging
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
     
-
+@ratelimit(key='user', rate='6/m', block=True, method=['PATCH'])
 @api_view(['PATCH'])
 @permission_classes([IsAuthenticated])
 def update_user_preferences(request):
@@ -76,7 +77,7 @@ def update_user_preferences(request):
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
     
-
+@ratelimit(key='user', rate='4/h', block=True, method=['PATCH'])
 @api_view(['PATCH'])
 @permission_classes([IsAuthenticated])
 @owner_required

@@ -6,11 +6,20 @@ import {
   useState,
   useEffect,
 } from "react";
-import { ActivityIndicator, Alert, Dimensions, Platform } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  Dimensions,
+  Platform,
+  View,
+  Text,
+} from "react-native";
 import { router } from "expo-router";
 import axios, { AxiosError } from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import AuthContextType from "@/app/types/management/onboarding";
+import AuthContextType, {
+  CompanyInterface,
+} from "@/app/types/management/onboarding";
 import {
   UserResponseType,
   OwnerOnboardingType,
@@ -18,6 +27,7 @@ import {
 import { storeData, loadUserData } from "@/app/utils/loadData";
 import Constants from "expo-constants";
 import BASE_URL from "@/app/utils/urls";
+import AlertModal from "./component/helper/AlertModal";
 
 /**
  * AuthContext provides authentication state and methods throughout the application.
@@ -25,11 +35,8 @@ import BASE_URL from "@/app/utils/urls";
  */
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 // const API_URL =
-//   Constants.expoConfig?.extra?.API_URL ||
-//   Constants.expoConfig?.plugins?.find(
-//     (plugin: any) => plugin[0] === "API_URL"
-//   )?.[1]?.API_URL ||
-//   "";
+//   Constants.expoConfig?.extra?.url?.host;
+// console.log("API_URL", API_URL);
 /**
  * Axios instance for making authenticated HTTP requests.
  * This instance is configured with interceptors for token management.
@@ -68,17 +75,18 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
    * the useEffect hook only runs when the fonts change.
    */
   const fontsLoaded = useLoadedFonts();
+  // This state is used here to simply manage the register company overlay.
+  // So that it is accessible from outside side component.
+  const [isRegisterCompany, setIsRegisterCompany] = useState<boolean>(false);
   // Authentication state
   const [token, setToken] = useState<string | null>(null);
+  const [isAlertModalVisible, setIsAlertModalVisible] =
+    useState<boolean>(false);
   const [refreshToken, setRefreshToken] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [role, setRole] = useState<string | null>(null);
   const [user, setUser] = useState<UserResponseType | null>(null);
-
-  // Registration state
   const [ownerData, setOwnerData] = useState<OwnerOnboardingType | null>(null);
-
-  // Form state
   const [passwordError, setPasswordError] = useState<boolean>(false);
   const [registrationMessage, setRegistrationMessage] = useState<string>("");
   const [dateClicked, setDateClicked] = useState(false);
@@ -86,8 +94,6 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     email: "",
     password: "",
   });
-
-  // Address state
   const [addresses, setAddresses] = useState<
     Array<{
       address1: string;
@@ -100,13 +106,22 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isAddressModalVisible, setIsAddressModalVisible] =
     useState<boolean>(false);
 
-  // Responsive design state
   const [screenWidth, setScreenWidth] = useState(
     Dimensions.get("window").width
   );
   const [windowWidth, setWindowWidth] = useState(
     Dimensions.get("window").width
   );
+
+  const [alertConfig, setAlertConfig] = useState<{
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  }>({
+    title: "",
+    message: "",
+    onConfirm: () => {},
+  });
 
   /**
    * Use the hook to set the width and screen width of the window using listeners to listen to changes in the window width.
@@ -280,9 +295,12 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   /**
+   * Authentication Methods
+   */
+
+  /**
    * Authenticates a user with their email and password.
-   * On successful authentication:
-   * - Stores access and refresh tokens
+   * - Stores access and refresh tokens on success
    * - Updates authentication state
    * - Redirects user based on their role
    *
@@ -292,6 +310,7 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = async (email: string, password: string): Promise<void> => {
     email = email.toLowerCase();
     const loginData = { email, password };
+    console.log("BASE_URL", BASE_URL());
     try {
       const response = await axios.post(`${BASE_URL()}/api/token/`, loginData);
 
@@ -304,7 +323,12 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       // Prevent superuser login
       if (user.is_superuser) {
-        Alert.alert("Error", "Superuser login is not allowed");
+        setAlertConfig({
+          title: "Superuser login is not allowed",
+          message: "Please try a different email address.",
+          onConfirm: () => setIsAlertModalVisible(false),
+        });
+        setIsAlertModalVisible(true);
         return;
       }
 
@@ -364,109 +388,6 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   /**
-   * Updates the login form state
-   * @param {string} key - Field name to update (email or password)
-   * @param {string} value - New value for the field
-   */
-  const handleLoginInput = (key: string, value: string) => {
-    setLoginDetails(
-      (prev) =>
-        ({
-          ...prev,
-          [key]: value,
-        } as { email: string; password: string })
-    );
-  };
-
-  /**
-   * Updates the date of birth in the registration form
-   * @param {string} selectDate - Selected date in string format
-   */
-  const handleDateInput = (selectDate: string) => {
-    handleUserInput("dob", selectDate);
-    setDateClicked(false);
-  };
-
-  /**
-   * Updates the owner registration form state
-   * @param {string} key - Field name to update
-   * @param {string} value - New value for the field
-   */
-  const handleUserInput = (key: string, value: string) => {
-    setOwnerData(
-      (prev) =>
-        ({
-          ...prev,
-          [key]: value,
-        } as OwnerOnboardingType)
-    );
-  };
-
-  /**
-   * Registers a new owner in the system
-   * On successful registration, redirects to the login page
-   *
-   * @param {OwnerOnboardingType} Data - Owner registration data
-   */
-  const onboardOwner = async (Data: OwnerOnboardingType) => {
-    try {
-      const response = await axios.post(
-        `${BASE_URL()}/api/register/user/`,
-        Data
-      );
-
-      console.log("User registered successfully");
-      router.replace("/management/onboarding/login");
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        const status = error.response?.status;
-        if (status === 400) {
-          Platform.OS === "web"
-            ? window.confirm("User already exists")
-            : Alert.alert("Error", "User already exists");
-        } else {
-          console.error("Error: ", error);
-          Alert.alert("Error", "An unexpected error occurred");
-        }
-      }
-    }
-  };
-
-  /**
-   * Look up user address using the postcode provided by the user.
-   * populate the address fields in the registration form.
-   */
-  const findAddresses = async (postcode: string) => {
-    setIsLoading(true);
-    try {
-      // Replace this with your actual API endpoint
-      const response = await axios.post(`${BASE_URL()}/api/lookup/address/`, {
-        postcode: postcode,
-      });
-      const data = response.data;
-      console.log("Addresses", data);
-      setAddresses(data);
-      setIsAddressModalVisible(true);
-    } catch (error) {
-      console.error("Error fetching addresses:", error);
-      // Handle error appropriately
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const selectAddress = (address: {
-    address1: string;
-    city: string;
-    postcode: string;
-  }) => {
-    handleUserInput("address1", address.address1);
-    handleUserInput("city", address.city);
-    handleUserInput("postcode", address.postcode);
-    setIsAddressModalVisible(false);
-  };
-
-  /**
    * Signs out the current user:
    * - Clears authentication state
    * - Removes stored tokens
@@ -489,7 +410,12 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     router.replace("/management/onboarding/login");
   };
 
-  // Add function to set preferred role
+  /**
+   * Sets the preferred role for users with multiple roles (admin/staff)
+   * Redirects to appropriate dashboard based on selection
+   *
+   * @param {("admin" | "staff")} role - The selected role
+   */
   const setPreferredRole = async (role: "admin" | "staff") => {
     try {
       await AsyncStorage.setItem(PREFERRED_ROLE_KEY, role);
@@ -503,6 +429,135 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  /**
+   * Registration and Onboarding Methods
+   */
+
+  /**
+   * Registers a new owner in the system
+   * - Sends registration data to backend
+   * - Shows success/error alerts
+   * - Redirects to login on success
+   *
+   * @param {OwnerOnboardingType} Data - Owner registration data
+   */
+  const onboardOwner = async (Data: OwnerOnboardingType) => {
+    console.log("Data", Data);
+    try {
+      const response = await axios.post(
+        `${BASE_URL()}/api/register/owner/`,
+        Data
+      );
+      // Route to the login screen if the user is created successfully
+      if (response.status === 201) {
+        setAlertConfig({
+          title: "Registration Successful",
+          message:
+            "You have successfully registered as an owner. Please login to continue.",
+          onConfirm: () => {
+            router.replace("/management/onboarding/login");
+            setIsAlertModalVisible(false);
+          },
+        });
+        setIsAlertModalVisible(true);
+      }
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const status = error.response?.status;
+        if (status === 400) {
+          setAlertConfig({
+            title: "User Already Exists",
+            message: "Please try a different email address.",
+            onConfirm: () => setIsAlertModalVisible(false),
+          });
+          setIsAlertModalVisible(true);
+        } else {
+          console.error("Error: ", error);
+          Alert.alert("Error", "An unexpected error occurred");
+        }
+      }
+    }
+  };
+
+  /**
+   * Updates the login form state using a key value pair to match the login details type.
+   * @param {string} key - Field name (email or password)
+   * @param {string} value - New field value
+   */
+  const handleLoginInput = (key: string, value: string) => {
+    setLoginDetails(
+      (prev) =>
+        ({
+          ...prev,
+          [key]: value,
+        } as { email: string; password: string })
+    );
+  };
+
+  /**
+   * Updates the owner registration form state using a key value pair to match the owner onboarding type.
+   * @param {string} key - Field name to update
+   * @param {string} value - New value for the field
+   */
+  const handleUserInput = (key: string, value: string) => {
+    setOwnerData(
+      (prev) =>
+        ({
+          ...prev,
+          [key]: value,
+        } as OwnerOnboardingType)
+    );
+  };
+
+  /**
+   * Address Lookup Methods
+   */
+
+  /**
+   * Looks up addresses using provided postcode
+   * - Makes API call to address lookup service
+   * - Updates addresses state with results
+   * - Shows address selection modal
+   *
+   * @param {string} postcode - Postcode to lookup
+   */
+  const findAddresses = async (postcode: string) => {
+    setIsLoading(true);
+    try {
+      // Replace this with your actual API endpoint
+      const response = await axios.post(`${BASE_URL()}/api/lookup/address/`, {
+        postcode: postcode,
+      });
+      const data = response.data;
+      console.log("Addresses", data);
+      setAddresses(data);
+      setIsAddressModalVisible(true);
+    } catch (error) {
+      console.error("Error fetching addresses:", error);
+      // Handle error appropriately
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  /**
+   * Handles address selection from lookup results
+   * - Updates registration form with selected address
+   * - Closes address selection modal
+   *
+   * @param {Object} address - Selected address object
+   */
+  const selectAddress = (address: {
+    address1: string;
+    city: string;
+    postcode: string;
+  }) => {
+    handleUserInput("address1", address.address1);
+    handleUserInput("city", address.city);
+    handleUserInput("postcode", address.postcode);
+    setIsAddressModalVisible(false);
+  };
+
   const value: AuthContextType = {
     token,
     refreshToken,
@@ -510,7 +565,7 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     role,
     user,
     login,
-    registerOwner: onboardOwner,
+    onboardOwner,
     handleUserInput,
     ownerData,
     fontsLoaded,
@@ -519,7 +574,6 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     passwordError,
     signOut,
     registrationMessage,
-    handleDateInput,
     dateClicked,
     setDateClicked,
     screenWidth,
@@ -532,6 +586,12 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     isLoading,
     isAddressVisible,
     isAddressModalVisible,
+    alertConfig,
+    setAlertConfig,
+    isAlertModalVisible,
+    setIsAlertModalVisible,
+    isRegisterCompany,
+    setIsRegisterCompany,
   };
 
   return (

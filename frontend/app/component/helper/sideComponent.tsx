@@ -13,13 +13,18 @@ import { AntDesign, MaterialIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useAuth } from "@/app/authentication";
-import { userData } from "@/app/utils/loadData";
-import UserDetailsComponent from "../management/profile/user details";
+import RegisterCompanyComponent from "@/app/management/onboarding/registerCompany";
 
-const SideComponent = () => {
-  const user = userData();
-  const { screenWidth, windowWidth, signOut, role, setPreferredRole } =
-    useAuth();
+const SideComponent = ({ closeDrawer }: { closeDrawer?: () => void }) => {
+  const {
+    screenWidth,
+    windowWidth,
+    signOut,
+    role,
+    setPreferredRole,
+    user,
+    setIsRegisterCompany,
+  } = useAuth();
 
   const [profilePopup, setProfilePopup] = useState<boolean>(false);
   const text = useThemeColor({}, "text");
@@ -33,7 +38,7 @@ const SideComponent = () => {
 
   /** Handles the user profile display route given the user role */
   const handleProfileRoute = () => {
-    router.push("/management/(drawer)/profile/main");
+    router.push("/management/(drawer)/profile/ManagementProfile");
   };
 
   const handleRoleSwitch = (newValue: boolean) => {
@@ -49,6 +54,20 @@ const SideComponent = () => {
           <Text style={[styles.buttonText, { color: text }]}>logo</Text>
         )}
       </View>
+      {/* Only display this when the user is an owner and the user is not an employee */}
+      {user?.is_owner && (
+        <TouchableOpacity
+          style={styles.createCompanyButton}
+          onPress={() => {
+            setIsRegisterCompany(true);
+            closeDrawer?.();
+          }}
+        >
+          <Text style={[styles.createCompanyButtonText, { color: text }]}>
+            create company
+          </Text>
+        </TouchableOpacity>
+      )}
 
       {/* Contains the views for the buttons in the side component  */}
       <View style={styles.containers}>
@@ -56,7 +75,10 @@ const SideComponent = () => {
         <View style={styles.innerContainer}>
           <TouchableOpacity
             style={styles.buttons}
-            onPress={() => router.push("/management/(drawer)/dashboard/main")}
+            onPress={() => {
+              router.push("/management/(drawer)/dashboard/ManagementDashboard");
+              closeDrawer?.();
+            }}
           >
             <MaterialIcons name="dashboard" size={20} color={icon} />
             {windowWidth >= screenWidth / 2 && (
@@ -68,7 +90,10 @@ const SideComponent = () => {
 
           <TouchableOpacity
             style={styles.buttons}
-            onPress={() => router.push("/management/(drawer)/task/main")}
+            onPress={() => {
+              router.push("/management/(drawer)/task/ManagementTask");
+              closeDrawer?.();
+            }}
           >
             <MaterialIcons name="track-changes" size={20} color={icon} />
             {/* Conditionally render the texts when the window width is over 50% */}
@@ -81,7 +106,10 @@ const SideComponent = () => {
 
           <TouchableOpacity
             style={styles.buttons}
-            onPress={() => router.push("/management/(drawer)/calendar/main")}
+            onPress={() => {
+              router.push("/management/(drawer)/calendar/ManagementCalendar");
+              closeDrawer?.();
+            }}
           >
             <MaterialIcons name="calendar-month" size={20} color={icon} />
             {/* Conditionally render the texts when the window width is over 50% */}
@@ -92,7 +120,10 @@ const SideComponent = () => {
 
           <TouchableOpacity
             style={styles.buttons}
-            onPress={() => router.push("/management/(drawer)/client/main")}
+            onPress={() => {
+              router.push("/management/(drawer)/client/ManagementClient");
+              closeDrawer?.();
+            }}
           >
             <MaterialIcons name="cases" size={20} color={icon} />
             {/* Conditionally render the texts when the window width is over 50% */}
@@ -103,7 +134,10 @@ const SideComponent = () => {
 
           <TouchableOpacity
             style={styles.buttons}
-            onPress={() => router.push("/management/(drawer)/employee/main")}
+            onPress={() => {
+              router.push("/management/(drawer)/employee/ManagementEmployee");
+              closeDrawer?.();
+            }}
           >
             <AntDesign name="user" size={20} color={icon} />
             {/* Conditionally render the texts when the window width is over 50% */}
@@ -121,9 +155,12 @@ const SideComponent = () => {
         <View style={styles.innerContainer}>
           <TouchableOpacity
             style={styles.buttons}
-            onPress={() =>
-              router.push("/management/(drawer)/notification/main")
-            }
+            onPress={() => {
+              router.push(
+                "/management/(drawer)/notification/ManagementNotification"
+              );
+              closeDrawer?.();
+            }}
           >
             <MaterialIcons name="notifications" size={20} color={icon} />
             {/* Conditionally render the texts when the window width is over 50% */}
@@ -134,7 +171,13 @@ const SideComponent = () => {
             )}
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.buttons} onPress={handleProfileRoute}>
+          <TouchableOpacity
+            style={styles.buttons}
+            onPress={() => {
+              handleProfileRoute();
+              closeDrawer?.();
+            }}
+          >
             <AntDesign name="profile" size={20} color={icon} />
             {/* Conditionally render the texts when the window width is over 50% */}
             {windowWidth >= screenWidth / 2 && (
@@ -144,7 +187,10 @@ const SideComponent = () => {
 
           <TouchableOpacity
             style={styles.buttons}
-            onPress={() => router.push("/management/(drawer)/messages/main")}
+            onPress={() => {
+              router.push("/management/(drawer)/messages/ManagementMessages");
+              closeDrawer?.();
+            }}
           >
             <MaterialIcons name="all-inbox" size={20} color={icon} />
             {/* Conditionally render the texts when the window width is over 50% */}
@@ -170,7 +216,13 @@ const SideComponent = () => {
         </View>
       )}
 
-      <TouchableOpacity style={styles.signoutContainer} onPress={signOut}>
+      <TouchableOpacity
+        style={styles.signoutContainer}
+        onPress={() => {
+          signOut();
+          closeDrawer?.();
+        }}
+      >
         <Text style={styles.signoutText}>
           {user?.first_name
             ? `${user.first_name} click to`
@@ -265,5 +317,20 @@ const styles = StyleSheet.create({
     fontSize: Platform.OS === "web" ? 12 : 14,
     fontWeight: "600",
     fontFamily: "BarlowRegular",
+  },
+  createCompanyButton: {
+    position: "absolute",
+    top: 10,
+    right: 10,
+    padding: 10,
+    borderRadius: 10,
+    backgroundColor: "rgba(0,0,0,0.1)",
+  },
+  createCompanyButtonText: {
+    fontSize: Platform.OS === "web" ? 12 : 14,
+    fontWeight: "600",
+    fontFamily: "BarlowRegular",
+    textTransform: "capitalize",
+    letterSpacing: 0.4,
   },
 });

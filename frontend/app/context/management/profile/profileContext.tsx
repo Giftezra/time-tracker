@@ -1,12 +1,11 @@
-import {
-  ProfileContextType,
-  ProfileUpdateType,
-} from "@/app/types/management/profile";
+import { ProfileUpdateType } from "@/app/types/management/profile";
+import ProfileContextType from "@/app/types/management/profile";
 import { useContext, createContext, useState } from "react";
 import { Alert, Linking } from "react-native";
 import { useAuth } from "@/app/authentication";
-import { userData } from "@/app/utils/loadData";
-
+import AlertModal from "@/app/component/helper/AlertModal";
+import { CompanyInterface } from "@/app/types/management/onboarding";
+import { router } from "expo-router";
 const ProfileContext = createContext<ProfileContextType | undefined>(undefined);
 
 /** Create a provider using the context.
@@ -14,12 +13,27 @@ const ProfileContext = createContext<ProfileContextType | undefined>(undefined);
  *
  */
 const ProfileProvider = ({ children }: { children: React.ReactNode }) => {
-  const { axiosInstance } = useAuth();
-  const user = userData();
-
+  const { axiosInstance, user, signOut } = useAuth();
   const [onModalVisible, setOnModalVisible] = useState<boolean>(false);
+  const [isAlertModalVisible, setIsAlertModalVisible] =
+    useState<boolean>(false);
+  const [alertConfig, setAlertConfig] = useState<{
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    onClose?: () => void;
+  }>({
+    title: "",
+    message: "",
+    onConfirm: () => {},
+    onClose: () => {},
+  });
 
   const [notificationToggle, setNotificationToggle] = useState<string[]>([]);
+  const [companyDetails, setCompanyDetails] = useState<
+    CompanyInterface | undefined
+  >(undefined);
+
   const [userDetails, setUserDetails] = useState<ProfileUpdateType>({
     firstname: user?.first_name,
     lastname: user?.last_name,
@@ -32,9 +46,8 @@ const ProfileProvider = ({ children }: { children: React.ReactNode }) => {
     company_website: user?.company_website,
     company_services: user?.company_services,
     company_helpline: user?.company_helpline,
-    company_email: user?.comapny_email,
+    company_email: user?.company_email,
   });
-
   const [allowPushNotification, setAllowPushNotification] = useState<boolean>(
     user?.allow_push_notification || false
   );
@@ -68,25 +81,73 @@ const ProfileProvider = ({ children }: { children: React.ReactNode }) => {
     ]);
   };
 
+  /**
+   * Create a company for the user on the server.
+   * @param companyDetails is the company details to be created.
+   * @returns void
+   */
+  const createCompany = async (companyDetails?: CompanyInterface) => {
+    try {
+      console.log("Sending company data:", companyDetails);
+      const response = await axiosInstance.post(
+        "/api/create/company/",
+        companyDetails
+      );
+      if (response.status === 200) {
+        setAlertConfig({
+          title: "Success",
+          message:
+            "Company created successfully. You will now be signed out of your account.",
+          onConfirm: () => {
+            signOut();
+            router.replace("/management/onboarding/login");
+            setIsAlertModalVisible(false);
+          },
+        });
+        setIsAlertModalVisible(true);
+      }
+    } catch (error: any) {
+      Alert.alert(
+        "Error",
+        error.response?.data?.error || "Failed to create company"
+      );
+    }
+  };
   /* The helper method is uses the type of userdetails to handle the user type.
         The method gets the value of the entered data using the keyof method to assign the given value to the object with the given key. */
-  const handleUpdate = (key: keyof ProfileUpdateType, value: string) => {
-    // update user details
-    setUserDetails((prev) => {
-      if (prev) {
-        return { ...prev, [key]: value };
-      }
-      return prev;
-    });
+
+  const handleUpdate = (key: string, value: string) => {
+    setUserDetails(
+      (prev) =>
+        ({
+          ...prev,
+          [key]: value,
+        } as ProfileUpdateType)
+    );
   };
 
+  /**
+   * This method is used to update the company details of the user.
+   * It uses the axiosInstance to send a patch request to the server to update the company details.
+   * @returns void
+   */
   const updateCompanyDetails = async () => {
     try {
-      const response = await axiosInstance.patch("/api/update/owner/company/details/", {
-        data: userDetails,
-      });
+      const response = await axiosInstance.patch(
+        "/api/update/owner/company/details/",
+        {
+          data: userDetails,
+        }
+      );
       if (response.status === 200) {
-        Alert.alert("Success", "Company details updated successfully");
+        setAlertConfig({
+          title: "Registration Successful",
+          message:
+            "You have successfully registered as an owner. Please login to continue.",
+          onConfirm: () => {
+            setIsAlertModalVisible(false);
+          },
+        });
         setUserDetails(response.data.new_data);
         setOnModalVisible(false);
       } else {
@@ -193,10 +254,25 @@ const ProfileProvider = ({ children }: { children: React.ReactNode }) => {
     handlePhone,
     onModalVisible,
     setOnModalVisible,
+    companyDetails,
+    setCompanyDetails,
+    createCompany,
   };
 
   return (
-    <ProfileContext.Provider value={value}>{children}</ProfileContext.Provider>
+    <ProfileContext.Provider value={value}>
+      {children}
+      <AlertModal
+        isVisible={isAlertModalVisible}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        onConfirm={alertConfig.onConfirm}
+        onClose={() => {
+          alertConfig.onClose?.();
+          setIsAlertModalVisible(false);
+        }}
+      />
+    </ProfileContext.Provider>
   );
 };
 

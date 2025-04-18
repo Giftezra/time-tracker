@@ -114,6 +114,7 @@ const DashboardProvider = ({ children }: { children: React.ReactNode }) => {
       try {
         const stats = await fetchContractStatistics(selectedYear);
         setContractStats(stats);
+        
         const unavailableEmployees = await fetchUnavailableEmployees();
         setUnavailableEmployees(unavailableEmployees);
         await fetchTaskStatistics();

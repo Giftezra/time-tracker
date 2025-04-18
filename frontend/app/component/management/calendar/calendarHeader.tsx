@@ -16,7 +16,7 @@ import { useCalendar } from "@/app/context/management/calendar/calendarContext";
 const CalendarHeader = () => {
   const {
     schedule,
-    timeFrame,
+    getShift,
     search,
     setSearch,
     handleSchedule,
@@ -24,6 +24,8 @@ const CalendarHeader = () => {
     gotoPreviousWeek,
     gotoNextWeek,
     currentWeek,
+    weekDays,
+    employees,
     weekRange,
     emailShiftReport,
   } = useCalendar();
@@ -94,6 +96,14 @@ const CalendarHeader = () => {
       );
     }
   };
+
+  const hasAnyShifts = employees.some((employee) => {
+    return weekDays.some((day) => {
+      const shifts = getShift(Number(employee.employee_id), day);
+      return shifts && (typeof shifts === "object" ? shifts.length > 0 : false);
+    });
+  });
+
 
   return (
     <View style={[styles.mainContainer, { padding: 5 }]}>
@@ -193,7 +203,7 @@ const CalendarHeader = () => {
               color="black"
             />
           </Pressable>
-          <Pressable onPress={() => setIsPrintModalVisible(true)}>
+          <Pressable onPress={() => setIsPrintModalVisible(true)} disabled={!hasAnyShifts}>
             <MaterialCommunityIcons name="printer" size={24} color="black" />
           </Pressable>
           <Pressable>

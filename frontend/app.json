@@ -34,7 +34,8 @@
         "expo-notifications",
         {
           "icon": "./assets/icons/notification.jpg",
-          "color": "#ffffff"
+          "color": "#ffffff",
+          "projectId": "22b76193-23d6-4e60-b879-1b93f8613fe8"
         }
       ],
       [
@@ -74,6 +75,10 @@
       },
       "stripe": {
         "publishableKey": "pk_test_51NK8SeKs3nf7cE2WBk18TrdJPOLqvJzYyxmlHFFmGNUmk78TsVVimg3YnGSVLkMhYoQWr1yBR21cbdoKfrb8zmmP00QauAcvF1"
+      },
+      "url": {
+        "scheme": "time-tracker",
+        "host": "13cb-2001-bb6-cf2d-3f00-5485-2dc5-2fe4-34e.ngrok-free.app"
       }
     }
   }

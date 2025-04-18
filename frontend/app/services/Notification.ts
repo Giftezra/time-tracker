@@ -57,51 +57,56 @@ export class NotificationService {
     );
     let finalStatus = existingStatus;
 
-    if (existingStatus !== "granted") {
-      try {
-        if (existingStatus === "denied") {
-          // Direct user to app settings if previously denied
-          return new Promise((resolve, reject) => {
-            Alert.alert(
-              "Notifications Disabled",
-              "Please enable notifications in your device settings",
-              [
-                {
-                  text: "Open Settings",
-                  onPress: async () => {
-                    await Linking.openSettings();
-                    // Re-check permission after returning from settings
-                    const { status: newStatus } =
-                      await Notifications.getPermissionsAsync();
-                    if (newStatus === "granted") {
-                      console.log("[setupNotifications] Token: ", newStatus);
-                      // const token = await this.getExpoPushToken();
-                      // console.log("[setupNotifications] Token: ", token.data);
-                      resolve(newStatus);
-                    } else {
-                      reject(new Error("Permission not granted"));
-                    }
-                  },
-                },
-                {
-                  text: "Cancel",
-                  onPress: () => reject(new Error("Permission not granted")),
-                  style: "cancel",
-                },
-              ]
-            );
-          });
-        } else {
-          // Request permission if status is undetermined
-          const { status } = await Notifications.requestPermissionsAsync();
-          finalStatus = status;
-        }
-      } catch (error: any) {
-        throw new Error("Failed to request permissions: " + error.message);
-      }
+    if (existingStatus === Notifications.PermissionStatus.GRANTED) {
+      // Get token immediately if already granted
+      // const token = await this.getExpoPushToken();
+      // console.log(
+      //   "[NotificationService] Token for granted status:",
+      //   token.data
+      // );
+      this.notificationStatus = existingStatus;
+      // return token;
     }
 
-    if (finalStatus !== "granted") {
+    if (existingStatus === Notifications.PermissionStatus.DENIED) {
+      // Direct user to app settings if previously denied
+      return new Promise((resolve, reject) => {
+        Alert.alert(
+          "Notifications Disabled",
+          "Please enable notifications in your device settings",
+          [
+            {
+              text: "Open Settings",
+              onPress: async () => {
+                await Linking.openSettings();
+                // Re-check permission after returning from settings
+                const { status: newStatus } =
+                  await Notifications.getPermissionsAsync();
+                if (newStatus === Notifications.PermissionStatus.GRANTED) {
+                  console.log("[setupNotifications] Token: ", newStatus);
+                  // const token = await this.getExpoPushToken();
+                  // console.log("[setupNotifications] Token: ", token.data);
+                  resolve(newStatus);
+                } else {
+                  reject(new Error("Permission not granted"));
+                }
+              },
+            },
+            {
+              text: "Cancel",
+              onPress: () => reject(new Error("Permission not granted")),
+              style: "cancel",
+            },
+          ]
+        );
+      });
+    } else {
+      // Request permission if status is undetermined
+      const { status } = await Notifications.requestPermissionsAsync();
+      finalStatus = status;
+    }
+
+    if (finalStatus !== Notifications.PermissionStatus.GRANTED) {
       throw new Error("Permission not granted");
     }
     this.notificationStatus = finalStatus;
@@ -116,7 +121,12 @@ export class NotificationService {
    */
   static async getExpoPushToken(): Promise<ExpoPushToken> {
     console.log("[NotificationService] Getting push token...");
-    const projectId = Constants.expoConfig?.extra?.eas?.projectId;
+    const projectId =
+      Constants.expoConfig?.extra?.eas?.projectId ||
+      Constants.expoConfig?.plugins?.find(
+        (plugin: any) => plugin[0] === "eas"
+      )?.[1]?.projectId ||
+      "";
     console.log("[NotificationService] Project ID:", projectId);
 
     if (!projectId) {

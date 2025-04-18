@@ -22,6 +22,7 @@ import { useAuth } from "@/app/authentication";
 import CustomCalendar from "@/app/component/helper/customCalendar";
 import { tranY } from "@/app/utils/animations/onboardingAnimation";
 import SubtitleThemedText from "@/app/component/helper/SubtitleThemedText";
+import AlertModal from "@/app/component/helper/AlertModal";
 
 /**
  * Component for the main admin registration page
@@ -31,16 +32,12 @@ const RegistrationComponent = () => {
   const {
     ownerData,
     handleUserInput,
-    handleDateInput,
     dateClicked,
-    setDateClicked,
+    isAlertModalVisible,
+    alertConfig,
   } = useAuth();
 
-  // Update the date handler
-  const handleDateSelection = (date: string) => {
-    handleUserInput("dob", date);
-    setDateClicked(false); // Close the calendar after selection
-  };
+  const [error, setError] = useState<string[]>([]);
 
   // Add validation function
   const isFormValid = () => {
@@ -53,6 +50,66 @@ const RegistrationComponent = () => {
       // Basic email validation
       /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(ownerData?.email)
     );
+  };
+
+  const handleInputValidation = () => {
+    // Clear previous errors
+    const newErrors: string[] = [];
+
+    if (ownerData?.first_name?.trim() === "") {
+      newErrors.push("First name is required");
+    }
+    if (ownerData?.last_name?.trim() === "") {
+      newErrors.push("Last name is required");
+    }
+    if (ownerData?.email?.trim() === "") {
+      newErrors.push("Email is required");
+    }
+    if (
+      !ownerData?.phone ||
+      ownerData.phone.trim() === "" ||
+      !ownerData.phone.trim().includes("+")
+    ) {
+      newErrors.push("Please enter a valid phone number with country code");
+    }
+    if (
+      !ownerData?.dob ||
+      ownerData.dob.trim() === "" ||
+      !/^\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])$/.test(
+        ownerData.dob.trim()
+      )
+    ) {
+      newErrors.push("Please enter date in YYYY-MM-DD format");
+    }
+
+    setError(newErrors);
+
+    // Only navigate if there are no errors
+    if (newErrors.length === 0) {
+      router.push("/management/onboarding/registrationAddressPage");
+    }
+  };
+
+  /**
+   * Validate the date input to ensure it is in the correct format.
+   * Automatically adds hyphens to the date input for better user experience.
+   * @param value - The date input value to validate
+   * @returns The validated date input with hyphens
+   */
+  const validateDateInput = (value: string) => {
+    // Remove any non-digit characters
+    const numbers = value.replace(/\D/g, "");
+
+    // Add hyphens automatically
+    let formattedValue = "";
+    for (let i = 0; i < numbers.length && i < 8; i++) {
+      if (i === 4 || i === 6) {
+        formattedValue += "-";
+      }
+      formattedValue += numbers[i];
+    }
+
+    return formattedValue;
   };
 
   return (
@@ -76,6 +133,16 @@ const RegistrationComponent = () => {
                 <AntDesign name="arrowdown" size={16} color="#4B5563" />
               </Animated.View>
             </View>
+
+            {error.length > 0 && (
+              <View style={{ padding: 10, marginBottom: 10 }}>
+                {error.map((err, index) => (
+                  <Text key={index} style={{ color: "red", marginBottom: 5 }}>
+                    • {err}
+                  </Text>
+                ))}
+              </View>
+            )}
 
             <View style={styles.formSection}>
               <View style={{ padding: 10, marginTop: 10 }}>
@@ -114,7 +181,7 @@ const RegistrationComponent = () => {
               <View style={{ padding: 10, marginBottom: 10 }}>
                 <Text style={styles.headerText}>phone</Text>
                 <RegistrationTextInputComponent
-                  placeholder="phone number"
+                  placeholder="+44"
                   value={ownerData?.phone}
                   setValue={(value) => handleUserInput("phone", value)}
                   inputMode="numeric"
@@ -123,53 +190,38 @@ const RegistrationComponent = () => {
                 />
               </View>
 
-              {dateClicked && (
-                <CustomCalendar onSelectDate={handleDateSelection} />
-              )}
-
               <View style={{ padding: 10, marginBottom: 10 }}>
                 <Text style={styles.headerText}>date of birth</Text>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                  }}
-                >
-                  <View style={{ flex: 1 }}>
-                    <RegistrationTextInputComponent
-                      placeholder="YYYY-MM-DD"
-                      value={ownerData?.dob}
-                      setValue={(value) => handleUserInput("dob", value)}
-                      inputMode="numeric"
-                      keyboardType="numeric"
-                      autoComplete="birthdate-full"
-                    />
-                  </View>
-                  <Pressable
-                    style={{ padding: 5 }}
-                    onPress={() => setDateClicked(!dateClicked)}
-                  >
-                    <MaterialIcons
-                      name="calendar-month"
-                      size={24}
-                      color="black"
-                    />
-                  </Pressable>
+                <View style={{ flex: 1 }}>
+                  <RegistrationTextInputComponent
+                    placeholder="YYYY-MM-DD"
+                    value={ownerData?.dob}
+                    setValue={(value) => {
+                      const formattedDate = validateDateInput(value);
+                      handleUserInput("dob", formattedDate);
+                    }}
+                    inputMode="numeric"
+                    keyboardType="numeric"
+                    autoComplete="birthdate-full"
+                  />
                 </View>
               </View>
             </View>
 
             <ArrowButtonComponent
-              onPress={() =>
-                router.push("/management/onboarding/registrationAddressPage")
-              }
+              onPress={handleInputValidation}
               title="Continue"
               disabled={!isFormValid()}
             />
           </ScrollView>
         </GestureHandlerRootView>
       </KeyboardAvoidingView>
+      <AlertModal
+        isVisible={isAlertModalVisible}
+        onConfirm={alertConfig.onConfirm}
+        title={alertConfig.title}
+        message={alertConfig.message}
+      />
     </SafeAreaView>
   );
 };

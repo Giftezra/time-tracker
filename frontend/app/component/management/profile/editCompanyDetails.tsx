@@ -1,7 +1,5 @@
 import {
-  ActivityIndicator,
   Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -19,6 +17,7 @@ import { useThemeColor } from "@/hooks/useThemeColor";
 import { useProfileContext } from "@/app/context/management/profile/profileContext";
 import { userData } from "@/app/utils/loadData";
 import ThemedHeaderText from "../../helper/ThemedHeaderText";
+
 const EditUserDetailsComponent = () => {
   const { userDetails, handleUpdate, updateCompanyDetails, setOnModalVisible } = useProfileContext();
   const headerText = useThemeColor({}, "headerText");
@@ -53,9 +52,9 @@ const EditUserDetailsComponent = () => {
       <View style={styles.headerContainer}>
         <ThemedHeaderText text="profile settings" />
         {Platform.OS !== "web" && (
-          <Pressable onPress={() => setOnModalVisible(false)} style={styles.closeButton}>
+          <TouchableOpacity onPress={() => setOnModalVisible(false)} style={styles.closeButton}>
             <MaterialIcons name="close" size={24} color={headerText} />
-          </Pressable>
+          </TouchableOpacity>
         )}
       </View>
 
@@ -142,7 +141,7 @@ const EditUserDetailsComponent = () => {
 
           <TextInputComponent
             text="Company Email"
-            placeholder={user?.comapny_email || "n/a"}
+            placeholder={user?.company_email || "n/a"}
             value={userDetails?.company_email}
             setValue={(text) => handleUpdate("company_email", text)}
             editable={editable}

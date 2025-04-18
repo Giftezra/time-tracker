@@ -2,12 +2,13 @@ import {
   BillingAddress,
   BillingDetails,
   CardType,
-  CheckoutContextType,
   CurrentPlanDetails,
   OwnerDetails,
   PaymentDetails,
+  SubscriptionHistoryInterface,
   SubscriptionPlanTiers,
 } from "@/app/types/management/payment";
+import CheckoutContextType from "@/app/types/management/payment";
 import { userData } from "@/app/utils/loadData";
 import { createContext, useContext, useState, useEffect } from "react";
 import { useAuth } from "@/app/authentication";
@@ -307,6 +308,21 @@ const PaymentContext = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  const fetchSubscriptionHistory = async (): Promise<SubscriptionHistoryInterface[]> => {
+    try {
+      const response = await axiosInstance.get("/api/get/subscription/history/");
+      if (response.status === 200) {
+        const history: SubscriptionHistoryInterface[] = response.data.subscription_history;
+        return history;
+      }else{
+        return [];
+      }
+    } catch (error) {
+      console.error("Error fetching subscription history:", error);
+      return [];
+    }
+  };
+
   const [billingDetails, setBillingDetails] = useState<BillingDetails>({
     numberOfEmployees: 0,
     billingPeriod: "monthly",
@@ -342,6 +358,7 @@ const PaymentContext = ({ children }: { children: React.ReactNode }) => {
     overagePlan,
     setOveragePlan,
     currentPlan,
+    fetchSubscriptionHistory,
   };
 
   return (

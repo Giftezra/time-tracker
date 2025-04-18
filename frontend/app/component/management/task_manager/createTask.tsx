@@ -1,29 +1,19 @@
 import {
-  ActionSheetIOS,
   ActivityIndicator,
-  Button,
   Image,
-  Modal,
   StyleSheet,
   ScrollView,
   Text,
   TouchableOpacity,
   View,
-  TextInput,
   Platform,
 } from "react-native";
-import React, { useEffect, useLayoutEffect, useState } from "react";
+import React, { useState } from "react";
 import { useThemeColor } from "@/hooks/useThemeColor";
-
-import { ca, DatePickerModal, TimePickerModal } from "react-native-paper-dates";
-
+import { DatePickerModal, TimePickerModal } from "react-native-paper-dates";
 import { EmployeeType } from "@/app/types/management/employee";
 import { user_image } from "@/app/utils/images";
-import {
-  ContractListType,
-  CreateTaskInterface,
-} from "@/app/types/management/task";
-import { get } from "react-native/Libraries/TurboModule/TurboModuleRegistry";
+import { ContractListType } from "@/app/types/management/task";
 import ButtonComponent from "../../helper/buttons";
 import TextInputComponent from "../../helper/textInput";
 import SubmitButtonComponent from "../../helper/submitButton";
@@ -59,8 +49,6 @@ const CreateTaskComponent = () => {
   const text = useThemeColor({}, "text");
   const inactivebtn = useThemeColor({}, "inactivebtn");
   const innerBackground = useThemeColor({}, "innerBackground");
-  const hightlight = useThemeColor({}, "highlight");
-  const textinput = useThemeColor({}, "textinput");
   const otherText = useThemeColor({}, "otherText");
 
   const [siteSelected, setSiteSelected] = useState<ContractListType | null>(
@@ -149,24 +137,29 @@ const CreateTaskComponent = () => {
     <ScrollView style={styles.maincontainer}>
       <View style={{ width: "100%" }}>
         {/* Contract Selection */}
-        <View
-          style={[
-            styles.container,
-            { backgroundColor: innerBackground, shadowColor: primary },
-          ]}
-        >
-          <TouchableOpacity
-            onPressIn={() => handleToggleSites("contracts")}
-            style={[styles.button]}
-          >
-            {isLoading ? (
-              <ActivityIndicator size={15} color={text} />
-            ) : (
-              <Text style={[styles.headerText, { color: text }]}>
-                {siteSelected ? "Selected Contract" : "Select Contract"}
+        <View style={[styles.container, { shadowColor: primary }]}>
+          {/* Display the contract selection button when there is a contract in the contract list */}
+          {contractList?.length && contractList?.length > 0 ? (
+            <TouchableOpacity
+              onPressIn={() => handleToggleSites("contracts")}
+              style={[styles.button]}
+            >
+              {isLoading ? (
+                <ActivityIndicator size={15} color={text} />
+              ) : (
+                <Text style={[styles.headerText, { color: text }]}>
+                  {siteSelected ? "Selected Contract" : "Select Contract"}
+                </Text>
+              )}
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.noContractContainer}>
+              <Text style={[styles.noContractText]}>
+                No contracts available Go to client page to create a contract
+                and assign to a client
               </Text>
-            )}
-          </TouchableOpacity>
+            </View>
+          )}
 
           {siteSelected && !selected && (
             <View style={styles.selectedDetailsContainer}>
@@ -240,18 +233,27 @@ const CreateTaskComponent = () => {
         </View>
 
         {/* Employee Selection */}
-        <View style={[styles.container, { backgroundColor: innerBackground }]}>
-          <TouchableOpacity
-            onPress={() => handleToggleSites("employees")}
-            style={styles.button}
-          >
-            <Text style={[styles.buttonText, {color:text}]}>
-              {selectedEmployees.length > 0
-                ? `Selected Employees (${selectedEmployees.length})`
-                : "Select Employees"}
-            </Text>
-          </TouchableOpacity>
-
+        <View style={[styles.container]}>
+          {/* Display the employee selection button when there is an employee in the employee list */}
+          {employeeList?.length && employeeList?.length > 0 ? (
+            <TouchableOpacity
+              onPress={() => handleToggleSites("employees")}
+              style={styles.button}
+            >
+              <Text style={[styles.buttonText, { color: text }]}>
+                {selectedEmployees.length > 0
+                  ? `Selected Employees (${selectedEmployees.length})`
+                  : "Select Employees"}
+              </Text>
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.noContractContainer}>
+              <Text style={[styles.noContractText]}>
+                No employees available, assign Go to employee page to create an
+                employee
+              </Text>
+            </View>
+          )}
           {selectedEmployees.length > 0 && !selected && (
             <View style={styles.selectedEmployeesContainer}>
               {selectedEmployees.map((emp, index) => (
@@ -480,13 +482,6 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     borderRadius: 8,
     shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
   },
 
   headerText: {
@@ -696,5 +691,20 @@ const styles = StyleSheet.create({
     padding: 8,
     borderRadius: 4,
     backgroundColor: "rgba(255,0,0,0.1)",
+  },
+
+  noContractContainer: {
+    padding: 16,
+    borderRadius: 12,
+    marginHorizontal: 12,
+    alignItems: "center",
+  },
+  noContractText: {
+    fontFamily: "BarlowRegular",
+    fontSize: Platform.OS === "web" ? 13 : 15,
+    fontWeight: "500",
+    color: "#000",
+    textTransform: "capitalize",
+    letterSpacing: 0.3,
   },
 });

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import User,Client,Company,Contracts,TaskComment,Task,Shift, Message, ChatRoom, Identity,BillingAddress, SubscriptionPlan,Overage, EmployeeCountHistory, Billing, SubscriptionTier
+from .models import User,Client,Company,Contracts,TaskComment,Task,Shift, Message, ChatRoom, Identity,BillingAddress, SubscriptionPlan,Overage, EmployeeCountHistory, Billing, SubscriptionTier, SubscriptionHistory
 
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django import forms
@@ -79,3 +79,4 @@ admin.site.register(Billing)
 admin.site.register(EmployeeCountHistory)
 admin.site.register(BillingAddress)
 admin.site.register(SubscriptionTier, SubscriptionTierAdmin)
+admin.site.register(SubscriptionHistory)

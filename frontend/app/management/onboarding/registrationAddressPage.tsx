@@ -20,16 +20,15 @@ import {
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 const RegistrationAddressPage = () => {
-  const { ownerData, handleUserInput, registerOwner, registrationMessage, findAddresses, selectAddress, addresses, isLoading, isAddressVisible, isAddressModalVisible } =
+  const { ownerData, handleUserInput, onboardOwner, registrationMessage, findAddresses, selectAddress, addresses, isLoading, isAddressVisible, isAddressModalVisible } =
     useAuth();
-
-  const inactiveBtn = useThemeColor({}, "inactivebtn");
 
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] =
     useState(false);
-  const [confirmPassword, setConfirmPassword] = useState<string>(); // Confirm password
+  const [confirmPassword, setConfirmPassword] = useState<string>();
   const [enteraddress, setEnterAddress] = useState<boolean>(false);
+  const [error, setError] = useState<string[]>([]);
 
   const togglePasswordVisibility = () => {
     setIsPasswordVisible(!isPasswordVisible);
@@ -37,6 +36,33 @@ const RegistrationAddressPage = () => {
 
   const toggleConfirmPasswordVisibility = () => {
     setIsConfirmPasswordVisible(!isConfirmPasswordVisible);
+  };
+
+  /**
+   * Handle the input validation for the registration form
+   * Ensure there are no errors and the owner data is complete before registering
+   * the owner
+   */
+  const handleInputValidation = () => {
+    const newErrors: string[] = [];
+    if (!ownerData?.password) {
+      newErrors.push("Password is required");
+    }
+    if (ownerData?.postcode?.trim() === "") {
+      newErrors.push("Postcode is required");
+    }
+    if (ownerData?.address?.trim() === "") {
+      newErrors.push("Address is required");
+    }
+    if (ownerData?.city?.trim() === "") {
+      newErrors.push("City is required");
+    }
+
+    setError(newErrors);
+
+    if (newErrors.length === 0 && ownerData) {
+      onboardOwner(ownerData);
+    }
   };
 
   return (
@@ -201,7 +227,7 @@ const RegistrationAddressPage = () => {
             {ownerData?.password === confirmPassword && ownerData && (
               <View style={styles.buttonContainer}>
                 <ArrowButtonComponent
-                  onPress={() => registerOwner(ownerData)}
+                  onPress={handleInputValidation}
                   title="Create Account"
                 />
               </View>

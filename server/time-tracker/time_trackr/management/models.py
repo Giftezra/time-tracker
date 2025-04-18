@@ -482,6 +482,25 @@ class SubscriptionPlan(models.Model):
     def __str__(self):
         return f"{self.company.name} - {self.tier.name}"
     
+  
+
+class SubscriptionHistory(models.Model):
+    subscription = models.ForeignKey(SubscriptionPlan, on_delete=models.CASCADE, related_name='subscription_history_subscription')
+    start_date = models.DateField()
+    renewal_date = models.DateField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"{self.subscription.company.name} - {self.subscription.tier.name}"
+    # Save the subscription history when the subscription is updated
+    def save(self, *args, **kwargs):
+        if self.subscription.is_active:
+            self.start_date = self.subscription.start_date
+            self.renewal_date = self.subscription.renewal_date
+        super().save(*args, **kwargs) 
+    
+    
+    
 
 
 class EmployeeCountHistory(models.Model):

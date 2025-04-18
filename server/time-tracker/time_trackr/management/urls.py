@@ -11,7 +11,7 @@ from .view.main.task_manager import get_active_tasks, get_clients_shifts, create
 
 from .view.main.calender import get_shifts, email_shift_report, cancel_shift, update_shift, approve_shift 
 
-from .view.main.payment import create_payment_sheet, get_subscription_tiers, get_current_plan, update_subscription_plan
+from .view.main.payment import create_payment_sheet, get_subscription_tiers, get_current_plan, update_subscription_plan, get_subscription_history
 
 from .view.main.notification import NotificationTokenView, NotificationView
 
@@ -28,7 +28,7 @@ from .view.main.messages import (
 
 urlpatterns = [
     # PAth definitions for all reqistration requests on the management app
-    path('register/user/', register_owner, name='register_owner'),
+    path('register/owner/', register_owner, name='register_owner'),
     path('onboard/employee/', onboard_employee, name='register_staff'),
     
     path('token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
@@ -72,7 +72,7 @@ urlpatterns = [
     path('get/employee/with/id/', get_employee_with_id, name='get_employee_with_id'),
     path('get/employee/task/details/', get_employee_task_details, name='get_employee_task_details'),
     path('get/employee/work/log/', get_employee_work_log, name='get_employee_work_log'),
-
+    path('get/subscription/history/', get_subscription_history, name='get_subscription_history'),
     path('get/subscription/tiers/', get_subscription_tiers, name='get_subscription_tiers'),
     path('get/current/plan/', get_current_plan, name='get_current_plan'),
 

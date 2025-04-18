@@ -20,17 +20,7 @@ const CalendarShiftComponent = () => {
     | undefined
   >(undefined);
 
-  const {
-    employees,
-    getShift,
-    weekDays,
-    cancelShift,
-    activeShift,
-    setActiveShift,
-    showEditShiftModal,
-    setShowEditShiftModal,
-    handleActiveShift,
-  } = useCalendar();
+  const { employees, getShift, weekDays, handleActiveShift } = useCalendar();
 
   /**
    * Handle the shift click event to store the active shift in the state
@@ -185,10 +175,23 @@ const CalendarShiftComponent = () => {
     );
   };
 
+  const hasAnyShifts = employees.some(employee => {
+    return weekDays.some(day => {
+      const shifts = getShift(Number(employee.employee_id), day);
+      return shifts && (typeof shifts === 'object' ? shifts.length > 0 : false);
+    });
+  });
+
+  if (!hasAnyShifts) {
+    return (
+      <View style={[styles.emptyContainer,]}>
+        <Text>No shifts found</Text>
+      </View>
+    );
+  }
+
   return (
-    <View
-      style={[styles.mainContainer, { backgroundColor: innerBackgroundColor }]}
-    >
+    <View style={[styles.mainContainer, { backgroundColor: "red" }]}>
       {/* Weekdays Header contains the week display */}
       <View style={styles.topheaderRow}>
         <Text style={[styles.weekdayText, { color: text }]}>Employees</Text>
@@ -221,7 +224,14 @@ export default CalendarShiftComponent;
 
 const styles = StyleSheet.create({
   mainContainer: {
+    flexGrow: 1,
+    flexShrink: 0,
+  },
+
+  emptyContainer: {
     flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
   },
 
   flailistRow: {

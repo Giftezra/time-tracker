@@ -2,6 +2,7 @@ import {
   Dimensions,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -10,54 +11,29 @@ import React, { useEffect, useState } from "react";
 import { Drawer } from "expo-router/drawer";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import SideComponent from "@/app/component/helper/sideComponent";
-import { AntDesign, MaterialIcons } from "@expo/vector-icons";
+import { AntDesign, MaterialIcons, Ionicons } from "@expo/vector-icons";
 
 import { useThemeColor } from "@/hooks/useThemeColor";
 import AuthProvider from "@/app/authentication";
 import { SafeAreaView } from "react-native-safe-area-context";
 import ProfileProvider from "@/app/context/management/profile/profileContext";
 import ExpandScreenComponent from "@/app/component/helper/expandScreen";
-import { Stack } from "expo-router";
+import { router, Stack } from "expo-router";
 import { useAuth } from "@/app/authentication";
 import { userData } from "@/app/utils/loadData";
-import  MessageProvider  from "@/app/context/management/messages/messageContext";
+import MessageProvider from "@/app/context/management/messages/messageContext";
 
 const VersionDisplay = ({ color }: { color: string }) => {
   return (
-    <View style={[styles.floatingcontainer, { backgroundColor: color }]}>
+    <View style={[styles.versioncontainer, { backgroundColor: color }]}>
       <Text style={styles.versionText}>Version 1.0.0</Text>
     </View>
   );
 };
 
-/**
- * Used to render a popup menu for the admin dashboard to display the version of the app when
- * the user clicks on the version number.
- * @returns
- */
-const RightDisplay = ({ onPress }: { onPress: () => void }) => {
-  const secondaryColor = useThemeColor({}, "secondaryColor");
-  const text = useThemeColor({}, "text");
-  return (
-    <View
-      style={[
-        styles.mainrightdisplaycontainer,
-        { backgroundColor: secondaryColor },
-      ]}
-    >
-      <Pressable style={styles.leftbuttons} onPress={onPress}>
-        <MaterialIcons name="info" size={20} color={text} />
-      </Pressable>
-    </View>
-  );
-};
-
-/**
- * This is the main layout for all the components in the drawer
- */
 export default function MainManagementLayout() {
   const [showVersion, setShowVersion] = useState(false);
-
+  const [showDrawer, setShowDrawer] = useState(false);
   const background = useThemeColor({}, "background");
   const secondary = useThemeColor({}, "secondaryColor");
   const tintColor = useThemeColor({}, "tint");
@@ -94,60 +70,89 @@ export default function MainManagementLayout() {
     return <ExpandScreenComponent />;
   }
 
+  const handleBackButton = () => {
+    const isLastScene = router.canGoBack();
+    return (
+      <View style={{ flexDirection: "row", alignItems: "center" }}>
+        {isLastScene ? (
+          <Pressable onPress={() => router.back()} style={{ marginRight: 10 }}>
+            <AntDesign name="arrowleft" size={24} color={background} />
+          </Pressable>
+        ) : (
+          <Text style={{ color: background, fontFamily: "BarlowRegular" }}>
+            Home
+          </Text>
+        )}
+      </View>
+    );
+  };
+
+  /* Create a component to display the header which will be used in the stack to display a drawer */
+  const Header = () => {
+    return (
+      <View style={[styles.header, { backgroundColor: tintColor }]}>
+        {handleBackButton()}
+        <View style={styles.innerContainer}>
+          <Pressable onPress={() => setShowDrawer(!showDrawer)}>
+            <Ionicons name="menu" size={24} color={background} />
+          </Pressable>
+          <Text style={{ fontSize: 20, fontFamily: "BarlowMedium" }}>
+            {user?.company_name || "Company Name"}
+          </Text>
+        </View>
+        <View style={{ flex: 1, alignItems: "flex-end" }}>
+          <Pressable onPress={() => setShowVersion(!showVersion)}>
+            <Ionicons name="information-circle" size={20} color={background} />
+          </Pressable>
+        </View>
+      </View>
+    );
+  };
+
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <GestureHandlerRootView
         style={[{ flex: 1 }, { backgroundColor: background }]}
       >
         <MessageProvider>
-          {/* The drawer is only used for mobile displays but a stack has to be returned for the web display */}
-        {Platform.OS !== "web" ? (
-          <Drawer
-            drawerContent={() => <SideComponent />}
-            screenOptions={{
-              headerShown: true,
-              headerRight: () => (
-                /**
-                 * Toggle the version display when the user clicks on the info icon.
-                 */
-                <RightDisplay onPress={toggleVersion} />
-              ),
-              title: user?.company_name || "Management",
-              headerStyle: {
-                backgroundColor: secondary,
-              },
-              headerTitleStyle: {
-                fontSize: 20,
-                fontFamily: "BarlowRegular",
-                fontWeight: "700",
-                color: background,
-                textShadowOffset: { width: 0.5, height: 0.5 },
-                textShadowColor: "black",
-              },
-              drawerStyle: {
-                backgroundColor: secondary,
-                width: "70%",
-              },
-            }}
-          />
-        ) : (
+          {Platform.OS !== "web" && <Header />}
           <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="calendar" options={{ headerShown: false }} />
-            <Stack.Screen name="clients" options={{ headerShown: false }} />
-            <Stack.Screen name="dashboard" options={{ headerShown: false }} />
-            <Stack.Screen name="employees" options={{ headerShown: false }} />
+            <Stack.Screen name="dashboard" options={{ headerShown: false }}/>
+            <Stack.Screen name="calendar" options={{ headerShown: false }}/>
+            <Stack.Screen name="client" options={{ headerShown: false }} />
+            <Stack.Screen name="employee" options={{ headerShown: false }} />
             <Stack.Screen name="messages" options={{ headerShown: false }} />
-            <Stack.Screen name="notifications" options={{ headerShown: false }} />
-            <Stack.Screen name="payments" options={{ headerShown: false }} />
-            <Stack.Screen name="tasks" options={{ headerShown: false }} />
+            <Stack.Screen
+              name="notification"
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen name="payment" options={{ headerShown: false }} />
             <Stack.Screen name="profile" options={{ headerShown: false }} />
-            <Stack.Screen name="settings" options={{ headerShown: false }} />
+            <Stack.Screen name="task" options={{ headerShown: false }} />
           </Stack>
-        )}
-
-        {showVersion && <VersionDisplay color={secondary} />}
+          {showVersion && <VersionDisplay color={secondary} />}
         </MessageProvider>
       </GestureHandlerRootView>
+
+      {/* Display the drawer when the user clicks on the menu button in the header, and also contains the close button to close the drawer */}
+      {showDrawer && (
+        <View style={styles.sideComponent}>
+          <ScrollView
+            style={{ flex: 1 }}
+            contentContainerStyle={{ flexGrow: 1 }}
+            showsVerticalScrollIndicator={true}
+            nestedScrollEnabled={true}
+          >
+            <SideComponent closeDrawer={() => setShowDrawer(false)} />
+          </ScrollView>
+          <Pressable
+            style={styles.closeDrawer}
+            onPress={() => setShowDrawer(false)}
+          >
+            <Ionicons name="close" size={24} color={background} />
+          </Pressable>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -168,9 +173,9 @@ const styles = StyleSheet.create({
     padding: 5,
   },
 
-  floatingcontainer: {
+  versioncontainer: {
     position: "absolute",
-    top: 60,
+    top: 20,
     right: 0,
     padding: 5,
     borderRadius: 5,
@@ -181,9 +186,52 @@ const styles = StyleSheet.create({
     zIndex: 100,
   },
 
+  sideComponent: {
+    flex: 1,
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    maxWidth: "70%",
+    zIndex: 100,
+    backgroundColor: "white",
+    borderRightWidth: 1,
+    borderRightColor: "#eee",
+  },
+
+  closeDrawer: {
+    position: "absolute",
+    top: 10,
+    right: -50,
+    zIndex: 100,
+    borderRadius: 10,
+    backgroundColor: "gray",
+    padding: 10,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+
   versionText: {
     fontSize: 12,
     fontFamily: "BarlowLight",
     fontWeight: "500",
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 10,
+    gap: 5,
+  },
+  innerContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
   },
 });

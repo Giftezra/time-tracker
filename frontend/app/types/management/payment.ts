@@ -6,7 +6,7 @@ export interface OwnerDetails {
   phone: string;
 }
 
-export interface CheckoutContextType {
+export default interface CheckoutContextType {
   ownerAddress: OwnerDetails | undefined;
   billingAddress: BillingAddress;
   handleBillingAddress: (field: keyof BillingAddress, value: string) => void;
@@ -34,6 +34,7 @@ export interface CheckoutContextType {
   overagePlan: number;
   setOveragePlan: (plan: number) => void;
   currentPlan: CurrentPlanDetails | undefined;
+  fetchSubscriptionHistory: () => Promise<SubscriptionHistoryInterface[]>;
 }
 
 export interface BillingAddress {
@@ -97,8 +98,9 @@ export interface CurrentPlanDetails {
 
 export interface SubscriptionHistoryInterface {
   id: string;
-  planName: string;
-  startDate: string;
-  endDate: string;
+  tier: string;
+  start_date: string;
+  renewal_date: string;
   status: "active" | "expiring" | "overdue";
+  billing_cycle?:string;
 }

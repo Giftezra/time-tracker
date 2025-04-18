@@ -1,4 +1,6 @@
-export interface ProfileContextType {
+import { CompanyInterface } from "./onboarding";
+
+export default interface ProfileContextType {
   notificationToggle: string[];
   handleToggle: (toggle: string) => void;
   handleLink: (link: string) => void;
@@ -16,21 +18,17 @@ export interface ProfileContextType {
   setAllowMarketingEmails(allow: boolean): void;
   onModalVisible: boolean;
   setOnModalVisible: (visible: boolean) => void;
+  companyDetails: CompanyInterface | undefined;
+  setCompanyDetails: (companyDetails: CompanyInterface | undefined) => void;
+  createCompany: (companyDetails?: CompanyInterface) => void;
 }
 
-export interface ProfileUpdateType {
+export interface ProfileUpdateType extends CompanyInterface {
   firstname?: string;
   lastname?: string;
   email?: string;
   phone?: string;
   dob?: string;
-  company_name?: string;
-  company_address?: string;
-  company_postcode?: string;
-  company_website?: string;
-  company_services?: string;
-  company_helpline?: string;
-  company_email?: string;
 }
 
 export interface UserNotificationType {
@@ -38,5 +36,3 @@ export interface UserNotificationType {
   allow_push_notification: boolean;
   allow_marketing_emails: boolean;
 }
-
-

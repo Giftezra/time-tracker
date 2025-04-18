@@ -61,9 +61,10 @@ const ManagementCalendar = () => {
                   </View>
                 ) : (
                   <ScrollView
-                    style={{ flex: 1 }}
+                    style={{ flexGrow: 1 }}
                     horizontal={true}
                     showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={{ flexGrow: 1 }}
                   >
                     <CalendarShiftComponent />
                   </ScrollView>

@@ -1,18 +1,14 @@
-import { useLoadedFonts } from "@/hooks/useLoadedFonts";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import React, { useState, useCallback } from "react";
+import React, { useState } from "react";
 import {
   Platform,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
   Alert,
 } from "react-native";
-("react-native-paper-dates");
-
 import { EmployeeType } from "@/app/types/management/employee";
 import { OpenTaskProps } from "@/app/types/management/task";
 import { FlatList } from "react-native-gesture-handler";

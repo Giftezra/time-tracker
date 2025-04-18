@@ -14,7 +14,7 @@ from staff.models import Staff
 from django.views.decorators.csrf import csrf_exempt
 import json
 from datetime import datetime, timedelta, timezone
-from management.models import Overage, Billing
+from management.models import Overage, Billing, SubscriptionHistory
 
 # Initialize Stripe with your secret key
 stripe.api_key = settings.STRIPE_SECRET_KEY
@@ -142,7 +142,8 @@ def update_subscription_plan(request):
         start_date = timezone.now().date()
         renewal_date = start_date + timedelta(days=365 if billing_period == 'annually' else 30)
         
-        # Update the subscription plan
+        # Update the subscription plan if it exists, otherwise create a new one
+        # Then create a new subscription history record to keep a record of the subscription plans
         subscription_plan, created = SubscriptionPlan.objects.update_or_create(
             company=company,
             defaults={
@@ -152,6 +153,11 @@ def update_subscription_plan(request):
                 'renewal_date': renewal_date,
                 'is_active': True,
             }
+        )
+        subscription_history = SubscriptionHistory.objects.create(
+            subscription=subscription_plan,
+            start_date=subscription_plan.start_date,
+            renewal_date=subscription_plan.renewal_date,
         )
         print('tier', tier)
         print('company', company)
@@ -166,6 +172,38 @@ def update_subscription_plan(request):
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
     
+
+
+@api_view(["GET"])
+@owner_required
+@permission_classes([IsAuthenticated])
+def get_subscription_history(request):
+    """ Get the subscription history from the database """
+    try:
+        # Get the associated company
+        company = Company.objects.get(owner=request.user)
+        # Get the owners current subscription plan
+        # Which is then used to get the subscription history which would contain the previous subscription plans
+        # Return the subscription history data
+        subscription_plan = SubscriptionPlan.objects.get(company=company)
+        subscription_history = SubscriptionHistory.objects.filter(subscription=subscription_plan)
+        subscription_history_data = []
+        for history in subscription_history:
+            # Get the status of the subscription given the renewal date and if the subscription is active
+            history_status = 'active' if history.subscription.is_active else 'expiring' if history.subscription.renewal_date < timezone.now().date() else 'overdue'
+            subscription_history_data.append({
+                'id': history.id,
+                'start_date': history.start_date,
+                'renewal_date': history.renewal_date,
+                'tier': history.subscription.tier.name,
+                'billing_cycle': history.subscription.billing_cycle,
+                'status': history_status,
+            })
+        return Response({'subscription_history': subscription_history_data}, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+
 
 
 @csrf_exempt
