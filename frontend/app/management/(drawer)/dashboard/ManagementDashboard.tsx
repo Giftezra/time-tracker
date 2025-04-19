@@ -11,7 +11,7 @@ import React, { useState } from "react";
 import ContractChartComponent from "@/app/component/management/dashboard/contractChart";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { useDashboardContext } from "@/app/context/management/dashboard/dashboardContext";
+import { useDashboardContext } from "@/app/context/management/dashboard/ManagementDashboardContext";
 import EmployeeAnalyticsComponent from "@/app/component/management/employees/employeeAnalytics";
 import { AntDesign, MaterialIcons } from "@expo/vector-icons";
 import WebDashboard from "./WebDashboard";
@@ -134,7 +134,7 @@ const styles = StyleSheet.create({
     maxWidth: 600,
     padding: 15,
     position: "relative",
-    overflow: 'scroll',
+    overflow: "scroll",
     minHeight: 600,
   },
 

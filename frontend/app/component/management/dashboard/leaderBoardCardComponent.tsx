@@ -1,7 +1,7 @@
 import { Image, StyleSheet, Text, View, TouchableOpacity } from "react-native";
 import React from "react";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { useDashboardContext } from "@/app/context/management/dashboard/dashboardContext";
+import { useDashboardContext } from "@/app/context/management/dashboard/ManagementDashboardContext";
 import { useNavigation } from "@react-navigation/native";
 import SubtitleThemedText from "../../helper/SubtitleThemedText";
 import InnerThemedText from "../../helper/InnerThemedText";

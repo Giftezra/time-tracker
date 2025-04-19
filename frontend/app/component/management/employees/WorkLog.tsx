@@ -4,8 +4,8 @@ import { useThemeColor } from "@/hooks/useThemeColor";
 import { useEmployeeContext } from "@/app/context/management/employee/employeeContext";
 import { WorklogInterface } from "@/app/types/management/employee";
 
-const WorkLog:React.FC<WorklogInterface> = (props) => {
-  const { startShift, endShift, shiftError } = useEmployeeContext();
+const WorkLog = ({workLog}:{workLog: WorklogInterface}) => {
+  const { startShift, endShift, shiftError, setAlertConfig, setIsAlertVisible } = useEmployeeContext();
   const text = useThemeColor({}, "text");
   const highlight = useThemeColor({}, "highlight");
   const primaryColor = useThemeColor({}, "primaryColor");
@@ -15,27 +15,59 @@ const WorkLog:React.FC<WorklogInterface> = (props) => {
 
   const handleStartShift = async () => {
     try {
-        if (!props?.id) {
-        Alert.alert("Error", "No shift ID found");
+        if (!workLog?.id) {
+          setIsAlertVisible(true);
+          setAlertConfig({
+            title: "Error",
+            message: "No shift ID found",
+            onConfirm: () => {
+              setIsAlertVisible(false);
+            },
+            isVisible: true,
+          });
         return;
       }else{
-        await startShift(props.id);
+        await startShift(workLog.id);
       }
     } catch (error) {
-      Alert.alert("Error", shiftError || "Failed to start shift");
+      setIsAlertVisible(true);
+      setAlertConfig({
+        title: "Error",
+        message: shiftError || "Failed to start shift",
+        onConfirm: () => {
+          setIsAlertVisible(false);
+        },
+        isVisible: true,
+      });
     }
   };
 
   const handleEndShift = async () => {
     try {
-      if (!props?.id) {
-        Alert.alert("Error", "No shift ID found");
+      if (!workLog?.id) {
+        setIsAlertVisible(true);
+        setAlertConfig({
+          title: "Error",
+          message: "No shift ID found",
+          onConfirm: () => {
+            setIsAlertVisible(false);
+          },
+          isVisible: true,
+        });
         return;
       }else{
-        await endShift(props.id);
+        await endShift(workLog.id);
       }
     } catch (error) {
-      Alert.alert("Error", shiftError || "Failed to end shift");
+      setIsAlertVisible(true);
+      setAlertConfig({
+        title: "Error",
+        message: shiftError || "Failed to end shift",
+        onConfirm: () => {
+          setIsAlertVisible(false);
+        },
+        isVisible: true,
+      });
     }
   };
 
@@ -44,11 +76,11 @@ const WorkLog:React.FC<WorklogInterface> = (props) => {
       style={[styles.worklogContainer, { backgroundColor: innerBackground }]}
     >
       <Text style={[styles.worklogDetailsText, { color: text }]}>
-        {props?.name} work log
+        {workLog?.name} work log
       </Text>
       <View>
         <Text style={[styles.worklogDetailsText, { color: text }]}>
-          {props?.task_start_date?.split("T")[0]}
+          {workLog?.task_start_date?.split("T")[0]}
         </Text>
         <Text
           style={[
@@ -61,7 +93,7 @@ const WorkLog:React.FC<WorklogInterface> = (props) => {
             },
           ]}
         >
-          {props?.task_start_time}
+          {workLog?.task_start_time}
         </Text>
         <Text
           style={[
@@ -77,7 +109,7 @@ const WorkLog:React.FC<WorklogInterface> = (props) => {
               Clock in
             </Text>
             <Text style={[styles.clockinClockoutText, { color: otherText }]}>
-              {props?.shift_start_time?.split("T")[1]}
+              {workLog?.shift_start_time?.split("T")[1]}
             </Text>
             <TouchableOpacity
               style={[
@@ -86,16 +118,16 @@ const WorkLog:React.FC<WorklogInterface> = (props) => {
                   backgroundColor: primaryColor,
                   shadowColor: secondaryColor,
                   borderBlockColor: highlight,
-                  opacity: props?.status === "started" ? 0.5 : 1,
+                  opacity: workLog?.status === "started" ? 0.5 : 1,
                 },
               ]}
-              disabled={props?.status === "started"}
+              disabled={workLog?.status === "started"}
               onPress={handleStartShift}
             >
               <Text
                 style={[
                   styles.clockinClockoutButtonText,
-                  { opacity: props?.status === "started" ? 0.5 : 1 },
+                  { opacity: workLog?.status === "started" ? 0.5 : 1 },
                 ]}
               >
                 start shift
@@ -107,7 +139,7 @@ const WorkLog:React.FC<WorklogInterface> = (props) => {
               Clock out
             </Text>
             <Text style={[styles.clockinClockoutText, { color: otherText }]}>
-              {props?.task_end_time}
+              {workLog?.task_end_time}
             </Text>
             <TouchableOpacity
               style={[
@@ -116,10 +148,10 @@ const WorkLog:React.FC<WorklogInterface> = (props) => {
                   backgroundColor: primaryColor,
                   shadowColor: primaryColor,
                   borderBlockColor: highlight,
-                  opacity: props?.status !== "started" ? 0.5 : 1,
+                    opacity: workLog?.status !== "started" ? 0.5 : 1,
                 },
               ]}
-              disabled={props?.status !== "started"}
+              disabled={workLog?.status !== "started"}
               onPress={handleEndShift}
             >
               <Text style={styles.clockinClockoutButtonText}>end shift</Text>

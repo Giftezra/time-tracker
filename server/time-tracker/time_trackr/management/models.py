@@ -77,10 +77,8 @@ class UserManager(BaseUserManager):
 
   def create_staff(self, email, password, company=None, **extra_fields):
     extra_fields.setdefault('is_employee', True)
-    
     # First create the user
     user = self.create_user(email, password, **extra_fields)
-    
     # If company is provided, create the staff relationship
     if company:
       try:

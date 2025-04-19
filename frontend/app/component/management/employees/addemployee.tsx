@@ -11,36 +11,26 @@ import {
 import React, { useState } from "react";
 import { AntDesign, MaterialIcons } from "@expo/vector-icons";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { Employee } from "@/app/types/management/employee";
 import TextInputComponent from "@/app/component/helper/textInput";
-import CustomCalendar from "@/app/component/helper/customCalendar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import SubmitButtonComponent from "@/app/component/helper/submitButton";
 import { useEmployeeContext } from "@/app/context/management/employee/employeeContext";
-
-const idType = [
-  "National ID",
-  "Passport",
-  "Voter's card",
-  "Driver's license",
-  "Visa",
-  "Residence permit",
-];
+import validateDateInput from "@/app/utils/helpers/dateValidation";
 
 const titled = ["admin", "staff"];
 
-const AddEmployeeComponent = () => {
-  const { employees, handleAddEmployeeInput, submitEmployee, error } =
-    useEmployeeContext();
-
-  const [showCalendar, setShowCalendar] = useState<boolean>(false);
-  const toggleCalendar = () => {
-    setShowCalendar(!showCalendar);
-  };
-
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [toggle, setToggle] = useState<string>();
+const AddEmployeeComponent = ({setIsModalOpen}:{setIsModalOpen: (isModalOpen: boolean) => void}) => {
+  const {
+    newEmployee,
+    handleAddEmployeeInput,
+    error,
+    onboardNemEmployee,
+    setAlertConfig,
+    setIsAlertVisible,
+  } = useEmployeeContext();
+  const [confirmPassword, setConfirmPassword] = useState<string>();
+  const [toggle, setToggle] = useState<string>("");
 
   /* Handles the toggle for the user id type selection and the role */
   const handleIdTypeToggle = (value: string) => {
@@ -51,227 +41,271 @@ const AddEmployeeComponent = () => {
     }
   };
 
-  const secondaryColor = useThemeColor({}, "secondaryColor");
-  const highlight = useThemeColor({}, "highlight");
+  /* Handle the submit button to ensure all the fields are filled.
+   * Validate the names, email, phone number, password and confirm password.
+   * Ensure these fields are not empty and display an array of error if any of the fields are empty.
+   */
+  const handleSubmit = async () => {
+    const errors = [];
+    if (!newEmployee?.first_name) {
+      errors.push("First name is required");
+    }
+    if (!newEmployee?.last_name) {
+      errors.push("Last name is required");
+    }
+    if (!newEmployee?.email) {
+      errors.push("Email is required");
+    }
+    if (!newEmployee?.phone || !newEmployee?.phone.includes("+")) {
+      errors.push("Phone number is required and must include a country code");
+    }
+    if (!newEmployee?.password) {
+      errors.push("Password is required");
+    }
+    if (!newEmployee?.dob) {
+      errors.push("Date of birth is required");
+    }
+    if (!newEmployee?.address) {
+      errors.push("Address is required");
+    }
+    if (!newEmployee?.city) {
+      errors.push("City is required");
+    }
+    if (!newEmployee?.postcode) {
+      errors.push("Postcode is required");
+    }
+    if (!newEmployee?.country) {
+      errors.push("Country is required");
+    }
+    // Display the errors in an alert if any of the fields are empty
+    // If there are validation errors, show them in the alert
+    if (errors.length > 0) {
+      setAlertConfig({
+        title: "Validation Error",
+        message: errors.join("\n"),
+        onConfirm: () => {
+          setIsAlertVisible(false);
+        },
+        isVisible: true,
+      });
+      setIsAlertVisible(true);
+      return;
+    }
+    // If validation passes, show confirmation dialog
+    setAlertConfig({
+      title: "Registration Information",
+      message: `You are about to register ${newEmployee?.first_name} ${newEmployee?.last_name}. Please ensure the details are correct before submitting. \n Email: ${newEmployee?.email} \n Phone: ${newEmployee?.phone} \n Role: ${newEmployee?.role} \n `,
+      onConfirm: async () => {
+        await onboardNemEmployee();
+        setIsAlertVisible(false);
+        setIsModalOpen(false);
+      },
+      isVisible: true,
+    });
+    setIsAlertVisible(true);
+  };
+
   const text = useThemeColor({}, "text");
   const innerBackground = useThemeColor({}, "innerBackground");
-  const textinput = useThemeColor({}, "textinput");
   const inactivebtn = useThemeColor({}, "inactivebtn");
   const icon = useThemeColor({}, "icon");
 
   return (
     <SafeAreaProvider style={{ flex: 1 }}>
-      <GestureHandlerRootView
-        style={[styles.mainContainer, { backgroundColor: secondaryColor }]}
-      >
-        {/* View contains the contents to create and manage adding a new employee */}
+      <GestureHandlerRootView style={styles.mainContainer}>
         <View style={styles.addEmployeeContainer}>
-          <Text>Onboard new employee</Text>
-          {/* Contains the employees first and last name */}
-          <ScrollView style={styles.container}>
-            <View
-              style={{
-                flexDirection: "column",
-              }}
-            >
-              <Text style={[styles.subheaderTexts, { color: text }]}>
-                Employee details
+          <Text style={styles.headerText}>Onboard New Employee</Text>
+          <ScrollView
+            style={styles.container}
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={styles.formSection}>
+              <Text style={[styles.sectionHeader, { color: text }]}>
+                Employee Details
               </Text>
-              <TextInputComponent
-                placeholder="First name"
-                text="first_name"
-                value={employees?.first_name}
-                setValue={(value) =>
-                  handleAddEmployeeInput("first_name", value)
-                }
-              />
-              <TextInputComponent
-                placeholder="last name"
-                text="last_name"
-                value={employees?.last_name}
-                setValue={(value) => handleAddEmployeeInput("last_name", value)}
-              />
-              <TextInputComponent
-                placeholder="Email"
-                text="email"
-                value={employees?.email}
-                setValue={(value) => handleAddEmployeeInput("email", value)}
-              />
-              <TextInputComponent
-                placeholder="Phone number"
-                text="phoneNumber"
-                value={employees?.phoneNumber}
-                setValue={(value) =>
-                  handleAddEmployeeInput("phoneNumber", value)
-                }
-              />
-
-              {/* Contains the view for the date of birth.
-                When clicked, the view will display a popup of the calender */}
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
-                <View style={{ flexGrow: 1 }}>
-                  <TextInputComponent
-                    placeholder="  YYYY-MM-DD"
-                    text="date of birth"
-                    value={employees?.dob}
-                    setValue={(value) => handleAddEmployeeInput("dob", value)}
-                  />
+              <View style={styles.inputGroup}>
+                <View style={styles.row}>
+                  <View style={styles.column}>
+                    <TextInputComponent
+                      placeholder="First name"
+                      text="first_name"
+                      value={newEmployee?.first_name}
+                      setValue={(value) =>
+                        handleAddEmployeeInput("first_name", value)
+                      }
+                    />
+                  </View>
+                  <View style={styles.column}>
+                    <TextInputComponent
+                      placeholder="Last name"
+                      text="last_name"
+                      value={newEmployee?.last_name}
+                      setValue={(value) =>
+                        handleAddEmployeeInput("last_name", value)
+                      }
+                    />
+                  </View>
                 </View>
 
-                <Pressable
-                  style={{
-                    padding: 2,
-                    borderRadius: 5,
-                    marginTop: 5,
+                <TextInputComponent
+                  placeholder="Email"
+                  text="email"
+                  value={newEmployee?.email}
+                  setValue={(value) => handleAddEmployeeInput("email", value)}
+                />
+                <TextInputComponent
+                  placeholder="+44"
+                  text="phone"
+                  value={newEmployee?.phone}
+                  setValue={(value) => handleAddEmployeeInput("phone", value)}
+                />
+                <TextInputComponent
+                  placeholder="YYYY-MM-DD"
+                  text="date of birth"
+                  value={newEmployee?.dob}
+                  setValue={(value) => {
+                    const formattedDate = validateDateInput(value);
+                    handleAddEmployeeInput("dob", formattedDate);
                   }}
-                  onPress={toggleCalendar}
-                >
-                  <AntDesign name="calendar" size={24} color={textinput} />
-                </Pressable>
+                />
               </View>
             </View>
 
-            {/* Conditonally render the calender display when the button is clicked */}
-            {showCalendar && (
-              <View style={{ width: 150, zIndex: 100 }}>
-                <CustomCalendar onSelectDate={toggleCalendar} />
-              </View>
-            )}
-
-            {/* View renders the  dropdowns used to manage the selection of 
-              The new employees id choice, and the role the employee would be playing.
-              
-              */}
-            <View>
-              {/* These views contains the buttons to toggle a dropdown which will h=be held in the same view component */}
-              <View
-                style={[
-                  styles.buttonContainer,
-                  { backgroundColor: innerBackground },
-                ]}
-              >
-                <Pressable
-                  style={[styles.buttons, { backgroundColor: inactivebtn }]}
-                  onPress={() => handleIdTypeToggle("idType")}
+            {/* Replace the Role & Employment Type section with just Role */}
+            <View style={styles.formSection}>
+              <Text style={[styles.sectionHeader, { color: "#000" }]}>
+                Role
+              </Text>
+              <View style={styles.inputGroup}>
+                {/* Contains the dropdown for the role  */}
+                <View
+                  style={[
+                    styles.selectContainer,
+                    { backgroundColor: innerBackground },
+                  ]}
                 >
-                  <AntDesign name="idcard" size={24} color={icon} />
-                  <Text style={[styles.buttonText, { color: text }]}>
-                    {employees?.id_type ? employees.id_type : "choose id"}
-                  </Text>
-                  <AntDesign
-                    name={toggle === "idType" ? "up" : "down"}
-                    size={18}
-                    color="black"
-                  />
-                </Pressable>
+                  <Pressable
+                    style={[
+                      styles.selectButton,
+                      { backgroundColor: inactivebtn },
+                    ]}
+                    onPress={() => handleIdTypeToggle("job title")}
+                  >
+                    <View style={styles.selectButtonContent}>
+                      <MaterialIcons name="work" size={20} color={text} />
+                      <Text style={[styles.selectButtonText, { color: text }]}>
+                        {newEmployee?.role ? newEmployee.role : "Select Role"}
+                      </Text>
+                    </View>
+                  </Pressable>
 
-                {/* Conditionally render the id types provided when the user toggles the button */}
-                {toggle === "idType" && (
-                  <View style={styles.dropdownContainer}>
-                    {idType.map((id, index) => (
-                      <Pressable
-                        key={index}
-                        onPress={() => {
-                          handleAddEmployeeInput("id_type", id);
-                        }}
-                        style={[
-                          styles.dropdownbuttons,
-                          { backgroundColor: inactivebtn },
-                        ]}
-                      >
-                        <Text style={[styles.dropdownText, { color: text }]}>
-                          {id}
-                        </Text>
-                      </Pressable>
-                    ))}
-                  </View>
-                )}
-              </View>
-
-              {/* Contains the roles */}
-              <View
-                style={[
-                  styles.buttonContainer,
-                  { backgroundColor: innerBackground },
-                ]}
-              >
-                <Pressable
-                  style={[styles.buttons, { backgroundColor: inactivebtn }]}
-                  onPress={() => handleIdTypeToggle("job title")}
-                >
-                  <MaterialIcons name="work" size={24} color={icon} />
-                  <Text style={styles.buttonText}>
-                    {employees ? employees.role : "role"}
-                  </Text>
-                  <AntDesign name="down" size={18} color="black" />
-                </Pressable>
-
-                {/* Conditionally render the roles when the boolean is true which means the user has toggled the button */}
-                {toggle === "job title" && (
-                  <View style={styles.dropdownContainer}>
-                    {titled.map((title, index) => (
-                      <Pressable
-                        key={index}
-                        onPress={() => {
-                          handleAddEmployeeInput("role", title);
-                        }}
-                        style={[
-                          styles.dropdownbuttons,
-                          { backgroundColor: inactivebtn },
-                        ]}
-                      >
-                        <Text style={[styles.dropdownText, { color: text }]}>
-                          {title}
-                        </Text>
-                      </Pressable>
-                    ))}
-                  </View>
-                )}
+                  {toggle === "job title" && (
+                    <View style={styles.dropdownContainer}>
+                      {titled.map((title, index) => (
+                        <Pressable
+                          key={index}
+                          onPress={() => {
+                            handleAddEmployeeInput("role", title);
+                            handleIdTypeToggle("job title");
+                          }}
+                          style={[
+                            styles.dropdownItem,
+                            { backgroundColor: inactivebtn },
+                          ]}
+                        >
+                          <Text style={[styles.dropdownText, { color: text }]}>
+                            {title}
+                          </Text>
+                        </Pressable>
+                      ))}
+                    </View>
+                  )}
+                </View>
               </View>
             </View>
 
-            <View style={{ width: "100%" }}>
-              <View>
+            {/* Add new Address section */}
+            <View style={styles.formSection}>
+              <Text style={[styles.sectionHeader, { color: "#000" }]}>
+                Address
+              </Text>
+              <View style={styles.inputGroup}>
+                <TextInputComponent
+                  placeholder="Address"
+                  text="address"
+                  value={newEmployee?.address}
+                  setValue={(value) => handleAddEmployeeInput("address", value)}
+                />
+                <View style={styles.row}>
+                  <View style={styles.column}>
+                    <TextInputComponent
+                      placeholder="City"
+                      text="city"
+                      value={newEmployee?.city}
+                      setValue={(value) =>
+                        handleAddEmployeeInput("city", value)
+                      }
+                    />
+                  </View>
+                  <View style={styles.column}>
+                    <TextInputComponent
+                      placeholder="Postcode"
+                      text="postcode"
+                      value={newEmployee?.postcode}
+                      setValue={(value) =>
+                        handleAddEmployeeInput("postcode", value)
+                      }
+                      uppercase={true}
+                    />
+                  </View>
+                </View>
+                <TextInputComponent
+                  placeholder="Country"
+                  text="country"
+                  value={newEmployee?.country}
+                  setValue={(value) => handleAddEmployeeInput("country", value)}
+                />
+              </View>
+            </View>
+
+            <View style={styles.formSection}>
+              <Text style={[styles.sectionHeader, { color: "#000" }]}>
+                Security
+              </Text>
+              <View style={styles.inputGroup}>
                 <TextInputComponent
                   placeholder="Password"
                   text="password"
-                  value={employees?.password}
+                  value={newEmployee?.password}
                   setValue={(value) =>
                     handleAddEmployeeInput("password", value)
                   }
                 />
-              </View>
-              <View>
                 <TextInputComponent
                   placeholder="Confirm password"
                   text="confirm password"
                   value={confirmPassword}
+                  setValue={setConfirmPassword}
                 />
+
+                {newEmployee?.password !== confirmPassword && (
+                  <Text style={styles.errorText}>Passwords do not match</Text>
+                )}
+
+                {error && (
+                  <View style={styles.errorContainer}>
+                    <Text style={styles.errorText}>{error.email}</Text>
+                  </View>
+                )}
               </View>
             </View>
 
-            {employees?.password !== confirmPassword && (
-              <Text style={{ fontSize: 10, color: "red" }}>
-                password does not match
-              </Text>
-            )}
-
-            {error && (
-              <View>
-                <Text>{error.email}</Text>
-              </View>
-            )}
-
-            <SubmitButtonComponent
-              title="create new staff"
-              onPress={submitEmployee}
-            />
+            <View style={styles.submitContainer}>
+              <SubmitButtonComponent
+                title="Create New Employee"
+                onPress={handleSubmit}
+              />
+            </View>
           </ScrollView>
         </View>
       </GestureHandlerRootView>
@@ -279,122 +313,131 @@ const AddEmployeeComponent = () => {
   );
 };
 
-export default AddEmployeeComponent;
-
 const styles = StyleSheet.create({
   mainContainer: {
     flex: 1,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    padding: 5,
+    backgroundColor: "#f5f5f5",
   },
 
   addEmployeeContainer: {
-    flex: 2,
-    padding: 5,
-    alignItems: "center",
+    flex: 1,
+    padding: 20,
+    maxWidth: 800,
+    width: "100%",
+    alignSelf: "center",
   },
 
   container: {
-    width: "100%",
-    padding: 10,
     flex: 1,
-    marginVertical: 10,
   },
 
-  namesContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    flexWrap: "wrap",
-  },
-
-  input: {
-    flex: 1,
-    padding: 8,
-    fontSize: 14,
-    fontFamily: "BarlowRegular",
+  headerText: {
+    fontSize: 20,
+    fontFamily: "BarlowMedium",
+    marginBottom: 24,
+    color: "#1a1a1a",
+    textAlign: "center",
+    letterSpacing: 0.5,
     fontWeight: "600",
-    borderWidth: 1,
-    borderRadius: 5,
-    marginHorizontal: 5,
-    marginVertical: 5,
-    elevation: 10,
-    shadowRadius: 10,
+    textTransform: "uppercase",
   },
 
-  buttons: {
-    width: "100%",
+  formSection: {
+    marginBottom: 32,
+    backgroundColor: "#ffffff",
+    borderRadius: 12,
+    padding: 20,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+
+  sectionHeader: {
+    fontSize: 15,
+    fontFamily: "BarlowMedium",
+    marginBottom: 20,
+    fontWeight: "600",
+    letterSpacing: 0.5,
+  },
+
+  inputGroup: {
+    gap: 10,
+  },
+
+  row: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    gap: 16,
+  },
+
+  column: {
+    flex: 1,
+  },
+
+  selectContainer: {
+    borderRadius: 8,
+    overflow: "hidden",
+  },
+
+  selectButton: {
+    flexDirection: "row",
     alignItems: "center",
     padding: 10,
-    backgroundColor: "#0e609a",
-  },
-
-  buttonContainer: {
     borderRadius: 5,
-    borderWidth: 1,
-    marginVertical: 10,
-    alignItems: "center",
   },
 
-  buttonText: {
-    color: "white",
-    textTransform: "capitalize",
+  selectButtonContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+
+  selectButtonText: {
+    fontSize: 15,
     fontFamily: "RobotoRegular",
-    fontWeight: "bold",
-    fontSize: 13,
+    flex: 1,
   },
 
   dropdownContainer: {
     width: "100%",
-    alignItems: "center",
-    padding: 10,
+    borderTopWidth: 1,
+    borderTopColor: "#e1e1e1",
   },
 
-  dropdownbuttons: {
-    padding: 10,
-    width: "100%",
-    borderWidth: 0.3,
-    marginVertical: 2,
+  dropdownItem: {
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#e1e1e1",
   },
 
   dropdownText: {
-    textTransform: "capitalize",
-    fontFamily: "RobotoRegular",
-    fontWeight: "bold",
-    fontSize: 13,
-  },
-
-  subheaderTexts: {
-    fontSize: 15,
-    fontWeight: "light",
+    fontSize: 14,
     fontFamily: "RobotoRegular",
     textTransform: "capitalize",
-    padding: 5,
-    marginVertical: 10,
-    alignSelf: "center",
   },
 
-  createButton: {
-    width: "100%",
-    padding: Platform.OS === "web" ? 10 : 14,
-    borderRadius: 5,
-    marginVertical: 10,
-    alignItems: "center",
-    elevation: 10,
-    shadowRadius: 10,
-    shadowOpacity: 0.5,
-    borderWidth: 2,
-    marginTop: 20,
+  errorContainer: {
+    padding: 12,
+    backgroundColor: "#fff1f0",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#ffccc7",
   },
 
-  createButtonText: {
-    fontSize: 15,
-    fontWeight: "700",
+  errorText: {
+    color: "#ff4d4f",
+    fontSize: 14,
     fontFamily: "RobotoRegular",
-    textTransform: "capitalize",
-    color: "white",
+  },
+
+  submitContainer: {
+    marginTop: 24,
+    marginBottom: 40,
   },
 });
+
+export default AddEmployeeComponent;

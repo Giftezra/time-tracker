@@ -16,6 +16,13 @@ import {
 } from "react";
 import { Alert } from "react-native";
 import { useAuth } from "@/app/authentication";
+import AlertConfig from "@/app/types/management/AlertConfig";
+import AlertModal from "@/app/component/helper/AlertModal";
+import { en, registerTranslation } from "react-native-paper-dates";
+import { Platform } from "react-native";
+
+// Register the English locale
+registerTranslation("en", en);
 
 /**
  * Create a context for the management task context.
@@ -56,7 +63,6 @@ const ManagementTaskProvider = ({
   const [unassignedTask, setUnassignedTask] = useState<OpenTaskProps[]>([]);
   const [editTask, setEditTask] = useState<OpenTaskProps | null>(null);
   const [activeTasks, setActiveTasks] = useState<ActiveTaskType[]>([]);
-
   const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
   const [isEditTaskModalVisible, setIsEditTaskModalVisible] =
     useState<boolean>(false);
@@ -65,23 +71,17 @@ const ManagementTaskProvider = ({
     ActiveTaskType | undefined
   >();
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [isCreating, setIsCreating] = useState<boolean>(false);
-
   const [assignTaskModalVisible, setAssignTaskModalVisible] = useState(false);
-
   const [selectedTask, setSelectedTask] = useState<OpenTaskProps | null>(null);
-
   const [dates, setDates] = useState<Date[]>([]);
   const [startTime, setStartTime] = useState({ hours: 0, minutes: 0 });
   const [endTime, setEndTime] = useState({ hours: 0, minutes: 0 });
   const [dateVisible, setDateVisible] = useState(false);
   const [startTimeVisible, seStartTimeVisible] = useState(false);
   const [endTimeVisible, setEndTimeVisible] = useState(false);
-
-  const [selectedContract, setSelectedContract] =
-    useState<ContractListType | null>(null);
-  const [employeeSelected, setEmployeeSelected] = useState<EmployeeType | null>(
-    null
+  const [isAlertVisible, setIsAlertVisible] = useState<boolean>(false);
+  const [alertConfig, setAlertConfig] = useState<AlertConfig | undefined>(
+    undefined
   );
 
   /**
@@ -92,17 +92,21 @@ const ManagementTaskProvider = ({
     setAssignTaskModalVisible(true);
   };
 
+  // Close the modal and display an alert modal to the user
+  // Make them aware that the task has been assigned to the employee
   const closeAssignTaskModal = () => {
     setAssignTaskModalVisible(false);
-    Alert.alert("Task Assigned", "Task has been assigned to the employee", [
-      {
-        text: "OK",
-        onPress: () => {
-          setAssignTaskModalVisible(false);
-        },
+    setAlertConfig({
+      title: "Task Assigned",
+      message: "Task has been assigned to the employee",
+      onConfirm() {
+        setAssignTaskModalVisible(false);
       },
-    ]);
+      isVisible: true,
+    });
+    setIsAlertVisible(true);
   };
+
   /**
    * This hook is used to fetch the users dat from the server when the page loads.
    * the data is fetches are
@@ -119,8 +123,6 @@ const ManagementTaskProvider = ({
         const unassignedTasks = await getOpenTasks();
         const activeTask = await getActiveTasks();
         const availableEmployees = await getAvailableEmployees();
-
-        // Set the contracts and employees in the state
         setContractList(contracts);
         setUnassignedTask(unassignedTasks);
         setActiveTasks(activeTask);
@@ -187,7 +189,7 @@ const ManagementTaskProvider = ({
           },
         }
       );
-      const employees: EmployeeType[] = response.data.employees;
+      const employees: EmployeeType[] = response.data.available_employees;
       return employees;
     } catch (error: any) {
       console.error("[get_available_employees] Error:", {
@@ -241,54 +243,6 @@ const ManagementTaskProvider = ({
   };
 
   /**
-   * The method is used to create a task when called.
-   * @param task is the object that contains the task details to be created.
-   */
-  const create_shift = async (task: CreateTaskInterface) => {
-    try {
-      const response = await axiosInstance.post("/api/create/shift/", {
-        data: task,
-      });
-      console.log("[create_shift] Success:", {
-        status: response.status,
-        data: response.data,
-      });
-      return response.data;
-    } catch (error: any) {
-      console.error("[create_shift] Error:", {
-        status: error.response?.status,
-        message: error.message,
-        details: error.response?.data,
-      });
-      throw error;
-    }
-  };
-
-  /**
-   * This method is used to create a task when the user does not provide an employee.
-   * @param task is the object that contains the task details to be created.
-   */
-  const create_task = async (task: CreateTaskInterface) => {
-    try {
-      const response = await axiosInstance.post("/api/create/task/", {
-        data: task,
-      });
-      console.log("[create_task] Success:", {
-        status: response.status,
-        data: response.data,
-      });
-      return response.data;
-    } catch (error: any) {
-      console.error("[create_task] Error:", {
-        status: error.response?.status,
-        message: error.message,
-        details: error.response?.data,
-      });
-      throw error;
-    }
-  };
-
-  /**
    * This method is used to terminate a task when the user clicks the terminate button.
    * @param task ActiveTaskType is the object that contains the task details to be terminated.
    * The details to be sent to the server would be the shift id and the employee id.
@@ -296,35 +250,44 @@ const ManagementTaskProvider = ({
   const terminateTask = async (task: ActiveTaskType | undefined) => {
     try {
       if (!task) {
-        throw new Error("Task is undefined");
+        setAlertConfig({
+          title: "Error",
+          message: "Task is undefined",
+          onConfirm() {
+            setIsAlertVisible(false);
+          },
+          isVisible: true,
+        });
+        setIsAlertVisible(true);
+        return;
       }
       const response = await axiosInstance.patch("/api/terminate/shift/", {
         shift_id: task.shift_id,
         employee_id: task.employee_id,
       });
-      console.log("[terminate_task] Success:", {
-        status: response.status,
-        data: response.data,
-      });
-      Alert.alert("Task Terminated", "Task has been terminated", [
-        {
-          text: "OK",
-          onPress: () => {
-            setIsModalVisible(false);
+      if (response.status === 200) {
+        setAlertConfig({
+          title: "Task Terminated",
+          message: response.data.message,
+          onConfirm() {
+            setIsAlertVisible(false);
           },
-        },
-      ]);
-      const updatedActiveTasks = await getActiveTasks();
-      setActiveTasks(updatedActiveTasks);
+          isVisible: true,
+        });
+        setIsAlertVisible(true);
+        const updatedActiveTasks = await getActiveTasks();
+        setActiveTasks(updatedActiveTasks);
+      }
     } catch (error: any) {
-      Alert.alert("Task Termination Error", "Task has not been terminated", [
-        {
-          text: "OK",
-          onPress: () => {
-            setIsModalVisible(false);
-          },
+      setAlertConfig({
+        title: "Error",
+        message: error.response?.data.error,
+        onConfirm() {
+          setIsAlertVisible(false);
         },
-      ]);
+        isVisible: true,
+      });
+      setIsAlertVisible(true);
     }
   };
 
@@ -337,18 +300,30 @@ const ManagementTaskProvider = ({
       const response = await axiosInstance.patch("/api/update/task/", {
         data: task,
       });
-
-      // After successful update, refetch the open tasks
-      const updatedOpenTasks = await getOpenTasks();
-      setUnassignedTask(updatedOpenTasks);
-
-      console.log("[update_task] Success:", {
-        status: response.status,
-        data: response.data,
-      });
-      return response.data.message;
+      if (response.status === 200) {
+        setIsAlertVisible(true);
+        setAlertConfig({
+          title: "Task Updated Status",
+          message: response.data.message,
+          onConfirm() {
+            setIsAlertVisible(false);
+          },
+          isVisible: true,
+        });
+        // After successful update, refetch the open tasks
+        const updatedOpenTasks = await getOpenTasks();
+        setUnassignedTask(updatedOpenTasks);
+      }
     } catch (error: any) {
-      return error;
+      setIsAlertVisible(true);
+      setAlertConfig({
+        title: "Error",
+        message: error.response?.data.error,
+        onConfirm() {
+          setIsAlertVisible(false);
+        },
+        isVisible: true,
+      });
     }
   };
 
@@ -360,7 +335,7 @@ const ManagementTaskProvider = ({
       return;
     }
     router.push({
-      pathname: "/management/(drawer)/messages/main",
+      pathname: "/management/(drawer)/messages/ManagementMessages",
       params: {
         employee_id: task.employee_id,
         employee_name: task.employee_name,
@@ -402,9 +377,12 @@ const ManagementTaskProvider = ({
    * @param params is used to get the dates selected as an array
    */
   const on_confirm_date = useCallback((params: any) => {
-    setDates(params.dates);
+    const selectedDates = params.dates || [];
+    setDates(selectedDates);
+    // Update taskData with the selected dates
+    collectNewTaskData("dates", selectedDates);
     setDateVisible(false);
-    console.log("[on-change-multi]", params);
+    console.log("[on-confirm-date]", selectedDates);
   }, []);
 
   const on_date_dismiss = useCallback(() => {
@@ -451,37 +429,62 @@ const ManagementTaskProvider = ({
   const hideModal = () => setIsModalVisible(false);
 
   /**
-   * This method determines whether to create a task or shift based on employee selection
-   * and handles the API call accordingly
+   * Create a new task or shift based on the employee selection.
+   * if the selected employee is not null, then create a shift otherwise, create a task.
+   * Check the fields for accuracy and display an alert for incorrect fields and fields that are missing.
+   * If all fields are correct, then create a the task or shift and display a success alert.
    */
-  const handleTaskCreation = async (taskData: CreateTaskInterface) => {
+  const handleTaskCreation = async () => {
+    if (!taskData) {
+      setIsAlertVisible(true);
+      setAlertConfig({
+        title: "Error",
+        message: "Task data is undefined",
+        onConfirm() {
+          setIsAlertVisible(false);
+        },
+        isVisible: true,
+      });
+      return;
+    }
+
     try {
-      setIsCreating(true);
-      if (!taskData) {
-        throw new Error("Task data is undefined");
-      }
-
-      // Validate required fields
+      // Check if the amount is greater than 0 or display an error if it is not
       if (!taskData.amount || taskData.amount <= 0) {
-        setTaskDataError({
-          ...taskData,
-          amount: 0,
+        setIsAlertVisible(true);
+        setAlertConfig({
+          title: "Error",
+          message: "Amount must be greater than 0",
+          onConfirm() {
+            setIsAlertVisible(false);
+          },
+          isVisible: true,
         });
         return;
       }
 
-      if (!taskData.dates || taskData.dates.length === 0) {
-        setTaskDataError({
-          ...taskData,
-          dates: [],
+      // Check if the dates exist in taskData
+      if (
+        !taskData.dates ||
+        !Array.isArray(taskData.dates) ||
+        taskData.dates.length === 0
+      ) {
+        setIsAlertVisible(true);
+        setAlertConfig({
+          title: "Error",
+          message: "Please select at least one date",
+          onConfirm() {
+            setIsAlertVisible(false);
+          },
+          isVisible: true,
         });
         return;
       }
 
-      // Validate that all dates are in the future
+      // Check if all dates are in the future
       const now = new Date();
-      now.setHours(0, 0, 0, 0); // Reset time to start of day for date comparison
-
+      now.setHours(0, 0, 0, 0);
+      // Reset time to start of day for date comparison
       const hasPastDate = taskData.dates.some((date) => {
         const taskDate = new Date(date);
         taskDate.setHours(0, 0, 0, 0);
@@ -489,11 +492,20 @@ const ManagementTaskProvider = ({
       });
 
       if (hasPastDate) {
-        Alert.alert("Invalid Dates", "Task dates cannot be in the past");
+        setIsAlertVisible(true);
+        setAlertConfig({
+          title: "Invalid Dates",
+          message: "Task dates cannot be in the past",
+          onConfirm() {
+            setIsAlertVisible(false);
+          },
+          isVisible: true,
+        });
+        setIsAlertVisible(true);
         return;
       }
 
-      // Validate time fields
+      // Check if the start and end time are not null or display an error if they are
       if (!taskData.start_time || !taskData.end_time) {
         setTaskDataError({
           ...taskData,
@@ -510,7 +522,15 @@ const ManagementTaskProvider = ({
         taskData.end_time.hours * 60 + taskData.end_time.minutes;
 
       if (endMinutes <= startMinutes) {
-        Alert.alert("Invalid Times", "End time must be after start time");
+        setIsAlertVisible(true);
+        setAlertConfig({
+          title: "Invalid Times",
+          message: "End time must be after start time",
+          onConfirm() {
+            setIsAlertVisible(false);
+          },
+          isVisible: true,
+        });
         return;
       }
 
@@ -518,42 +538,67 @@ const ManagementTaskProvider = ({
       const formattedDates = taskData.dates.map(
         (date) => date.toISOString().split("T")[0]
       );
+
       const formattedData = {
         ...taskData,
         dates: formattedDates,
-        start_date: formattedDates[0], // Use first date as start date
-        end_date: formattedDates[formattedDates.length - 1], // Use last date as end date
+        start_date: formattedDates[0],
+        end_date: formattedDates[formattedDates.length - 1],
+        amount: Number(taskData.amount), // Ensure amount is a number
       };
 
-      // Call appropriate creation method based on whether employees are selected
-      console.log("[handleTaskCreation] Formatted Data:", formattedData);
-      const response = await axiosInstance.post(
+      console.log("Sending request with data:", formattedData); // Add logging
+
+      const endpoint =
         taskData.employee_id && taskData.employee_id.length > 0
           ? "/api/create/shift/"
-          : "/api/create/task/",
-        { data: formattedData }
-      );
+          : "/api/create/task/";
 
-      Alert.alert(
-        "Success",
-        `${taskData.employee_id ? "Shift" : "Task"} created successfully`,
-        [{ text: "OK" }]
-      );
+      const response = await axiosInstance.post(endpoint, {
+        data: formattedData,
+      });
 
-      // Refresh data after creation
-      const unassignedTasks = await getOpenTasks();
-      setUnassignedTask(unassignedTasks);
+      console.log("Response received:", response.data); // Add logging
 
-      return response.data;
+      if (response.status === 201) {
+        const message = `${taskData.employee_id ? "Shift" : "Task"} ${
+          response.data.message
+        } \n ${
+          response.data.successful_assignments?.length > 0
+            ? "Employees assigned successfully"
+            : ""
+        }`;
+
+        setIsAlertVisible(true);
+        setAlertConfig({
+          title: "Success",
+          message: message,
+          onConfirm() {
+            setIsAlertVisible(false);
+            // Clear form data after successful creation
+            setTaskData(undefined);
+          },
+          isVisible: true,
+        });
+
+        // Refresh data after creation
+        const unassignedTasks = await getOpenTasks();
+        setUnassignedTask(unassignedTasks);
+      }
     } catch (error: any) {
-      Alert.alert(
-        "Error",
-        error.response?.data?.error || "Failed to create task/shift",
-        [{ text: "OK" }]
-      );
-      throw error;
-    } finally {
-      setIsCreating(false);
+      console.error("Error creating task/shift:", error); // Add error logging
+      const message =
+        error.response?.data?.error ||
+        "An error occurred while creating the task/shift";
+      setIsAlertVisible(true);
+      setAlertConfig({
+        title: "Error",
+        message: message,
+        onConfirm() {
+          setIsAlertVisible(false);
+        },
+        isVisible: true,
+      });
     }
   };
 
@@ -584,8 +629,6 @@ const ManagementTaskProvider = ({
     dateVisible,
     startTimeVisible,
     endTimeVisible,
-    create_shift,
-    create_task,
     startTime,
     endTime,
     dates,
@@ -608,6 +651,16 @@ const ManagementTaskProvider = ({
   return (
     <ManagementTaskContext.Provider value={value}>
       {children}
+      {/* Display the alert modal when the isAlertVisible state is true */}
+      {isAlertVisible && (
+        <AlertModal
+          isVisible={isAlertVisible}
+          title={alertConfig?.title || ""}
+          message={alertConfig?.message || ""}
+          onClose={() => setIsAlertVisible(false)}
+          onConfirm={alertConfig?.onConfirm}
+        />
+      )}
     </ManagementTaskContext.Provider>
   );
 };

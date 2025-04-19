@@ -5,9 +5,8 @@ import {
   JobDetailsType,
   NewClientDetailsInterface,
 } from "@/app/types/management/client";
-import { BASE_URL } from "@/app/utils/urls";
 
-import { router } from "expo-router"; 
+import { router } from "expo-router";
 import {
   useContext,
   createContext,
@@ -18,7 +17,8 @@ import {
 import { Alert, Linking, Platform } from "react-native";
 import { useAuth } from "@/app/authentication";
 import axios from "axios";
-
+import AlertModal from "@/app/component/helper/AlertModal";
+import AlertConfig from "@/app/types/management/AlertConfig";
 const ClientContext = createContext<ClientContextType | undefined>(undefined);
 
 const ClientProvider: React.FC<{ children: React.ReactNode }> = ({
@@ -28,14 +28,11 @@ const ClientProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const [countDown, setCountdown] = useState<string | null>(null);
   const [timeElapsed, setTimeElapsed] = useState<string>("");
-  // Loading states
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isUpdateContractLoading, setIsUpdateContractLoading] =
     useState<boolean>(false);
   const [isEditClientLoading, setIsEditClientLoading] =
     useState<boolean>(false);
-
-  // Modal visibility states
   const [isCreateContractModalVisible, setIsCreateContractModalVisible] =
     useState<boolean>(false);
   const [isCreateClientModalVisible, setIsCreateClientModalVisible] =
@@ -45,7 +42,6 @@ const ClientProvider: React.FC<{ children: React.ReactNode }> = ({
   const [isEditContractModalVisible, setIsEditContractModalVisible] =
     useState<boolean>(false);
   const [isNewClientLoading, setIsNewClientLoading] = useState<boolean>(false);
-
   const [clientId, setClientId] = useState<string | undefined>(undefined);
   const [clientDetailsData, setClientDetailsData] = useState<
     ClientDetailsType[]
@@ -56,13 +52,17 @@ const ClientProvider: React.FC<{ children: React.ReactNode }> = ({
   const [newContract, setNewContract] = useState<
     ContractDetailsType | undefined
   >(undefined);
-
   const [activeContract, setActiveContract] = useState<
     ContractDetailsType | undefined
   >(undefined);
   const [activeClient, setActiveClient] = useState<
     ClientDetailsType | undefined
   >(undefined);
+
+  const [isAlertVisible, setIsAlertVisible] = useState<boolean>(false);
+  const [alertConfig, setAlertConfig] = useState<AlertConfig | undefined>(
+    undefined
+  );
 
   const toggleCreateContractModal = (client_id: string | undefined) => {
     setIsCreateContractModalVisible(true);
@@ -178,6 +178,7 @@ const ClientProvider: React.FC<{ children: React.ReactNode }> = ({
         const updatedClientDetails = await fetchClientContractDetails();
         setClientDetailsData(updatedClientDetails);
         setIsCreateContractModalVisible(false);
+        setNewContract(undefined);
         Alert.alert("Success", response.data.message);
       }
     } catch (error) {
@@ -266,8 +267,16 @@ const ClientProvider: React.FC<{ children: React.ReactNode }> = ({
         const updatedClientDetails = await fetchClientContractDetails();
         setClientDetailsData(updatedClientDetails);
         setIsEditContractModalVisible(false);
+        setAlertConfig({
+          title: "Success",
+          message: response.data.message,
+          onConfirm: () => {
+            setIsAlertVisible(false);
+          },
+          isVisible: true,
+        });
       }
-      Alert.alert("Contract Update Data", response.data.message);
+      setIsAlertVisible(true);
     } catch (error) {
       console.error("Error updating contract:", error);
     } finally {
@@ -292,8 +301,16 @@ const ClientProvider: React.FC<{ children: React.ReactNode }> = ({
         const updatedClientDetails = await fetchClientContractDetails();
         setClientDetailsData(updatedClientDetails);
         setIsCreateClientModalVisible(false);
-        Alert.alert("Success", response.data.message);
+        setAlertConfig({
+          title: "Success",
+          message: response.data.message,
+          onConfirm: () => {
+            setIsAlertVisible(false);
+          },
+          isVisible: true,
+        });
       }
+      setIsAlertVisible(true);
     } catch (error) {
       console.error("Error creating client", error);
     } finally {
@@ -318,7 +335,15 @@ const ClientProvider: React.FC<{ children: React.ReactNode }> = ({
         setClientDetailsData(updatedClientDetails);
         setIsEditClientModalVisible(false);
       }
-      Alert.alert("Client Update Data", response.data.message);
+      setAlertConfig({
+        title: "Success",
+        message: response.data.message,
+        onConfirm: () => {
+          setIsAlertVisible(false);
+        },
+        isVisible: true,
+      });
+      setIsAlertVisible(true);
     } catch (error) {
       console.error("Error updating client:", error);
     } finally {
@@ -343,7 +368,15 @@ const ClientProvider: React.FC<{ children: React.ReactNode }> = ({
         setClientDetailsData(updatedClientDetails);
         const updatedJobDetails = await fetchContractAndJobDetails();
         setClientJobDetailsData(updatedJobDetails);
-        Alert.alert("Success", response.data.message);
+        setAlertConfig({
+          title: "Success",
+          message: response.data.message,
+          onConfirm: () => {
+            setIsAlertVisible(false);
+          },
+          isVisible: true,
+        });
+        setIsAlertVisible(true);
       }
     } catch (error) {
       console.error("Error deleting client:", error);
@@ -368,14 +401,19 @@ const ClientProvider: React.FC<{ children: React.ReactNode }> = ({
         window.location.href = `tel:${phone}`;
       }
     } else {
-      Alert.alert("Call", `Do you want to call the number? ${phone} `, [
-        {
-          text: "Cancel",
-          onPress: () => console.log("Cancel Pressed"),
-          style: "cancel",
+      setAlertConfig({
+        title: "Call",
+        message: `Do you want to call the number? ${phone}`,
+        onConfirm: () => {
+          Linking.openURL(`tel:${phone}`);
+          setIsAlertVisible(false);
         },
-        { text: "OK", onPress: () => Linking.openURL(`tel:${phone}`) },
-      ]);
+        onClose: () => {
+          setIsAlertVisible(false);
+        },
+        isVisible: true,
+      });
+      setIsAlertVisible(true);
     }
   };
 
@@ -388,7 +426,7 @@ const ClientProvider: React.FC<{ children: React.ReactNode }> = ({
       );
     }
     router.push({
-      pathname: "/management/messages/main",
+      pathname: "/management/messages/ManagementMessages",
       params: { id: id },
     });
   };
@@ -446,10 +484,26 @@ const ClientProvider: React.FC<{ children: React.ReactNode }> = ({
     setIsCreateContractModalVisible,
     createClient,
     isNewClientLoading,
+    setNewContract,
+    alertConfig,
+    setAlertConfig,
+    isAlertVisible,
+    setIsAlertVisible,
   };
 
   return (
-    <ClientContext.Provider value={value}>{children}</ClientContext.Provider>
+    <ClientContext.Provider value={value}>
+      {children}
+      {isAlertVisible && (
+        <AlertModal
+          title={alertConfig?.title || ""}
+          message={alertConfig?.message || ""}
+          isVisible={isAlertVisible}
+          onClose={alertConfig?.onClose}
+          onConfirm={alertConfig?.onConfirm}
+        />
+      )}
+    </ClientContext.Provider>
   );
 };
 

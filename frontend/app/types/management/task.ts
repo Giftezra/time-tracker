@@ -112,8 +112,6 @@ export default interface ActiveTaskContextType {
   dateVisible: boolean;
   startTimeVisible: boolean;
   endTimeVisible: boolean;
-  create_shift: (params: CreateTaskInterface) => Promise<void>;
-  create_task: (params: CreateTaskInterface) => Promise<void>;
   startTime: { hours: number; minutes: number };
   endTime: { hours: number; minutes: number };
   dates: Date[];
@@ -129,6 +127,6 @@ export default interface ActiveTaskContextType {
   isEditTaskModalVisible: boolean;
   setIsEditTaskModalVisible: (visible: boolean) => void;
   setEditTask: (task: OpenTaskProps | null) => void;
-  updateTask: (task: OpenTaskProps) => Promise<ResponseType>;
-  handleTaskCreation: (taskData: CreateTaskInterface) => Promise<any>;
+  updateTask: (task: OpenTaskProps) => Promise<void>;
+  handleTaskCreation: () => Promise<void>;
 }

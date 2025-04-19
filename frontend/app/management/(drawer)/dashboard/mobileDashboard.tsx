@@ -11,48 +11,49 @@ import LeaderBoardComponent from "@/app/component/management/dashboard/leaderBoa
 import ContractChartComponent from "@/app/component/management/dashboard/contractChart";
 import TaskChartComponent from "@/app/component/management/dashboard/taskChart";
 import { EmployeeOnLeaveInterface } from "@/app/types/management/dashboard";
-import { useDashboardContext } from "@/app/context/management/dashboard/dashboardContext";
+import { useDashboardContext } from "@/app/context/management/dashboard/ManagementDashboardContext";
 import ThemedHeaderText from "@/app/component/helper/ThemedHeaderText";
 const MobileDashboard = () => {
-  const { unavailableEmployees, todayEvents, taskStats } = useDashboardContext();
-    const total = taskStats.total || 1; // Prevent division by zero
+  const { unavailableEmployees, todayEvents, taskStats } =
+    useDashboardContext();
+  const total = taskStats.total || 1; // Prevent division by zero
 
-    const pieData = [
-      {
-        value: (taskStats.completed / total) * 100,
-        color: "#4CAF50",
-        gradientCenterColor: "#81C784",
-        focused: true,
-      },
-      {
-        value: (taskStats.ongoing / total) * 100,
-        color: "#2196F3",
-        gradientCenterColor: "#64B5F6",
-      },
-      {
-        value: (taskStats.assigned / total) * 100,
-        color: "#FFC107",
-        gradientCenterColor: "#FFD54F",
-      },
-      {
-        value: (taskStats.pending / total) * 100,
-        color: "#FF5722",
-        gradientCenterColor: "#FF8A65",
-      },
-    ];
+  const pieData = [
+    {
+      value: (taskStats.completed / total) * 100,
+      color: "#4CAF50",
+      gradientCenterColor: "#81C784",
+      focused: true,
+    },
+    {
+      value: (taskStats.ongoing / total) * 100,
+      color: "#2196F3",
+      gradientCenterColor: "#64B5F6",
+    },
+    {
+      value: (taskStats.assigned / total) * 100,
+      color: "#FFC107",
+      gradientCenterColor: "#FFD54F",
+    },
+    {
+      value: (taskStats.pending / total) * 100,
+      color: "#FF5722",
+      gradientCenterColor: "#FF8A65",
+    },
+  ];
 
-    const overageData = [
-      {
-        value: (taskStats.completed / total) * 100,
-        color: "#4CAF50",
-        gradientCenterColor: "#81C784",
-      },
-      {
-        value: (taskStats.ongoing / total) * 100,
-        color: "#2196F3",
-        gradientCenterColor: "#64B5F6",
-      },
-    ];
+  const overageData = [
+    {
+      value: (taskStats.completed / total) * 100,
+      color: "#4CAF50",
+      gradientCenterColor: "#81C784",
+    },
+    {
+      value: (taskStats.ongoing / total) * 100,
+      color: "#2196F3",
+      gradientCenterColor: "#64B5F6",
+    },
+  ];
 
   const white = useThemeColor({}, "white");
   const [width, setWidth] = useState(0);

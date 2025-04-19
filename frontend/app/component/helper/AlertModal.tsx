@@ -26,22 +26,29 @@ const AlertModal = ({
           <Text style={styles.title}>{title}</Text>
           <Text style={styles.message}>{message}</Text>
 
+          {/* Dislplay the button given if the props is passed */}
           <View style={styles.buttonContainer}>
-            <TouchableOpacity
-              style={[styles.button, styles.cancelButton]}
-              onPress={onClose}
-            >
-              <Text style={styles.cancelButtonText}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.button, styles.confirmButton]}
-              onPress={() => {
-                onConfirm?.();
-                onClose?.();
-              }}
-            >
-              <Text style={styles.confirmButtonText}>OK</Text>
-            </TouchableOpacity>
+            {/* Display the cancel button if the onClose prop is passed */}
+            {onClose && (
+              <TouchableOpacity
+                style={[styles.button, styles.cancelButton]}
+                onPress={onClose}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+            )}
+            {/* Display the confirm button if the onConfirm prop is passed */}
+            {onConfirm && (
+              <TouchableOpacity
+                style={[styles.button, styles.confirmButton]}
+                onPress={() => {
+                  onConfirm?.();
+                  onClose?.();
+                }}
+              >
+                <Text style={styles.confirmButtonText}>OK</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
       </View>
@@ -65,13 +72,19 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 18,
-    fontWeight: "bold",
+    fontWeight: "600",
     marginBottom: 10,
+    fontFamily: "BarlowRegular",
+    letterSpacing: 0.5,
+    color: "red",
   },
   message: {
-    fontSize: 16,
+    fontSize: 14,
     color: "#666",
+    fontFamily: "BarlowLight",
+    fontWeight: "400",
     marginBottom: 20,
+    letterSpacing: 0.3,
   },
   buttonContainer: {
     flexDirection: "row",

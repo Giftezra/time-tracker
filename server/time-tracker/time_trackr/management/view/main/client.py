@@ -1,84 +1,121 @@
-""" Clientview module is designed to handle the client page of the client.
-The methods will return all clients and their details, create a new client,
-update a client, delete a client, and search for a client.
-
-The methods will also create contracts (site) for the clients
-"""
-
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import get_object_or_404
- 
 from .decorators import admin_required
 from django.core.exceptions import ValidationError
 from ...models import Company, Client, Contracts, Shift
 from staff.models import Staff
 from ...tasks import send_contract_created_email, send_client_created_email, send_contract_updated_email
-
-
 from ...serializer import ContractsSerializer, ClientSerializer
 from datetime import datetime
+from django_ratelimit.decorators import ratelimit
+from django.core.cache import cache
+from django.conf import settings
+from management.helpers import get_cache_key
+
     
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 @admin_required
+@ratelimit(key='user', rate='10/m', method=['POST'])
 def create_client(request):
-   try:
-    # Set the company to the owner company if the user is the owner of the company
-    # Set the company to the staff company if the user is a staff member
-    if request.user.is_owner:
-        company = get_object_or_404(Company, owner=request.user)
-    elif request.user.is_employee:
-        company = get_object_or_404(Staff, user=request.user).company
-    else:
-        return Response({"error": "User is not authorized to create a client"}, status=status.HTTP_403_FORBIDDEN)
+    """
+    Create a new client for a company.
     
-    # Get the email address of the owner of the company
-    owner_email = company.owner.email
-    # Retrieve the new client details from the request data
-    new_client = request.data.get('new_client')
+    Args:
+        request: HTTP request containing client details in request.data['new_client']
+                Required fields: name, email, phone, address, postcode, city, country
+                
+    Returns:
+        Response with:
+        - 201: Client created successfully
+        - 400: Validation error
+        - 403: User not authorized
+        
+    Notes:
+        - Only company owners and employees can create clients
+        - All fields are required and validated
+        - Client is associated with the user's company
+    """
+    try:
+        # Set the company to the owner company if the user is the owner of the company
+        # Set the company to the staff company if the user is a staff member
+        if request.user.is_owner:
+            company = get_object_or_404(Company, owner=request.user)
+        elif request.user.is_employee:
+            company = get_object_or_404(Staff, user=request.user).company
+        else:
+            return Response({"error": "User is not authorized to create a client"}, status=status.HTTP_403_FORBIDDEN)
+        
+        # Get the email address of the owner of the company
+        owner_email = company.owner.email
+        # Retrieve the new client details from the request data
+        new_client = request.data.get('new_client')
 
-    # Validate the fields
+        # Validate the fields
 
-    # Loop through the fields and validate the data is not empty, then add it to the data dictionary
-    for field in new_client:
-        value = new_client.get(field)
-        if not value:
-            return Response({"error": f"{field} is required"}, status=status.HTTP_400_BAD_REQUEST)
+        # Loop through the fields and validate the data is not empty, then add it to the data dictionary
+        for field in new_client:
+            value = new_client.get(field)
+            if not value:
+                return Response({"error": f"{field} is required"}, status=status.HTTP_400_BAD_REQUEST)
 
-    # Create a new client with request data
-    # Return a success message if the client is created successfully
-    # Return an error message if the client is not created successfu
-    client = Client.objects.create(
-      company=company,
-      name=new_client['name'],
-      email=new_client['email'],
-      phone=new_client['phone'],
-      address=new_client['address'],
-      postcode=new_client['postcode'],
-      city=new_client['city'],
-      country=new_client['country'],
-      created_by=request.user
-    )
-    client.save()
-    # Send an email to the owner with the client details
-    # send_client_created_email.delay(client.name, client.phone, client.email, client.services, owner_email)
-    # Return a success message if the client is created successfully
-    return Response({"message": "Client created successfully"}, status=status.HTTP_201_CREATED)
+        # Create a new client with request data
+        # Return a success message if the client is created successfully
+        # Return an error message if the client is not created successfu
+        client = Client.objects.create(
+          company=company,
+          name=new_client['name'],
+          email=new_client['email'],
+          phone=new_client['phone'],
+          address=new_client['address'],
+          postcode=new_client['postcode'],
+          city=new_client['city'],
+          country=new_client['country'],
+          created_by=request.user
+        )
+        client.save()
+        # Send an email to the owner with the client details
+        # send_client_created_email.delay(client.name, client.phone, client.email, client.services, owner_email)
+        # Return a success message if the client is created successfully
+        return Response({"message": "Client created successfully"}, status=status.HTTP_201_CREATED)
 
-   except ValidationError as e:
-    return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    except ValidationError as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 """ Create a new contract for the client"""
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 @admin_required
+@ratelimit(key='user', rate='10/m', method=['POST'])
 def create_contract(request):
-    """Method is used to create a new contract for the client. After the contract is created, 
-    an email is sent to the company owner with the contract details"""
+    """
+    Create a new contract for an existing client.
+    
+    Args:
+        request: HTTP request containing:
+            - client_id: ID of the client
+            - new_contract: Contract details including:
+                - name: Contract name
+                - address: Contract location address  
+                - postcode: Contract location postcode
+                - city: Contract location city
+                - start_date: Contract start date (YYYY-MM-DD)
+                - end_date: Contract end date (YYYY-MM-DD)
+    
+    Returns:
+        Response with:
+        - 201: Contract created successfully
+        - 400: Invalid/missing data or client not found
+        
+    Notes:
+        - Validates all required fields
+        - Dates must be in YYYY-MM-DD format
+        - Client must exist in database
+    """
     if not request.data:
         return Response({"error": "Contract details are required"}, status=status.HTTP_400_BAD_REQUEST)
     
@@ -106,7 +143,7 @@ def create_contract(request):
         # Save the contract object to the database
         contract = Contracts.objects.create(
             client=client,
-            name=new_contract['contract_name'],
+            name=new_contract['name'],
             address=new_contract['address'],
             postcode=new_contract['postcode'],
             city=new_contract['city'],
@@ -126,15 +163,29 @@ def create_contract(request):
     except ValidationError as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
   
-  
-
-  
-
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 @admin_required
+@ratelimit(key='user', rate='10/m', method=['GET'])
 def getContractsAndJobDetails(request):
-    """Retrieve active contract and job details for a specific client including assigned staff."""
+    """
+    Get active contracts and job details for all clients of a company, including assigned staff.
+    
+    Returns:
+        Response with:
+        - 200: List of client jobs containing:
+            - Client details (id, name)
+            - Task details (serial, times, pay)
+            - Contract details (name, address)
+            - Assigned staff details (id, name, contact info)
+        - 400: Error occurred
+        - 403: User not authorized
+        
+    Notes:
+        - Only accessible by company owners and employees
+        - Returns shifts filtered by task->contract->client relationship
+        - Includes full employee details for each shift
+    """
     try:
         # Get the appropriate company based on user role
         if request.user.is_owner:
@@ -147,6 +198,13 @@ def getContractsAndJobDetails(request):
                           status=status.HTTP_403_FORBIDDEN)
     except Company.DoesNotExist:
         return Response({"error": "Company does not exist"}, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Get the cache key for the company
+    # Get the cached contracts and job details for the company if it exists
+    cache_key = get_cache_key('contracts_and_job_details', company.id)
+    cached_data = cache.get(cache_key)
+    if cached_data:
+        return Response({'client_job_list': cached_data}, status=status.HTTP_200_OK)
     
     try:
         # Get all associated clients with the company
@@ -183,6 +241,8 @@ def getContractsAndJobDetails(request):
                     'contract_postcode': shift.task.contract.postcode,
                     'employee': employee_details
                 })
+        # Cache the data for 5 minutes
+        cache.set(cache_key, client_job_list, settings.CACHE_TIMEOUT)
         return Response({'client_job_list': client_job_list}, status=status.HTTP_200_OK)
     except Exception as e:
         print(e)
@@ -196,12 +256,20 @@ def getContractsAndJobDetails(request):
 @admin_required
 def getClientAndContracts(request):
     """
-    Retrieve clients and their associated contracts for a company based on the request user.
-    Args:
-        request (HttpRequest): The HTTP request object containing user information.
+    Get all clients and their associated contracts for a company.
+    
     Returns:
-        Response: A JSON response containing client details and their associated contracts,
-                or an error message if the client does not exist.
+        Response with:
+        - 200: List of clients containing:
+            - Client details (id, name, contact info)
+            - List of associated contracts with details
+        - 400: Error occurred
+        - 403: User not authorized
+        
+    Notes:
+        - Only accessible by company owners and employees
+        - Returns all clients associated with the user's company
+        - Includes full contract details for each client
     """    
     try:
         # Check if the user is the owner of the company and retrieve the company object
@@ -216,6 +284,14 @@ def getClientAndContracts(request):
         except Company.DoesNotExist:
             return Response({"error": "Company does not exist"}, status=status.HTTP_400_BAD_REQUEST)
         
+        # Get the cache key for the company
+        # Get the cached clients and contracts for the company if it exists
+        cache_key = get_cache_key('clients_and_contracts', company.id)
+        cached_data = cache.get(cache_key)
+        if cached_data:
+            return Response({'client_details': cached_data}, status=status.HTTP_200_OK)
+        
+
         # Get all clients associated with the company
         clients = Client.objects.filter(company=company)
         client_list = [] # Create an empty list to store the client details
@@ -248,7 +324,8 @@ def getClientAndContracts(request):
                 'country': client.country,
                 'contracts': contract_list
             })
-        
+        # Cache the data for 5 minutes
+        cache.set(cache_key, client_list, settings.CACHE_TIMEOUT)
         # Return the response with the client details and their associated contracts
         return Response({'client_details': client_list}, status=status.HTTP_200_OK)
     
@@ -265,7 +342,25 @@ def getClientAndContracts(request):
 @permission_classes([IsAuthenticated])
 @admin_required
 def update_client(request):
-    """ Method is used to update the client details """
+    """
+    Update an existing client's details.
+    
+    Args:
+        request: HTTP request containing:
+            client: Dictionary with:
+                - client_id: ID of client to update
+                - Optional fields to update: name, address, postcode, 
+                  city, email, phone, country
+    
+    Returns:
+        Response with:
+        - 200: Client updated successfully
+        - 400: Client not found or invalid data
+        
+    Notes:
+        - Only updates provided fields
+        - Client must exist in database
+    """
     if not request.data:
         return Response({"error": "Client details are required"}, status=status.HTTP_400_BAD_REQUEST)
     
@@ -309,7 +404,18 @@ def update_client(request):
 @permission_classes([IsAuthenticated])
 @admin_required
 def delete_client(request):
-    """ Method is used to delete a client from the database """
+    """
+    Delete a client from the database.
+    
+    Args:
+        request: HTTP request containing:
+            - client_id: ID of client to delete
+            
+    Returns:
+        Response with:
+        - 200: Client deleted successfully
+        - 400: Client not found or invalid data
+    """
     if not request.data:
         return Response({"error": "Client details are required"}, status=status.HTTP_400_BAD_REQUEST)
     
@@ -329,7 +435,25 @@ def delete_client(request):
 @permission_classes([IsAuthenticated])
 @admin_required
 def update_contract(request):
-    """ Method is used to update the start and end date of the contract """
+    """
+    Update an existing contract's details.
+    
+    Args:
+        request: HTTP request containing:
+            contract: Dictionary with:
+                - contract_id: ID of contract to update
+                - Optional fields: end_date, start_date (YYYY-MM-DD format),
+                  name, address, postcode, city
+                
+    Returns:
+        Response with:
+        - 200: Contract updated successfully
+        - 400: Contract not found, invalid data, or invalid date format
+        
+    Notes:
+        - Only updates provided fields
+        - Dates must be in YYYY-MM-DD format
+    """
     # Validate the request data
     if not request.data:
         return Response({"error": "Contract details are required"}, status=status.HTTP_400_BAD_REQUEST)
@@ -376,8 +500,22 @@ def update_contract(request):
 @permission_classes([IsAuthenticated])
 @admin_required
 def complete_contract(request):
-    """ The method is used to end the contract between parties automatically when the end date arrives.
-    The method updates the contract's status to completed."""
+    """
+    Mark a contract as completed.
+    
+    Args:
+        request: HTTP request containing:
+            - contract_id: ID of contract to complete
+            
+    Returns:
+        Response with:
+        - 200: Contract marked as completed
+        - 404: Contract not found
+        - 400: Invalid data
+        
+    Notes:
+        - Sets contract is_completed flag to True
+    """
     if not request.data:
         return Response({"error": "Contract details are required"}, status=status.HTTP_400_BAD_REQUEST)
     
@@ -397,7 +535,19 @@ def complete_contract(request):
 @permission_classes([IsAuthenticated])
 @admin_required
 def delete_contract(request):
-    """ Method is used to delete a contract from the database """
+    """
+    Delete a contract from the database.
+    
+    Args:
+        request: HTTP request containing:
+            - contract_id: ID of contract to delete
+            
+    Returns:
+        Response with:
+        - 200: Contract deleted successfully
+        - 404: Contract not found
+        - 400: Invalid data
+    """
     if not request.data:
         return Response({"error": "Contract details are required"}, status=status.HTTP_400_BAD_REQUEST)
     

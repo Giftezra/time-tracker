@@ -33,6 +33,7 @@ const MainClient = () => {
     setIsEditClientModalVisible,
     activeClient,
     setIsCreateContractModalVisible,
+    setNewContract
   } = useClientContext();
 
   const background = useThemeColor({}, "primaryColor");
@@ -45,7 +46,10 @@ const MainClient = () => {
         <View>
           <TouchableOpacity
             style={styles.newClientButton}
-            onPress={() => setIsCreateClientModalVisible(true)}
+            onPress={() => {
+              setIsCreateClientModalVisible(true);
+              setNewContract(undefined);
+            }}
           >
             <ButtonText text="new client" />
           </TouchableOpacity>
@@ -79,7 +83,7 @@ const MainClient = () => {
               <MaterialCommunityIcons name="close" size={24} color="black" />
             </Pressable>
           </View>
-          <AddContractComponent />
+          <AddContractComponent isModal={isCreateContractModalVisible} />
         </Modal>
 
         {/* Display the add client component which will enable the user enter a new client details */}
@@ -96,7 +100,7 @@ const MainClient = () => {
             >
               <MaterialCommunityIcons name="close" size={24} color="black" />
             </Pressable>
-            <AddClientComponent />
+            <AddClientComponent isModal={isCreateClientModalVisible} />
           </View>
         </Modal>
 

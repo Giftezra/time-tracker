@@ -163,7 +163,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: "#e0e0e0",
     fontFamily: "BarlowMedium",
-    letterSpacing: 1,
+    letterSpacing: 0.2,
   },
   selectedDateText: {
     color: "#0066ff",

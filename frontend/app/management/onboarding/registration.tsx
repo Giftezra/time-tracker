@@ -1,9 +1,6 @@
 import {
-  ActivityIndicator,
   Animated,
   KeyboardAvoidingView,
-  Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -11,18 +8,17 @@ import {
 } from "react-native";
 import React, { useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { AntDesign, MaterialIcons } from "@expo/vector-icons";
+import { AntDesign } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useLoadedFonts } from "@/hooks/useLoadedFonts";
 import { router } from "expo-router";
 
 import RegistrationTextInputComponent from "@/app/component/helper/registrationTextinput";
 import ArrowButtonComponent from "@/app/component/helper/arrowButton";
 import { useAuth } from "@/app/authentication";
-import CustomCalendar from "@/app/component/helper/customCalendar";
 import { tranY } from "@/app/utils/animations/onboardingAnimation";
 import SubtitleThemedText from "@/app/component/helper/SubtitleThemedText";
 import AlertModal from "@/app/component/helper/AlertModal";
+import validateDateInput from "@/app/utils/helpers/dateValidation";
 
 /**
  * Component for the main admin registration page
@@ -32,7 +28,6 @@ const RegistrationComponent = () => {
   const {
     ownerData,
     handleUserInput,
-    dateClicked,
     isAlertModalVisible,
     alertConfig,
   } = useAuth();
@@ -88,28 +83,6 @@ const RegistrationComponent = () => {
     if (newErrors.length === 0) {
       router.push("/management/onboarding/registrationAddressPage");
     }
-  };
-
-  /**
-   * Validate the date input to ensure it is in the correct format.
-   * Automatically adds hyphens to the date input for better user experience.
-   * @param value - The date input value to validate
-   * @returns The validated date input with hyphens
-   */
-  const validateDateInput = (value: string) => {
-    // Remove any non-digit characters
-    const numbers = value.replace(/\D/g, "");
-
-    // Add hyphens automatically
-    let formattedValue = "";
-    for (let i = 0; i < numbers.length && i < 8; i++) {
-      if (i === 4 || i === 6) {
-        formattedValue += "-";
-      }
-      formattedValue += numbers[i];
-    }
-
-    return formattedValue;
   };
 
   return (

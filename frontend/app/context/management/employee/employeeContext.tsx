@@ -1,13 +1,10 @@
 import {
-  Employee,
-  EmployeeAnalyticInterface,
-  EmployeeContextType,
-  EmployeeDetailsType,
-  EmployeeOverviewInterface,
-  TaskDetailsProps, 
+  NewEmployeeInterface,
+  EmployeeDetailsInterface,
+  TaskDetailsProps,
   WorklogInterface,
 } from "@/app/types/management/employee";
-import { BASE_URL } from "@/app/utils/urls";
+import EmployeeContextType from "@/app/types/management/employee";
 import {
   useContext,
   createContext,
@@ -16,80 +13,57 @@ import {
   useEffect,
 } from "react";
 import { useAuth } from "@/app/authentication";
-import { Axios, AxiosError } from "axios";
-
+import AlertConfig from "@/app/types/management/AlertConfig";
+import AlertComponent from "@/app/component/helper/AlertModal";
 const EmployeeContext = createContext<EmployeeContextType | undefined>(
   undefined
 );
-
 const EmployeeProvider: React.FC<{
   children: ReactNode;
 }> = ({ children }) => {
-  // Get the axois instance
   const { axiosInstance } = useAuth();
-
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [shiftError, setShiftError] = useState<string | undefined>(undefined);
-
-  const [employees, setEmployees] = useState<Employee>();
-  const [employeelist, setEmployeeList] = useState<EmployeeDetailsType[]>();
-  const [error, setError] = useState<Employee | undefined>(undefined);
-
-  // Set the employee id to the state so its accessible by all the components
-  const [employeeId, setEmployeeId] = useState<string>("");
-  const [employeeData, setEmployeeData] = useState<EmployeeOverviewInterface>(
-    {
-      role: "",
-      name: "",
-      email: "",
-      phone: "",
-      dob: "",
-      date_hired: "",
-    }
+  const [newEmployee, setNewEmployee] = useState<NewEmployeeInterface>();
+  const [employeelist, setEmployeeList] =
+    useState<EmployeeDetailsInterface[]>();
+  const [error, setError] = useState<NewEmployeeInterface | undefined>(
+    undefined
   );
-  const [taskDetails, setTaskDetails] = useState<TaskDetailsProps>({
-    total_tasks: 0,
-    total_selected_tasks: 0,
-    total_assigned_tasks: 0,
-    total_completed_tasks: 0,
-    total_cancelled_tasks: 0,
-  });
-  const [workLog, setWorkLog] = useState<WorklogInterface>({
-    id: "",
-    name: "",
-    task_start_date: "",
-    shift_start_time: "",
-    task_start_time: "",
-    task_end_time: "",
-    status: "",
-  });
+  const [employeeId, setEmployeeId] = useState<string>("");
+  const [employeeData, setEmployeeData] = useState<EmployeeDetailsInterface|undefined>(undefined);
+  const [taskDetails, setTaskDetails] = useState<TaskDetailsProps|undefined>(undefined);
+  const [workLog, setWorkLog] = useState<WorklogInterface|undefined>(undefined);
+  const [isAlertVisible, setIsAlertVisible] = useState<boolean>(false);
+  const [alertConfig, setAlertConfig] = useState<AlertConfig>();
 
-  const [search, setSearch] = useState<string>("");
-  const [filteredEmployeeList, setFilteredEmployeeList] =
-    useState<EmployeeDetailsType[]>();
-
+  /**
+   * Handle the users ability to add a new employee to the company. using the employee context.
+   * @param key: string The key of the employee to be added.
+   * @param value: string The value of the employee to be added.
+   */
   const handleAddEmployeeInput = (key: string, value: string) => {
-    setEmployees(
+    setNewEmployee(
       (prev) =>
         ({
           ...prev,
           [key]: value,
-        } as Employee)
+        } as NewEmployeeInterface)
     );
   };
 
-  /**
-   * Clear all data from the state when the modal is closed.
-   */
+  /* Clear the data stats when the method is called */
   const clearData = () => {
     setEmployeeData({
+      id: "",
       role: "",
       name: "",
       email: "",
       phone: "",
       dob: "",
       date_hired: "",
+      is_active: false,
     });
     setTaskDetails({
       total_tasks: 0,
@@ -106,7 +80,6 @@ const EmployeeProvider: React.FC<{
       task_start_time: "",
       task_end_time: "",
       status: "",
-
     });
   };
 
@@ -147,7 +120,6 @@ const EmployeeProvider: React.FC<{
         setEmployeeList(employee_list);
       } catch (error: any) {
         console.error("Error fetching employees:", error);
-        throw new Error("Failed to fetch employees");
       } finally {
         setIsLoading(false);
       }
@@ -158,18 +130,20 @@ const EmployeeProvider: React.FC<{
   /** The method is used to retrieve all of the employees associated with the user from the server.
    * Note that the server is designed to only return the employees if the request is made by an admin or the owner of the company.
    */
-  const getAllEmployees = async (): Promise<EmployeeDetailsType[]> => {
+  const getAllEmployees = async (): Promise<EmployeeDetailsInterface[]> => {
     try {
-      const response = await axiosInstance.get(
-        `/api/get/employees/with/details/`
-      );
-      return response.data.employees;
+      const response = await axiosInstance.get(`/api/get/employee/display/`);
+      return response.data.employee_list;
     } catch (error: any) {
       console.error("Error fetching employees:", error);
       throw new Error("Failed to fetch employees");
     }
-  };
-
+  };  
+  /**
+   * Get the employee details given the employee id from the server.
+   * @param id: string The id of the employee to be fetched.
+   * @returns The employee details.
+   */
   const retrieveEmployeeWithId = async (id: string) => {
     try {
       const response = await axiosInstance.get(`/api/get/employee/with/id/`, {
@@ -250,72 +224,104 @@ const EmployeeProvider: React.FC<{
     }
   };
 
-  /** Method is used to filter the employeelist given the search params.
-   * If the search finds the employee given the search params, return the employee.
-   * Search based on the name, email, phone and id of the employee.
-   */
-  const filterEmployeeList = () => {
-    // Check the list is not undefined before filtering
-    if (employeelist === undefined) {
-      return;
-    }
-    setFilteredEmployeeList(
-      employeelist.filter((employee) => {
-        let filtered =
-          employee.name.toLowerCase().includes(search.toLowerCase()) ||
-          employee.email.toLowerCase().includes(search.toLowerCase()) ||
-          employee.phone.toLowerCase().includes(search.toLowerCase()) ||
-          employee.id.toLowerCase().includes(search.toLowerCase());
-        return filtered;
-      })
-    );
-  };
-
   /** This method is used to submit the employee details to the server.
    * The method uses no params but simply send the employee details stored in the states to the server.
    * The method returns a boolean value to indicate if the request was successful or not.
    */
   const onboardNemEmployee = async () => {
-    /** Filter the employee data to ensure that none of the data is undefined.
-     * If any of the data is undefined, return an error message that tallies with the data that is undefined.
-     * Set the error state to the error message.
-     */
-    for (const key in employees) {
-      if (employees[key as keyof Employee] === undefined) {
-        setError(
-          (prev) =>
-            ({
-              ...prev,
-              [key]: `${key} is required`,
-            } as Employee)
-        );
-        return false;
-      }
-    }
-
     try {
       const response = await axiosInstance.post(
-        `${BASE_URL}/api/onboard/employee/`
+        `/api/onboard/employee/`,
+        newEmployee
       );
+      // Set the alert config to display the alert with the message from the server if the request was successful or created
+      if (response.status === 200 || response.status === 201) {
+        setAlertConfig({
+          title: "Message",
+          message: response.data.message,
+          onConfirm: async () => {
+            const employee_list = await getAllEmployees();
+            setEmployeeList(employee_list);
+            setIsAlertVisible(false);
+          },
+          isVisible: true,
+        });
+        setIsAlertVisible(true);
+        setNewEmployee(undefined);
+      }
     } catch (error: any) {
-      console.error("Error adding employee:", error);
+      console.error("Error adding employee:", error.response?.data || error); // Enhanced error logging
+      // Show error to user
+      setAlertConfig({
+        title: "Error",
+        message: error.response?.data?.error || "Failed to add employee",
+        onConfirm: () => {
+          setIsAlertVisible(false);
+        },
+        isVisible: true,
+      });
+      setIsAlertVisible(true);
+    }
+  };
+
+  /**
+   * Remove or deactivate an employee from the company.
+   * This will mean the employee data can nolonger be retrieved from the server.
+   * @params id: string The id of the employee to be removed.
+   */
+  const removeEmployee = async (id: string) => {
+    try {
+      const response = await axiosInstance.delete("/api/remove/employee/", {
+        params: { employee_id: id },
+      });
+      if (response.status === 200) {
+        setIsAlertVisible(true);
+        setAlertConfig({
+          title: "Message",
+          message: response.data.message,
+          onConfirm: async () => {
+            const employee_list = await getAllEmployees();
+            setEmployeeList(employee_list);
+            setIsAlertVisible(false);
+          },
+          isVisible: true,
+        });
+      } else if (response.status === 400) {
+        setIsAlertVisible(true);
+        setAlertConfig({
+          title: "Error",
+          message: response.data.error,
+          onConfirm: async () => {
+            const employee_list = await getAllEmployees();
+            setEmployeeList(employee_list);
+            setIsAlertVisible(false);
+          },
+          isVisible: true,
+        });
+      }
+    } catch (error: any) {
+      setIsAlertVisible(true);
+      setAlertConfig({
+        title: "Error",
+        message: error.response.data.message,
+        onConfirm: () => {
+          setIsAlertVisible(false);
+        },
+        isVisible: true,
+      });
     }
   };
 
   /** Method simply filters the employee list given the search params in the state */
   const value: EmployeeContextType = {
-    employees,
+    newEmployee,
     handleAddEmployeeInput,
-    submitEmployee: onboardNemEmployee,
+    onboardNemEmployee,
     error,
     isLoading,
     isModalVisible,
     setIsModalVisible,
     employeelist,
-    search,
-    setSearch,
-    filteredEmployeeList,
-    filterEmployeeList,
     setEmployeeId,
     taskDetails,
     workLog,
@@ -327,11 +333,26 @@ const EmployeeProvider: React.FC<{
     retrieveEmployeeWithId,
     retrieveEmployeeTaskDetails,
     retrieveEmployeeWorkLog,
+    isAlertVisible,
+    alertConfig,
+    setAlertConfig,
+    setIsAlertVisible,
+    removeEmployee,
   };
 
   return (
     <EmployeeContext.Provider value={value}>
       {children}
+      {/* Display the modal if the alert is visible */}
+      {isAlertVisible && (
+        <AlertComponent
+          title={alertConfig?.title || ""}
+          message={alertConfig?.message || ""}
+          onConfirm={alertConfig?.onConfirm}
+          isVisible={alertConfig?.isVisible || false}
+          onClose={alertConfig?.onClose}
+        />
+      )}
     </EmployeeContext.Provider>
   );
 };

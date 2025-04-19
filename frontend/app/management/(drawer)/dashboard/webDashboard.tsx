@@ -7,7 +7,7 @@ import {
   View,
 } from "react-native";
 import React, { useEffect, useState } from "react";
-import { useDashboardContext } from "@/app/context/management/dashboard/dashboardContext";
+import { useDashboardContext } from "@/app/context/management/dashboard/ManagementDashboardContext";
 import DashboardWelcomeHeader from "@/app/component/management/dashboard/welcomeHeader";
 import ExpenseComponent from "@/app/component/management/dashboard/expense";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -127,7 +127,11 @@ const WebDashboard = () => {
                 setTaskChartWidth(width);
               }}
             >
-              <TaskChartComponent width={taskChartWidth} title="task" pieData={[]} />
+              <TaskChartComponent
+                width={taskChartWidth}
+                title="task"
+                pieData={[]}
+              />
             </View>
           </View>
         </View>

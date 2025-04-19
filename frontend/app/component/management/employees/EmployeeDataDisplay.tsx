@@ -14,15 +14,21 @@ import { router } from "expo-router";
 import { useThemeColor } from "@/hooks/useThemeColor";
 
 import { user_image } from "@/app/utils/images";
-import { EmployeeDetailsType } from "@/app/types/management/employee";
+import { EmployeeDetailsInterface } from "@/app/types/management/employee";
 import { useEmployeeContext } from "@/app/context/management/employee/employeeContext";
 import EmployeeAnalyticsComponent from "./employeeAnalytics";
 
-const EmployeeDisplayComponent: React.FC<EmployeeDetailsType> = (props) => {
+const EmployeeDisplayComponent: React.FC<EmployeeDetailsInterface> = (
+  props
+) => {
   // Import the context methods
-  const { setEmployeeId, setIsModalVisible } = useEmployeeContext();
-
-
+  const {
+    setEmployeeId,
+    setIsModalVisible,
+    removeEmployee,
+    setAlertConfig,
+    setIsAlertVisible,
+  } = useEmployeeContext();
   const primary = useThemeColor({}, "primaryColor");
   const highlight = useThemeColor({}, "highlight");
   const innerbackground = useThemeColor({}, "innerBackground");
@@ -35,10 +41,26 @@ const EmployeeDisplayComponent: React.FC<EmployeeDetailsType> = (props) => {
    * Set the employee id to the employee id state.
    */
   const handleEmployeeClick = () => {
-    setEmployeeId(props.id);
+    setEmployeeId(props.id || "");
     setIsModalVisible(true);
   };
 
+  const handleRemoveEmployee = () => {
+    if (!props.id) return;
+    // If the id is provided, remove the employee and display an alert to the user.
+    setAlertConfig({
+      title: "Message",
+      message: `You are about to remove ${props.name} from the company. This action is irreversible.`,
+      onConfirm: async () => {
+        await removeEmployee(props.id || "");
+      },
+      onClose: () => {
+        setIsAlertVisible(false);
+      },
+      isVisible: true,
+    });
+    setIsAlertVisible(true);
+  };
   return (
     /* Route the admin to the employees analytics page when clicked. 
        Send the user id and accross to the next page to fetch the user that was requested  */
@@ -65,12 +87,18 @@ const EmployeeDisplayComponent: React.FC<EmployeeDetailsType> = (props) => {
         onPress={handleEmployeeClick}
       >
         <View style={styles.employmentDetailsContainer}>
-          <View>
+          <View style={{ gap: 10 }}>
+            <Pressable
+              style={{ backgroundColor: "red", padding: 5, borderRadius: 5 }}
+              onPress={handleRemoveEmployee}
+            >
+              <Text style={[styles.detailsText, { color: "white" }]}>
+                Remove Employee
+              </Text>
+            </Pressable>
+
             <Text style={[styles.detailsText, { color: text }]}>
-              department
-            </Text>
-            <Text style={[styles.detailsText, { color: text }]}>
-              {props.is_active}
+              {props.is_active ? "Active" : "Inactive"}
             </Text>
           </View>
 

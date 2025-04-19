@@ -3,12 +3,9 @@ import {
   Platform,
   ScrollView,
   StyleSheet,
-  Text,
-  TextInput,
-  Touchable,
-  TouchableOpacity,
   View,
   Pressable,
+  Text,
 } from "react-native";
 import React, { useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -22,31 +19,17 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import SubHeaderText from "../../helper/SubHeaderText";
 import InnerThemedText from "../../helper/InnerThemedText";
 import ButtonText from "../../helper/ButtonText";
-const renderCalendar = () => {
-  return (
-    <CustomCalendar
-      onSelectDate={() => {
-        alert("Date selected");
-      }}
-    />
-  );
-};
+import AlertModal from "../../helper/AlertModal";
 
-const AddContractComponent = () => {
+const AddContractComponent = ({isModal}:{isModal:boolean}) => {
   // Get the methods from the context.
-  const { newContract, handleAddContractInput, createContract } =
+  const { newContract, handleAddContractInput, createContract, setNewContract, alertConfig, setAlertConfig, isAlertVisible, setIsAlertVisible } =
     useClientContext();
 
-  const innerBackground = useThemeColor({}, "innerBackground");
   const otherText = useThemeColor({}, "otherText");
-  const text = useThemeColor({}, "text");
-  const inactivebtn = useThemeColor({}, "inactivebtn");
-  const textinput = useThemeColor({}, "textinput");
-
   const [enterAddress, setEnterAddress] = useState(false);
   const [showStartDateScroller, setShowStartDateScroller] = useState(false);
   const [showEndDateScroller, setShowEndDateScroller] = useState(false);
-
   // Add state for date components
   const [startDate, setStartDate] = useState({
     day: new Date().getDate(),
@@ -59,7 +42,6 @@ const AddContractComponent = () => {
     month: new Date().getMonth() + 1,
     year: new Date().getFullYear(),
   });
-
   // Format date helper function
   const formatDate = (day: number, month: number, year: number) => {
     return `${year}-${month.toString().padStart(2, "0")}-${day
@@ -102,41 +84,124 @@ const AddContractComponent = () => {
     setShowStartDateScroller(false); // Close start date scroller
   };
 
+  /**
+   * Validate the contract input fields and handle the modal display alert for the user
+   */
+  const validateContractInput = () => {
+    const validationErrors: string[] = [];
+
+    // Add console.log to debug the newContract object
+    console.log("Contract details:", newContract);
+
+    // Check if newContract exists first
+    if (!newContract) {
+      validationErrors.push("Contract details are missing");
+      return false;
+    }
+
+    // Check contract name - handle both undefined and empty string cases
+    if (!newContract.name?.trim()) {
+      validationErrors.push("Contract name is required");
+    }
+
+    // Rest of the validation checks
+    if (!newContract.postcode?.trim()) {
+      validationErrors.push("Postcode is required");
+    }
+    if (!newContract.address?.trim()) {
+      validationErrors.push("Address is required");
+    }
+    if (!newContract.city?.trim()) {
+      validationErrors.push("City is required");
+    }
+    if (!newContract.start_date?.trim()) {
+      validationErrors.push("Start date is required");
+    }
+    if (!newContract.end_date?.trim()) {
+      validationErrors.push("End date is required");
+    }
+    // Check if the start date is before the end date
+    if (newContract.start_date && newContract.end_date) {
+      const startDate = new Date(newContract.start_date); 
+      const endDate = new Date(newContract.end_date);
+      if (startDate > endDate) {    
+        validationErrors.push("Start date must be before end date");
+      }
+      if (startDate < new Date()) {
+        validationErrors.push("Start date must be in the future");
+      }
+    }
+
+    if (validationErrors.length > 0) {
+      setAlertConfig({
+        title: "Validation Error",
+        message: validationErrors.join("\n"),
+        onConfirm: () => setIsAlertVisible(false),
+        isVisible: true,
+      });
+      setIsAlertVisible(true);
+      return false;
+    }
+
+    setAlertConfig({  
+      title: "Create Contract",
+      message: `Are you sure you want to create this contract? ${newContract.name}`,
+      onConfirm: () => {
+        setIsAlertVisible(false);
+        setNewContract(undefined);
+        createContract();   
+      },
+      isVisible: true,
+    });
+    setIsAlertVisible(true);
+    return true;
+  };
+
   return (
     <GestureHandlerRootView style={styles.mainContainer}>
       <ScrollView style={styles.scrollView}>
-        <SubHeaderText text="create a new contract" />
+        <SubHeaderText text="New Contract" />
 
         <View style={styles.warningContainer}>
-          <InnerThemedText text="Note: contracts created on time tracker does not reflect a signed contract. Time tracker is solely used to manage clients and general task systems." />
-          <InnerThemedText text="Please read our terms and conditions and privacy policy" />
-
-          <Pressable style={styles.warningPressables}>
-            <InnerThemedText text="here" />
-          </Pressable>
+          <MaterialCommunityIcons
+            name="information"
+            size={24}
+            color="#947600"
+            style={styles.warningIcon}
+          />
+          <View style={styles.warningTextContainer}>
+            <InnerThemedText text="Note: Contracts created in Time Tracker do not constitute legally binding agreements. This system is intended for client and task management purposes only." />
+            <View style={styles.termsContainer}>
+              <InnerThemedText text="Please review our" />
+              <Pressable style={styles.termsLink}>
+                <Text style={styles.linkText}>terms and conditions</Text>
+              </Pressable>
+              <InnerThemedText text="and" />
+              <Pressable style={styles.termsLink}>
+                <Text style={styles.linkText}>privacy policy</Text>
+              </Pressable>
+            </View>
+          </View>
         </View>
 
         <View style={styles.formContainer}>
           <TextInputComponent
-            placeholder="Contract name"
-            text="Contract name"
+            placeholder="Enter contract name"
+            text="Contract Name"
             value={newContract?.name}
-            setValue={(text) => handleAddContractInput("contract_name", text)}
+            setValue={(text) => handleAddContractInput("name", text)}
           />
 
-          <View style={styles.postcodeContainer}>
-            <View style={styles.postcodeInput}>
-              <TextInputComponent
-                placeholder="Post code"
-                text="Post code"
-                value={newContract?.postcode}
-                setValue={(text) => handleAddContractInput("postcode", text)}
-              />
-            </View>
-            <Pressable
-              style={[styles.findAddressBtn, { backgroundColor: otherText }]}
-            >
-              <ButtonText text="find address" />
+          <View style={styles.postcodeInput}>
+            <TextInputComponent
+              placeholder="Enter postcode"
+              text="Postcode"
+              value={newContract?.postcode}
+              setValue={(text) => handleAddContractInput("postcode", text)}
+            />
+
+            <Pressable style={[styles.findAddressBtn]}>
+              <ButtonText text="Find Address" />
             </Pressable>
           </View>
 
@@ -144,20 +209,21 @@ const AddContractComponent = () => {
             onPress={toggleEnterAddress}
             style={styles.manualAddressBtn}
           >
-            <InnerThemedText
-              text={
-                enterAddress
-                  ? "− Hide manual address"
-                  : "+ Enter address manually"
-              }
+            <MaterialCommunityIcons
+              name={enterAddress ? "minus" : "plus"}
+              size={20}
+              color="#0066cc"
             />
+            <Text style={styles.manualAddressText}>
+              {enterAddress ? "Hide manual address" : "Enter address manually"}
+            </Text>
           </Pressable>
 
           {enterAddress && (
             <View style={styles.addressFields}>
               <TextInputComponent
-                placeholder="Address line 1"
-                text="Address line 1"
+                placeholder="Address"
+                text="Address"
                 autoComplete="address-line1"
                 value={newContract?.address}
                 setValue={(text) => handleAddContractInput("address", text)}
@@ -267,8 +333,8 @@ const AddContractComponent = () => {
 
           <View style={styles.submitContainer}>
             <SubmitButtonComponent
-              title="create Contract"
-              onPress={createContract}
+              title="Create Contract"
+              onPress={validateContractInput}
             />
           </View>
         </View>
@@ -283,74 +349,76 @@ const styles = StyleSheet.create({
   mainContainer: {
     flex: 1,
     width: "100%",
-    backgroundColor: "#fff",
+    backgroundColor: "#f8f9fa",
   },
   scrollView: {
     flex: 1,
     padding: Platform.OS === "web" ? 40 : 20,
   },
-  pageTitle: {
-    fontSize: Platform.OS === "web" ? 24 : 20,
-    fontFamily: "BarlowRegular",
-    fontWeight: "600",
-    marginBottom: 20,
-    color: "#1a1a1a",
-  },
   warningContainer: {
     backgroundColor: "#fff8e6",
-    borderRadius: 8,
-    padding: 16,
+    borderRadius: 12,
+    padding: 20,
     marginBottom: 24,
     borderWidth: 1,
-    borderColor: "#ffd700",
+    borderColor: "#ffe066",
+    flexDirection: "row",
+    alignItems: "flex-start",
   },
-  warningText: {
-    fontSize: Platform.OS === "web" ? 14 : 13,
-    fontFamily: "BarlowRegular",
-    color: "#666666",
-    lineHeight: 20,
-    marginBottom: 8,
+  warningIcon: {
+    marginRight: 12,
+    marginTop: 2,
+  },
+  warningTextContainer: {
+    flex: 1,
+  },
+  termsContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginTop: 8,
+    gap: 4,
+  },
+  termsLink: {
+    marginHorizontal: 2,
   },
   linkText: {
     color: "#0066cc",
     textDecorationLine: "underline",
+    fontFamily: "BarlowRegular",
     fontSize: Platform.OS === "web" ? 14 : 13,
   },
   formContainer: {
     backgroundColor: "#ffffff",
-    borderRadius: 8,
+    borderRadius: 12,
     padding: 24,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
     elevation: 3,
+    gap: 20,
   },
   postcodeContainer: {
     flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 16,
+    alignItems: "flex-start",
     gap: 12,
   },
   postcodeInput: {
     flex: 1,
   },
   findAddressBtn: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 6,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
-    minWidth: 120,
-  },
-  findAddressBtnText: {
-    fontSize: 14,
-    fontFamily: "BarlowRegular",
-    fontWeight: "600",
-    textTransform: "capitalize",
+    minWidth: 130,
+    marginTop: 24,
   },
   manualAddressBtn: {
-    marginBottom: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
   manualAddressText: {
     fontSize: 14,
@@ -358,45 +426,38 @@ const styles = StyleSheet.create({
     fontFamily: "BarlowRegular",
   },
   addressFields: {
-    gap: 5,
-    marginBottom: 15,
+    gap: 16,
   },
   dateContainer: {
-    flexDirection: "column",
     gap: 16,
-    marginBottom: 24,
   },
   dateField: {
     width: "100%",
-  },
-  submitContainer: {
-    marginTop: 8,
-  },
-  warningPressables: {
-    flexDirection: "row",
-    alignItems: "center",
   },
   dateButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     backgroundColor: "#f8f9fa",
-    padding: 12,
-    borderRadius: 5,
+    padding: 16,
+    borderRadius: 8,
     marginBottom: 12,
     borderWidth: 1,
     borderColor: "#e9ecef",
   },
-  dateButtonText: {
-    fontSize: 16,
-    fontFamily: "BarlowRegular",
-    color: "#4a4a4a",
-  },
   dateScrollerContainer: {
-    backgroundColor: "#f8f9fa",
-    borderRadius: 5,
-    padding: 8,
+    backgroundColor: "#ffffff",
+    borderRadius: 8,
+    padding: 16,
     borderWidth: 1,
     borderColor: "#e9ecef",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  submitContainer: {
+    marginTop: 24,
   },
 });

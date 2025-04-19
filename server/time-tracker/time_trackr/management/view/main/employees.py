@@ -1,101 +1,25 @@
 from datetime import datetime, timedelta
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from rest_framework import status
 from django.shortcuts import get_object_or_404
-
 from .decorators import admin_required
-
-from ...models import Task, User, Company, Shift
-from ...serializer import UserSerializer, ShiftSerializer
-
-
-from ...models import Company
-from staff.models import Staff
-
-""" Method is designed to retrieve all employees that are available and has no shift assigned to them in the next 24 hours."""
+from management.models import Task, Company, Shift, User, Identity
+from management.models import Staff
 from datetime import datetime, timedelta
 from django.shortcuts import get_object_or_404
-from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
-from management.models import Staff, Company, Shift
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-@admin_required
-def get_available_employees(request):
-    """ 
-    Retrieves the list of employees that are:
-    1. Available based on their availability schedule
-    2. Not on leave
-    3. Have no shifts assigned during the requested time period
-    """
-    try:
-        # Get current_date from request params
-        current_date_str = request.GET.get('current_date')
-        if not current_date_str:
-            return Response({'error': 'current_date parameter is required'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        # Parse the date string into datetime objects
-        now = datetime.strptime(current_date_str, '%Y-%m-%d')
-        later = now + timedelta(days=1)
-
-        # Get the user company
-        try:
-            if hasattr(request.user, 'is_owner') and request.user.is_owner:
-                company = get_object_or_404(Company, owner=request.user)
-            elif hasattr(request.user, 'is_admin') and request.user.is_admin:
-                staff_member = get_object_or_404(Staff, user=request.user)
-                company = staff_member.company
-            else:
-                return Response({'error': 'User does not have a company'}, status=status.HTTP_400_BAD_REQUEST)
-        except Company.DoesNotExist:
-            return Response({'error': 'Company not found'}, status=status.HTTP_404_NOT_FOUND)
-
-        # Get staff members who:
-        # 1. Belong to the company
-        # 2. Have availability set for this period
-        # 3. Are not on leave
-        # 4. Don't have shifts scheduled during this period
-        available_users = Staff.objects.filter(
-            company=company,
-            staff_availability__availability_status='available'
-        ).exclude(
-            # Exclude staff who are on leave
-            staff_leave__status__in=['pending', 'approved', 'on_leave'],
-            staff_leave__start_date__lte=now.date(),
-            staff_leave__end_date__gte=now.date()
-        ).exclude(
-            # Exclude staff who have shifts during this period
-            shift_staff__status__in=['assigned', 'started'],
-            shift_staff__task__start_date=now.date(),
-            #shift_staff__task__end_date=later.date()
-        ).distinct()
-        print("Available users:", available_users)
-
-        employee_list = [{
-            'employee_name': staff.user.get_full_name(),
-            'employee_id': staff.id,
-        } for staff in available_users]
-
-        return Response({'employees': employee_list}, status=status.HTTP_200_OK)
-    
-    except ValueError:
-        return Response({'error': 'Invalid date format. Use YYYY-MM-DD'}, status=status.HTTP_400_BAD_REQUEST)
-    except Exception as e:
-        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-    
-
+from django_ratelimit.decorators import ratelimit
+from django.core.cache import cache
+from django.conf import settings
+from management.helpers import get_cache_key
 
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 @admin_required
-def get_all_employees_details(request):
+@ratelimit(key='user', rate='10/m', block=True, method=['GET'])
+def employee_display(request):
     """ Method gets all employees associated with a company.
     The method gets the employee using the company id associated with 
     the request user to indicate they all work for the same company.
@@ -112,15 +36,19 @@ def get_all_employees_details(request):
                 return Response({'error': 'You are not authorized to access this resource'}, status=status.HTTP_403_FORBIDDEN)
         except Company.DoesNotExist as e:
             return Response({'error': 'Company not found'}, status=status.HTTP_404_NOT_FOUND)
+        # Get the cache key for the employees list
+         # Return the employees list from cache if it exists 
+        cache_key = get_cache_key('employees_list', company.id)
+        cache_data = cache.get(cache_key)
+        if cache_data:
+            return Response({'employee_list': cache_data}, status=status.HTTP_200_OK)
         
         # Get all employees associated with the company and sort them by name
         staff_members = Staff.objects.filter(company=company)
-        
         employee_list = []
         for staff in staff_members:
             # Get the user role
             role = 'admin' if staff.user.is_admin else 'staff'
-
             employee_list.append({
                 'id': staff.id,
                 'name': staff.user.get_full_name(),  
@@ -130,7 +58,9 @@ def get_all_employees_details(request):
                 'date_hired': staff.date_hired,
                 'is_active': staff.user.is_active
             })
-        return Response({'employees': employee_list}, status=status.HTTP_200_OK)
+        # Cache the employees list for 1 hour
+        cache.set(cache_key, employee_list, timeout=settings.CACHE_TIMEOUT)
+        return Response({'employee_list': employee_list}, status=status.HTTP_200_OK)
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
     
@@ -138,6 +68,7 @@ def get_all_employees_details(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 @admin_required
+@ratelimit(key='user', rate='10/m', block=True, method=['GET'])
 def get_all_employees(request):
     """ This method will return a list of all employees in the company. 
      It will only return theier employee id and name """
@@ -152,6 +83,11 @@ def get_all_employees(request):
             return Response({'error': 'You are not authorized to access this resource'}, status=status.HTTP_403_FORBIDDEN)
     except Company.DoesNotExist as e:
             return Response({'error': 'Company not found'}, status=status.HTTP_404_NOT_FOUND)
+    # Get the cache key for the employees list
+    cache_key = get_cache_key('employees_list', company.id)
+    cache_data = cache.get(cache_key)
+    if cache_data:
+        return Response({'employees': cache_data}, status=status.HTTP_200_OK)
     
     try:
         staff_members = Staff.objects.filter(company=company)
@@ -159,20 +95,19 @@ def get_all_employees(request):
             'employee_id': staff.id,
             'employee_name': staff.user.get_full_name()
         } for staff in staff_members]
-        print("Employee List:", employee_list)
+        # Cache the employees list for 1 hour
+        cache.set(cache_key, employee_list, timeout=settings.CACHE_TIMEOUT)
+
         return Response({'employees': employee_list}, status=status.HTTP_200_OK)
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         
-        
-        
-        
-
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 @admin_required
-def get_employee_details(request):
+@ratelimit(key='user', rate='10/m', block=True, method=['GET'])
+def get_employee_analytics(request):
     """ The method is used to retrieve the details of a single employee, given the employee id sent from the client """
     try:
         # Get the company of the request user
@@ -186,6 +121,11 @@ def get_employee_details(request):
                 return Response({'error': 'You are not authorized to access this resource'}, status=status.HTTP_403_FORBIDDEN)
         except Company.DoesNotExist as e:
             return Response({'error': 'Company not found'}, status=status.HTTP_404_NOT_FOUND)
+        # Get the cache key for the employees list
+        cache_key = get_cache_key('employees_details', company.id, employee_id)
+        cache_data = cache.get(cache_key)
+        if cache_data:
+            return Response({'employees': cache_data}, status=status.HTTP_200_OK)
         
         # Get the employee id from the request data and retrieve the employee details
         employee_id = request.query_params.get('employee_id')
@@ -224,6 +164,8 @@ def get_employee_details(request):
             'number_of_unassigned_tasks':unassigned_tasks,
             'number_of_assigned_tasks': assigned_task,
         }
+        # Cache the employee details for 1 hour
+        cache.set(cache_key, employee_data, timeout=settings.CACHE_TIMEOUT)
         return Response({'employee_data': employee_data}, status=status.HTTP_200_OK)
     except Staff.DoesNotExist as e:
         return Response({'error': 'Employee not found'}, status=status.HTTP_404_NOT_FOUND)
@@ -231,19 +173,24 @@ def get_employee_details(request):
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
-
-
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 @admin_required
+@ratelimit(key='user', rate='10/m', block=True, method=['GET'])
 def get_shift_details(request):
     # Validate the request data and throw an error if the data is not provided
     if not request.data:
         return Response({'error': 'User id is required'}, status=status.HTTP_400_BAD_REQUEST)
-    
     staff_id = request.data.get('staff_id')
-    
+
     shift_details = []
+    # Get the cache key for the shift details
+    # Return the shift details from cache if it exists
+    cache_key = get_cache_key('shift_details', staff_id)
+    cache_data = cache.get(cache_key)
+    if cache_data:
+        return Response({'shifts': cache_data}, status=status.HTTP_200_OK)
+    
     # Get the user's shifts that has been accepted by the user with the assigned status
     # and shift that has not yet been accepted by the user with the pending status
     # Get the task associated with the shift and retrieve the task details
@@ -267,7 +214,8 @@ def get_shift_details(request):
                 'staff_id': staff_id
             }
             shift_details.append(task_details)
-        print("Shift details:", shift_details)
+        # Cache the shift details for 1 hour
+        cache.set(cache_key, shift_details, timeout=settings.CACHE_TIMEOUT)
         return Response({'shifts': shift_details}, status=status.HTTP_200_OK)
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -276,6 +224,7 @@ def get_shift_details(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 @admin_required
+@ratelimit(key='user', rate='10/m', block=True, method=['GET'])
 def get_employee_complete_shifts(request):
     """ Method retrieves the total number of shifts completed by the employee."""
 
@@ -295,12 +244,20 @@ def get_employee_complete_shifts(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 @admin_required
+@ratelimit(key='user', rate='10/m', block=True, method=['GET'])
 def get_employee_work_log(request):
     """Retrieves the employee's current or most recent work log. This will return only assigned or started shifts which are about to begin"""
     try:
         employee_id = request.GET.get('employee_id')
         if not employee_id:
             return Response({'error': 'Employee ID is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Get the cache key for the employee work log
+        # Get the employee work log from cache if it exists in the cache
+        cache_key = get_cache_key('employee_work_log', employee_id)
+        cache_data = cache.get(cache_key)
+        if cache_data:
+            return Response({'work_log': cache_data}, status=status.HTTP_200_OK)
 
         staff = get_object_or_404(Staff, id=employee_id)
         
@@ -308,10 +265,12 @@ def get_employee_work_log(request):
         print(f"Looking up shifts for employee ID: {employee_id}")
         
         # Get the most recent shift for this employee
+        # Get only the assigned or started shifts
+        # Add ordering to get the most recent shift which is the first shift in the list
         current_shift = Shift.objects.filter(
             staff=staff,
             status__in=['assigned', 'started'],
-        ).order_by('-start_time').first()  # Add ordering to get the most recent shift
+        ).order_by('-start_time').first()
 
         # Return empty data instead of 404 when no shifts are found
         if not current_shift:
@@ -329,7 +288,8 @@ def get_employee_work_log(request):
             'task_end_time': current_shift.task.end_time,
             'status': current_shift.status
         }
-        print("Work log:", work_log)
+        # Cache the employee work log for 5 minutes
+        cache.set(cache_key, work_log, timeout=settings.CACHE_TIMEOUT)
         return Response({'work_log': work_log}, status=status.HTTP_200_OK)
     
     except Exception as e:
@@ -340,12 +300,19 @@ def get_employee_work_log(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 @admin_required
+@ratelimit(key='user', rate='10/m', block=True, method=['GET'])
 def get_employee_task_details(request):
     """Retrieves the employee's task details"""
     try:
         employee_id = request.GET.get('employee_id')
         if not employee_id:
             return Response({'error': 'Employee ID is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Get the cache key for the employee task details
+        cache_key = get_cache_key('employee_task_details', employee_id)
+        cache_data = cache.get(cache_key)
+        if cache_data:
+            return Response({'task_details': cache_data}, status=status.HTTP_200_OK)
 
         staff = get_object_or_404(Staff, id=employee_id)
         # Get the total number of tasks the employee has selected
@@ -374,7 +341,8 @@ def get_employee_task_details(request):
             'total_completed_tasks': total_completed_tasks,
             'total_cancelled_tasks': total_cancelled_tasks
         }
-        print("All task details:", all_task_details)
+        # Cache the employee task details for 5 minutes
+        cache.set(cache_key, all_task_details, timeout=settings.CACHE_TIMEOUT)
         return Response({'task_details': all_task_details}, status=status.HTTP_200_OK)
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -383,12 +351,21 @@ def get_employee_task_details(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 @admin_required
+@ratelimit(key='user', rate='10/m', block=True, method=['GET'])
 def get_employee_with_id(request):
-    """Retrieves the employee's details with the given id"""
+    """Retrieves the employee's details with the given id.
+    First try to get the data from cache before querying the database if the data is not cached."""
+
     try:
         employee_id = request.GET.get('employee_id')
         if not employee_id:
             return Response({'error': 'Employee ID is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Get the cache key for the employee details
+        cache_key = get_cache_key('employee_details', employee_id)
+        cache_data = cache.get(cache_key)
+        if cache_data:
+            return Response({'employee_details': cache_data}, status=status.HTTP_200_OK)
 
         staff = get_object_or_404(Staff, id=employee_id)
         role = 'owner' if staff.user.is_owner else 'admin'
@@ -401,22 +378,123 @@ def get_employee_with_id(request):
             'role': role,
             'date_hired': staff.date_hired,
         }
+        # Cache the employee details for 1 hour
+        cache.set(cache_key, employee_details, timeout=settings.CACHE_TIMEOUT)
         return Response({'employee_details': employee_details}, status=status.HTTP_200_OK)
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        
-        
-        
-        
-        
+  
 
-
-
-
-        # Get the total number of tasks the employee has selected
-
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+@admin_required
+@ratelimit(key='user', rate='50/h', block=True, method=['POST'])
+def onboard_employee(request):
+    """ Create an employee based on the roles provided from the client.
+    After creating the employee, send an email to the user using celery to send the email in the background """
+    
+    if not request.data:
+        return Response({'error': 'Please provide the user details'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Get company based on user role
+    if request.user.is_owner:
+        company = get_object_or_404(Company, owner=request.user)
+    else:
+        # If the request user is not an owner, get the company through the staff relationship
+        company = get_object_or_404(Staff, user=request.user).company
+    
+    try:
+        required_fields = ['first_name', 'last_name', 'email', 'phone', 'password', 'dob', 'role','address','city','postcode','country']
         
+        # Add debug logging for missing fields
+        missing_fields = [field for field in required_fields if not request.data.get(field)]
+        if missing_fields:
+            print("Missing fields:", missing_fields)
+            return Response({'error': f'Missing required fields: {", ".join(missing_fields)}'}, 
+                          status=status.HTTP_400_BAD_REQUEST)
         
+        # Create the validated data
+        validated_data = {
+            'first_name': request.data.get('first_name'),
+            'last_name': request.data.get('last_name'),
+            'email': request.data.get('email'),
+            'phone': request.data.get('phone'),
+            'password': request.data.get('password'),
+            'dob': request.data.get('dob'),
+            'address': request.data.get('address'),
+            'city': request.data.get('city'),
+            'postcode': request.data.get('postcode'),
+            'country': request.data.get('country')
+        }
+        
+        # Add debug logging
+        print("Validated data:", validated_data)
+        
+        role = request.data.get('role')
+        print("Role:", role)
+        
+        # Use the role to direct the object creation
+        # Create admin if role is admin and staff if role is staff
+        # Return the valid responses
+        if role == 'admin':
+            user = User.objects.create_admin(
+                first_name=validated_data['first_name'],
+                last_name=validated_data['last_name'],
+                email=validated_data['email'],
+                phone=validated_data['phone'],
+                password=validated_data['password'],
+                dob=validated_data['dob'],
+                address=validated_data['address'],
+                city=validated_data['city'],
+                postcode=validated_data['postcode'],
+                country=validated_data['country'],
+                company=company
+            )
+            return Response({'message': 'Admin created successfully'}, status=status.HTTP_201_CREATED)
+            
+        elif role == 'staff':
+            user = User.objects.create_staff(
+                first_name=validated_data['first_name'],
+                last_name=validated_data['last_name'],
+                email=validated_data['email'],
+                phone=validated_data['phone'],
+                password=validated_data['password'],
+                dob=validated_data['dob'],
+                address=validated_data['address'],
+                city=validated_data['city'],
+                postcode=validated_data['postcode'],
+                country=validated_data['country'],
+                company=company
+            )
+            return Response({'message': 'Staff created successfully'}, status=status.HTTP_201_CREATED)
+        
+    except Exception as e:
+        print(f"Error creating user: {str(e)}")  # Add debug logging
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+@admin_required
+@ratelimit(key='user', rate='50/h', block=True, method=['DELETE'])
+def remove_employee(request):
+    """Remove an employee from the database"""
+    try:
+        # Get the employee id from the server request or return an error if the employee id is not provided
+        # If the employee id is provided, get the employee from the database and delete the employee
+        employee_id = request.GET.get('employee_id')
+        print(f"Employee ID: {employee_id}")
+        if not employee_id:
+            return Response({'error': 'Employee ID is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        employee = get_object_or_404(Staff, id=employee_id)
+        employee.delete()
+        return Response({'message': 'Employee removed successfully'}, status=status.HTTP_200_OK)
+    except Staff.DoesNotExist:
+        return Response({'error': 'Employee not found'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            
 
             
        

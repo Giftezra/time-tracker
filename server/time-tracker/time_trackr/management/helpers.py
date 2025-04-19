@@ -58,5 +58,9 @@ def get_coordinates_from_address(address, postcode, country = 'United Kingdom'):
     except (GeocoderTimedOut, GeocoderUnavailable) as e:
         return None, None
     
+def get_cache_key(prefix, *args):
+    """ Generate a cache key for the given arguments. """
+    return f"{prefix}:{':'.join(str(arg) for arg in args)}"
+    
     
     

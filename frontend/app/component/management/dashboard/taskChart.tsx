@@ -1,7 +1,7 @@
 import { Platform, StyleSheet, Text, View } from "react-native";
 import React from "react";
 import { PieChart } from "react-native-gifted-charts";
-import { useDashboardContext } from "@/app/context/management/dashboard/dashboardContext";
+import { useDashboardContext } from "@/app/context/management/dashboard/ManagementDashboardContext";
 import SubtitleThemedText from "../../helper/SubtitleThemedText";
 import InnerThemedText from "../../helper/InnerThemedText";
 import ThemedHeaderText from "../../helper/ThemedHeaderText";
@@ -51,7 +51,7 @@ const TaskChartComponent = ({
           </View>
         </View>
       );
-    }else{
+    } else {
       return (
         <View style={styles.renderLegendContainer}>
           <View style={styles.legendRow}>

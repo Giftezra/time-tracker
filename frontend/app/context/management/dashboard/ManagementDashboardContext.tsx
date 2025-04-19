@@ -37,7 +37,7 @@ const DashboardProvider = ({ children }: { children: React.ReactNode }) => {
   } = useEmployeeContext();
 
   // Authentication instance for API calls
-  const { axiosInstance } = useAuth();
+  const { axiosInstance, user } = useAuth();
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
   const [unavailableEmployees, setUnavailableEmployees] = useState<
@@ -105,6 +105,7 @@ const DashboardProvider = ({ children }: { children: React.ReactNode }) => {
   /**
    * Fetch the contract statistics for the selected year when the component mounts.
    * The state uses the new Date().getFullYear() to get the current year.
+   * Run this effect when the selectedYear changes, and only when the user has been associated with a company.
    * @param year
    * @returns
    */
@@ -114,7 +115,7 @@ const DashboardProvider = ({ children }: { children: React.ReactNode }) => {
       try {
         const stats = await fetchContractStatistics(selectedYear);
         setContractStats(stats);
-        
+
         const unavailableEmployees = await fetchUnavailableEmployees();
         setUnavailableEmployees(unavailableEmployees);
         await fetchTaskStatistics();
@@ -127,14 +128,17 @@ const DashboardProvider = ({ children }: { children: React.ReactNode }) => {
       }
     };
     fetchData();
-  }, [selectedYear]);
+  }, [
+    selectedYear,
+    user?.company_name !== "" || user?.company_name !== undefined,
+  ]);
 
   /**
    * Fetches contract statistics from the API for a given year
    * Uses current year if no year is provided
    * @param year - The year for which to fetch statistics (optional)
    * @returns Promise<BarData[]> - Transformed contract statistics data
-   */     
+   */
   const fetchContractStatistics = async (year?: number) => {
     setIsLoading(true);
     try {

@@ -52,7 +52,6 @@ const MainEmployeeTaskManager = () => {
 
   const secondaryColor = useThemeColor({}, "secondaryColor");
   const highlight = useThemeColor({}, "highlight");
-
   const [toggleView, setToggleView] = useState<string>("open tasks");
 
   /**

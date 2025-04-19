@@ -10,7 +10,7 @@ import React, { useState, useEffect } from "react";
 import { BarChart } from "react-native-gifted-charts";
 
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useDashboardContext } from "@/app/context/management/dashboard/dashboardContext";
+import { useDashboardContext } from "@/app/context/management/dashboard/ManagementDashboardContext";
 import ThemedHeaderText from "../../helper/ThemedHeaderText";
 import InnerThemedText from "../../helper/InnerThemedText";
 const renderTitle = () => {

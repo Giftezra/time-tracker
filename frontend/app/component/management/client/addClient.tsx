@@ -1,12 +1,20 @@
-import { StyleSheet, Text, TextInput, View, ScrollView, Alert, ActivityIndicator, TouchableOpacity } from "react-native";
+import {
+  StyleSheet,
+  TextInput,
+  View,
+  ScrollView,
+  Alert,
+  ActivityIndicator,
+  TouchableOpacity,
+} from "react-native";
 import React, { useState } from "react";
-import { AntDesign, MaterialIcons } from "@expo/vector-icons";
 import { NewClientDetailsInterface } from "@/app/types/management/client";
 import { useClientContext } from "@/app/context/management/client/clientContext";
 import ButtonText from "../../helper/ButtonText";
 import SubHeaderText from "../../helper/SubHeaderText";
 import ThemedHeaderText from "../../helper/ThemedHeaderText";
 import SubtitleThemedText from "../../helper/SubtitleThemedText";
+import AlertModal from "../../helper/AlertModal";
 /**
  * AddClientComponent is responsible for rendering a form to register new clients.
  * It provides input fields for client details including name, contact information,
@@ -18,8 +26,20 @@ import SubtitleThemedText from "../../helper/SubtitleThemedText";
  * <AddClientComponent />
  * ```
  */
-const AddClientComponent = () => {
+const AddClientComponent = ({isModal}:{isModal:boolean}) => {
   const { createClient, isNewClientLoading } = useClientContext();
+  const [isAlertVisible, setIsAlertVisible] = useState(false);
+  const [alertConfig, setAlertConfig] = useState<{
+    title: string;
+    message: string;
+    onConfirm?: () => void;
+    onCancel?: () => void;
+  }>({
+    title: "",
+    message: "",
+    onConfirm: () => {},
+    onCancel: () => {},
+  });
   const [newClientDetails, setNewClientDetails] =
     useState<NewClientDetailsInterface>({
       name: "",
@@ -38,19 +58,103 @@ const AddClientComponent = () => {
     setNewClientDetails({ ...newClientDetails, [field]: value });
   };
 
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const validatePhone = (phone: string): boolean => {
+    // Allows formats like: +1234567890, 123-456-7890, (123) 456-7890
+    const phoneRegex =
+      /^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/;
+    return phoneRegex.test(phone.replace(/\s/g, ""));
+  };
+
+  const validatePostcode = (postcode: string): boolean => {
+    // Basic postcode validation - can be adjusted based on your country requirements
+    return postcode.length >= 3 && postcode.length <= 10;
+  };
+  
+
   const handleClientRegistration = async () => {
-    try{
-      Alert.alert('Registration Information', ' You are about to register a new client. Please ensure the details are correct before submitting.', [{
-        text: 'Cancel',
-        style: 'cancel',
-      }, {
-        text: 'Submit',
-        onPress: () => createClient(newClientDetails),
-      }])
+    try {
+      // Create validation errors array
+      const validationErrors: string[] = [];
+
+      // Validate required fields
+      if (!newClientDetails.name.trim()) {
+        validationErrors.push("Client name is required");
+      } else if (newClientDetails.name.length < 2) {
+        validationErrors.push("Client name must be at least 2 characters long");
+      }
+
+      if (!newClientDetails.email.trim()) {
+        validationErrors.push("Email is required");
+      } else if (!validateEmail(newClientDetails.email)) {
+        validationErrors.push("Please enter a valid email address");
+      }
+
+      if (!newClientDetails.phone.trim()) {
+        validationErrors.push("Phone number is required");
+      } else if (!validatePhone(newClientDetails.phone)) {
+        validationErrors.push("Please enter a valid phone number");
+      }
+
+      if (!newClientDetails.address.trim()) {
+        validationErrors.push("Address is required");
+      }
+
+      if (!newClientDetails.postcode.trim()) {
+        validationErrors.push("Postcode is required");
+      } else if (!validatePostcode(newClientDetails.postcode)) {
+        validationErrors.push("Please enter a valid postcode");
+      }
+
+      if (!newClientDetails.city.trim()) {
+        validationErrors.push("City is required");
+      }
+
+      if (!newClientDetails.country.trim()) {
+        validationErrors.push("Country is required");
+      }
+
+      // If there are validation errors, show them in the alert
+      if (validationErrors.length > 0) {
+        setAlertConfig({
+          title: "Validation Error",
+          message: validationErrors.join("\n"),
+          onConfirm: () => {
+            setIsAlertVisible(false);
+          },
+        });
+        setIsAlertVisible(true);
+        return;
+      }
+
+      // If validation passes, show confirmation dialog
+      setAlertConfig({
+        title: "Registration Information",
+        message:
+          "You are about to register a new client. Please ensure the details are correct before submitting.",
+        onConfirm: () => createClient(newClientDetails),
+        onCancel: () => {
+          setIsAlertVisible(false);
+        },
+      });
+      setIsAlertVisible(true);
     } catch (error) {
-      console.error('Error registering client', error);
+      console.error("Error registering client", error);
+      setAlertConfig({
+        title: "Error",
+        message:
+          "An error occurred while registering the client. Please try again.",
+        onConfirm: () => {
+          setIsAlertVisible(false);
+        },
+      });
+      setIsAlertVisible(true);
     }
-  }
+  };
   /**
    * Renders a scrollable form with input fields for client registration.
    * The form includes:
@@ -161,7 +265,7 @@ const AddClientComponent = () => {
                   style={styles.input}
                   placeholderTextColor="#A0AEC0"
                   importantForAutofill="yes"
-                  autoComplete='address-line2'
+                  autoComplete="address-line2"
                   value={newClientDetails.city}
                   onChangeText={(text) => handleInputChange("city", text)}
                 />
@@ -182,7 +286,10 @@ const AddClientComponent = () => {
             </View>
           </View>
 
-          <TouchableOpacity style={styles.registerButton} onPress={handleClientRegistration}>
+          <TouchableOpacity
+            style={styles.registerButton}
+            onPress={handleClientRegistration}
+          >
             {isNewClientLoading ? (
               <ActivityIndicator size="large" color="#4299E1" />
             ) : (
@@ -190,6 +297,13 @@ const AddClientComponent = () => {
             )}
           </TouchableOpacity>
         </View>
+        <AlertModal
+          title={alertConfig.title}
+          message={alertConfig.message}
+          isVisible={isAlertVisible}
+          onClose={alertConfig.onCancel}
+          onConfirm={alertConfig.onConfirm}
+        />
       </ScrollView>
     </View>
   );
@@ -231,8 +345,10 @@ const styles = StyleSheet.create({
   },
 
   container: {
-    padding: 16,
+    padding: 10,
     paddingBottom: 40,
+    gap: 10,
+
   },
 
   formSection: {
@@ -243,6 +359,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 4,
     elevation: 3,
+    gap: 10,
   },
 
   sectionContainer: {
@@ -261,6 +378,7 @@ const styles = StyleSheet.create({
 
   inputGroup: {
     marginBottom: 20,
+    gap:5
   },
 
   label: {
@@ -269,6 +387,7 @@ const styles = StyleSheet.create({
     color: "#4A5568",
     marginBottom: 8,
     fontFamily: "BarlowRegular",
+    gap:5
   },
 
   input: {

@@ -13,6 +13,7 @@ const TextInputComponent = ({
   autoComplete,
   editable,
   keyboardType,
+  uppercase,
 }: {
   text: string;
   placeholder: string | undefined;
@@ -21,6 +22,7 @@ const TextInputComponent = ({
   isMultiline?: boolean;
   lines?: number;
   secureTextEntry?: boolean;
+  uppercase?: boolean;
   autoComplete?:
     | "additional-name"
     | "address-line1"
@@ -90,7 +92,7 @@ const TextInputComponent = ({
           {isFocused || value ? text : ""}
         </Text>
       </View>
-      <View style={[styles.textInputContainer, { backgroundColor: textinput }]}>
+      <View style={[styles.textInputContainer, { backgroundColor: textinput,}]}>
         <TextInput
           value={value}
           onChangeText={setValue}

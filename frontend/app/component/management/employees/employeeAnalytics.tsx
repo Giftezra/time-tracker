@@ -9,20 +9,31 @@
 import React from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { WorklogInterface, TaskDetailsProps, EmployeeOverviewInterface } from "@/app/types/management/employee";
+import {
+  WorklogInterface,
+  TaskDetailsProps,
+  EmployeeDetailsInterface,
+} from "@/app/types/management/employee";
 import EmployeeOverview from "./EmployeeOverview";
 import WorkLog from "./WorkLog";
 import TaskDetails from "./TaskDetails";
-const EmployeeAnalyticsComponent = ({employeeData, workLog, taskDetails}: {employeeData: EmployeeOverviewInterface, workLog: WorklogInterface, taskDetails: TaskDetailsProps}) => {
+
+const EmployeeAnalyticsComponent = ({
+  employeeData,
+  workLog,
+  taskDetails,
+}: {
+  employeeData?: EmployeeDetailsInterface;
+  workLog?: WorklogInterface;
+  taskDetails?: TaskDetailsProps;
+}) => {
   const secondaryColor = useThemeColor({}, "secondaryColor");
 
   return (
-    <ScrollView
-      style={[styles.mainContainer, { backgroundColor: secondaryColor }]}
-    >
+    <ScrollView style={[styles.mainContainer]}>
       <View style={styles.mainOverviewContainer}>
-        <EmployeeOverview {...employeeData!} />
-        <WorkLog {...workLog!} />
+        <EmployeeOverview overview={employeeData!} />
+        <WorkLog workLog={workLog!} />
       </View>
 
       <TaskDetails {...taskDetails!} />

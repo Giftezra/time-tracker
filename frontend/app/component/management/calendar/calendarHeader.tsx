@@ -12,6 +12,8 @@ import React, { useState } from "react";
 import { AntDesign, MaterialCommunityIcons } from "@expo/vector-icons";
 import SearchInputContainer from "../../helper/SearchInput";
 import { useCalendar } from "@/app/context/management/calendar/calendarContext";
+import AlertConfig from "@/app/types/management/AlertConfig";
+import AlertModal from "../../helper/AlertModal";
 
 const CalendarHeader = () => {
   const {
@@ -30,6 +32,10 @@ const CalendarHeader = () => {
     emailShiftReport,
   } = useCalendar();
 
+  const [isAlertVisible, setIsAlertVisible] = useState(false);
+  const [alertConfig, setAlertConfig] = useState<AlertConfig | undefined>(
+    undefined
+  );
   const [isPrintModalVisible, setIsPrintModalVisible] = useState(false);
   const [sendingReportError, setSendingReportError] = useState<string | null>(
     null
@@ -38,16 +44,15 @@ const CalendarHeader = () => {
     day: 1,
     month: 1,
     year: 2024,
-  }); // Store the selected start date in a state object
+  });
   const [selectedEndDate, setSelectedEndDate] = useState({
     day: 1,
     month: 1,
     year: 2024,
-  }); // Store the selected end date in a state object
-
-  const days = Array.from({ length: 31 }, (_, i) => i + 1); // Create an array of days from 1 to 31
-  const months = Array.from({ length: 12 }, (_, i) => i + 1); // Create an array of months from 1 to 12
-  const years = Array.from({ length: 50 }, (_, i) => 2020 + i); // Create an array of years from 2020 to 2024
+  });
+  const days = Array.from({ length: 31 }, (_, i) => i + 1);
+  const months = Array.from({ length: 12 }, (_, i) => i + 1);
+  const years = Array.from({ length: 50 }, (_, i) => 2020 + i);
 
   /**
    * Call the emailShiftReport method to send the report to the user's email address.
@@ -79,21 +84,20 @@ const CalendarHeader = () => {
         await sendReport();
       }
     } else {
-      // If the platform is not web, use the Alert.alert method to ask the user if they want to proceed
-      Alert.alert(
-        "Send Report",
-        "This report will be sent to your email address. Do you want to proceed?",
-        [
-          {
-            text: "Cancel",
-            style: "cancel",
-          },
-          {
-            text: "OK",
-            onPress: () => sendReport(),
-          },
-        ]
-      );
+      setIsAlertVisible(true);
+      setAlertConfig({
+        title: "Send Report",
+        message:
+          "This report will be sent to your email address. Do you want to proceed?",
+        onConfirm: () => {
+          sendReport();
+          setIsAlertVisible(false);
+        },
+        onClose: () => {
+          setIsAlertVisible(false);
+        },
+        isVisible: true,
+      });
     }
   };
 
@@ -103,7 +107,6 @@ const CalendarHeader = () => {
       return shifts && (typeof shifts === "object" ? shifts.length > 0 : false);
     });
   });
-
 
   return (
     <View style={[styles.mainContainer, { padding: 5 }]}>
@@ -203,7 +206,10 @@ const CalendarHeader = () => {
               color="black"
             />
           </Pressable>
-          <Pressable onPress={() => setIsPrintModalVisible(true)} disabled={!hasAnyShifts}>
+          <Pressable
+            onPress={() => setIsPrintModalVisible(true)}
+            disabled={!hasAnyShifts}
+          >
             <MaterialCommunityIcons name="printer" size={24} color="black" />
           </Pressable>
           <Pressable>
@@ -414,6 +420,15 @@ const CalendarHeader = () => {
           </View>
         </View>
       </Modal>
+      {isAlertVisible && (
+        <AlertModal
+          isVisible={alertConfig?.isVisible || false}
+          onClose={() => alertConfig?.onClose?.()}
+          onConfirm={() => alertConfig?.onConfirm?.()}
+          title={alertConfig?.title || ""}
+          message={alertConfig?.message || ""}
+        />
+      )}
     </View>
   );
 };

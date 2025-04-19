@@ -17,7 +17,7 @@ const TaskDetails:React.FC<TaskDetailsProps> = (props) => {
         <View
           style={[
             styles.totalProjectsContainer,
-            { borderBlockColor: highlight, shadowColor: innerBackground },
+            { borderBlockColor: highlight, shadowColor: '#fff' },
           ]}
         >
           <Text style={[styles.detailsText, { color: text }]}>

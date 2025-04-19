@@ -228,6 +228,7 @@ CACHES = {
     }
 }
 RATELIMIT_USE_CACHE = 'default'
+CACHE_TIMEOUT = 300
 # Add these settings for admin customization
 ADMIN_SITE_HEADER = "Time Trackr Administration"
 ADMIN_SITE_TITLE = "Time Trackr Admin Portal"

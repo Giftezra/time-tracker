@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import React, { useEffect, useState } from "react";
-import { useDashboardContext } from "@/app/context/management/dashboard/dashboardContext";
+import { useDashboardContext } from "@/app/context/management/dashboard/ManagementDashboardContext";
 import { router } from "expo-router";
 import { userData } from "@/app/utils/loadData";
 import InnerThemedText from "../../helper/InnerThemedText";
@@ -23,11 +23,13 @@ const DashboardWelcomeHeader = () => {
       <View style={styles.headerRow}>
         <View style={styles.welcometextContainer}>
           <ThemedHeaderText text={`Welcome back, ${user?.first_name}`} />
-          <SubtitleThemedText text={
-            role === "Owner"
-              ? "Monitor your business performance and daily activities"
-              : "Track your tasks and daily activities"
-          } />
+          <SubtitleThemedText
+            text={
+              role === "Owner"
+                ? "Monitor your business performance and daily activities"
+                : "Track your tasks and daily activities"
+            }
+          />
         </View>
 
         {role === "Owner" && (
@@ -36,7 +38,9 @@ const DashboardWelcomeHeader = () => {
               styles.subscriptionButton,
               pressed && styles.buttonPressed,
             ]}
-            onPress={() => router.push("/management/(drawer)/payment/ManagementPayment")}
+            onPress={() =>
+              router.push("/management/(drawer)/payment/ManagementPayment")
+            }
           >
             <InnerThemedText text="Manage Subscription" />
           </Pressable>
@@ -45,18 +49,22 @@ const DashboardWelcomeHeader = () => {
 
       <View style={styles.todaysTaskContainer}>
         <ThemedHeaderText text="Daily Overview" />
-        <InnerThemedText text={
-          role === "Owner"
-            ? "View company performance metrics and scheduled activities"
-            : "Review your schedule and assigned tasks"
-        } />
+        <InnerThemedText
+          text={
+            role === "Owner"
+              ? "View company performance metrics and scheduled activities"
+              : "Review your schedule and assigned tasks"
+          }
+        />
 
         <Pressable
           style={({ pressed }) => [
             styles.calendarButton,
             pressed && styles.buttonPressed,
           ]}
-          onPress={() => router.navigate("/management/(drawer)/calendar/ManagementCalendar")}
+          onPress={() =>
+            router.navigate("/management/(drawer)/calendar/ManagementCalendar")
+          }
         >
           <ButtonText text="View Calendar" />
         </Pressable>

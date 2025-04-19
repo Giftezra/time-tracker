@@ -109,30 +109,6 @@ const CreateTaskComponent = () => {
     });
   };
 
-  /**
-   * Handles the submission of the task/shift creation
-   */
-  const handleSubmit = async () => {
-    if (!taskData) {
-      setError("Please fill in the required fields");
-      return;
-    }
-
-    setIsCreating(true);
-    setError(null);
-
-    try {
-      await handleTaskCreation(taskData);
-      // Clear form or navigate away
-      setSelectedEmployees([]);
-      // Add other form reset logic as needed
-    } catch (err: any) {
-      setError(err.message || "Failed to create task");
-    } finally {
-      setIsCreating(false);
-    }
-  };
-
   return (
     <ScrollView style={styles.maincontainer}>
       <View style={{ width: "100%" }}>
@@ -142,7 +118,7 @@ const CreateTaskComponent = () => {
           {contractList?.length && contractList?.length > 0 ? (
             <TouchableOpacity
               onPressIn={() => handleToggleSites("contracts")}
-              style={[styles.button]}
+              style={[styles.button, { backgroundColor: primary }]}
             >
               {isLoading ? (
                 <ActivityIndicator size={15} color={text} />
@@ -162,7 +138,12 @@ const CreateTaskComponent = () => {
           )}
 
           {siteSelected && !selected && (
-            <View style={styles.selectedDetailsContainer}>
+            <View
+              style={[
+                styles.selectedDetailsContainer,
+                { backgroundColor: primary },
+              ]}
+            >
               <Text style={[styles.detailText, { color: text }]}>
                 Contract ID: {siteSelected.contract_id}
               </Text>
@@ -240,7 +221,7 @@ const CreateTaskComponent = () => {
               onPress={() => handleToggleSites("employees")}
               style={styles.button}
             >
-              <Text style={[styles.buttonText, { color: text }]}>
+              <Text style={[styles.buttonText, { color: "#000" }]}>
                 {selectedEmployees.length > 0
                   ? `Selected Employees (${selectedEmployees.length})`
                   : "Select Employees"}
@@ -457,7 +438,12 @@ const CreateTaskComponent = () => {
               ? "Create Task"
               : "Create Shift"
           }
-          onPress={handleSubmit}
+          onPress={() => {
+            setIsCreating(true);
+            handleTaskCreation().finally(() => {
+              setIsCreating(false);
+            });
+          }}
         />
       </View>
     </ScrollView>
@@ -508,9 +494,9 @@ const styles = StyleSheet.create({
 
   scrollviewContainer: {
     width: "100%",
-    maxHeight: 250,
+    maxHeight: 200,
     marginVertical: 8,
-    paddingHorizontal: 12,
+    padding: 5,
   },
 
   pressable: {

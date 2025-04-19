@@ -1,9 +1,9 @@
 import React from "react";
 import { View, Text, Image, StyleSheet } from "react-native";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { EmployeeOverviewInterface } from "@/app/types/management/employee";
+import { EmployeeDetailsInterface } from "@/app/types/management/employee";
 
-const EmployeeOverview:React.FC<EmployeeOverviewInterface> = (props) => {
+  const EmployeeOverview = ({overview}:{overview: EmployeeDetailsInterface}) => {
 
   const text = useThemeColor({}, "text");
   const highlight = useThemeColor({}, "highlight");
@@ -14,32 +14,32 @@ const EmployeeOverview:React.FC<EmployeeOverviewInterface> = (props) => {
       style={[styles.worklogContainer, { backgroundColor: innerBackground }]}
     >
       <Text style={[styles.roleText, { color: highlight }]}>
-        {props?.role}
+          {overview?.role}
       </Text>
       <View style={styles.nameAndImageContainer}>
         <View>
           <Text style={[styles.nameText, { color: text }]}>
-            {props?.name}
+            {overview?.name}
           </Text>
           <Text style={[styles.nameText, { fontSize: 10, color: text }]}>
-            {props?.email}
+            {overview?.email}
           </Text>
         </View>
       </View>
       <View style={styles.innerRowsFordatehired}>
         <Text style={[styles.detailsText, { color: text }]}>hired</Text>
         <Text style={[styles.detailsText, { color: text }]}>
-          {props?.date_hired || "N/A"}
+          {overview?.date_hired || "N/A"}
         </Text>
       </View>
       <View style={styles.innerRowsFordatehired}>
         <Text style={[styles.detailsText, { color: text }]}>dob</Text>
         <Text style={[styles.detailsText, { color: text }]}>
-          {props?.dob || "N/A"}
+          {overview?.dob || "N/A"}
         </Text>
       </View>
       <Text style={[styles.detailsText, { color: text, padding: 5 }]}>
-        {props?.phone || "N/A"}
+        {overview?.phone || "N/A"}
       </Text>
     </View>
   );

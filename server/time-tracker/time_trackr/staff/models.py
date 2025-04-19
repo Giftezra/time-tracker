@@ -19,28 +19,16 @@ class Staff(models.Model):
   def __str__(self):
     return f'{self.user} - {self.company}'
   
-  def check_activity_status(self):
-    """Check if staff has had any shifts in the last 15 days then update their status to inactive"""
-    fifteen_days_ago = timezone.now().date() - timedelta(days=15)
-    
-    # Check for any timesheets in the last 15 days
-    recent_timesheet = self.staff_time_sheet.filter(
-        created_at__gte=fifteen_days_ago
-    ).exists()
-    
-    # Update is_active status if no recent activity
-    if not recent_timesheet and self.is_active:
-        self.is_active = False
-        self.save(update_fields=['is_active'])
-    
   def save(self, *args, **kwargs):
-    # Only check activity status if this is an existing staff member
-    if self.pk:
-        self.check_activity_status()
+    is_new = self._state.adding  # Check if this is a new staff being created
     super().save(*args, **kwargs)
-  
-  
-  
+    
+    if is_new:  # Only create availability for new staff
+      Availability.objects.create(
+        staff=self,
+        availability_status='available'
+      )
+
 class Availability(models.Model):
   staff = models.ForeignKey(Staff, on_delete=models.CASCADE, related_name='staff_availability')
   start_date = models.DateField(blank=True, null=True)

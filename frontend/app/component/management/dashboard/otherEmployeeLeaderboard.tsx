@@ -8,7 +8,7 @@ import {
 } from "react-native";
 import { AntDesign, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { useDashboardContext } from "@/app/context/management/dashboard/dashboardContext";
+import { useDashboardContext } from "@/app/context/management/dashboard/ManagementDashboardContext";
 import SubtitleThemedText from "../../helper/SubtitleThemedText";
 import InnerThemedText from "../../helper/InnerThemedText";
 const image = require("@/assets/images/user image.jpg");
@@ -70,7 +70,7 @@ const OtherEmployeeOnLeaderboard = ({
         </View>
 
         <Pressable onPress={() => handleProfilePress(id)}>
-          <MaterialCommunityIcons name='account' size={15} color={icon} />
+          <MaterialCommunityIcons name="account" size={15} color={icon} />
         </Pressable>
       </View>
     </View>

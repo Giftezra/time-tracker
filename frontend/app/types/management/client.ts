@@ -1,3 +1,4 @@
+import AlertConfig from "./AlertConfig";
 import { EmployeeDetailsComponentType } from "./task";
 
 export interface ContractDetailsType {
@@ -20,15 +21,8 @@ export interface NewClientDetailsInterface {
   country: string;
 }
 
-export interface ClientDetailsType {
+export interface ClientDetailsType extends NewClientDetailsInterface {
   client_id: string;
-  name: string;
-  address: string;
-  postcode: string;
-  email: string;
-  phone: string;
-  city: string;
-  country: string;
   contracts: ContractDetailsType[];
 }
 
@@ -73,6 +67,11 @@ export interface ClientContextType {
   setIsCreateContractModalVisible: (visible: boolean) => void;
   createClient: (newClientDetails: NewClientDetailsInterface) => Promise<any>;
   isNewClientLoading: boolean;
+  setNewContract: (contract?: ContractDetailsType) => void;
+  alertConfig: AlertConfig | undefined;
+  setAlertConfig: (alertConfig: AlertConfig | undefined) => void;
+  isAlertVisible: boolean;
+  setIsAlertVisible: (visible: boolean) => void;
 }
 
 export interface JobDetailsType {

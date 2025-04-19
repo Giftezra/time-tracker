@@ -9,28 +9,23 @@
  */
 import {
   ActivityIndicator,
-  Alert,
-  KeyboardAvoidingView,
-  Modal,
   Platform,
   Pressable,
   StyleSheet,
-  Text,
   TouchableOpacity,
   View,
 } from "react-native";
 import React, { useState } from "react";
-import { AntDesign, MaterialIcons } from "@expo/vector-icons";
+import { MaterialIcons } from "@expo/vector-icons";
 import { useThemeColor } from "@/hooks/useThemeColor";
-
 import { ClientDetailsType } from "@/app/types/management/client";
 import { ScrollView } from "react-native-gesture-handler";
 import { useClientContext } from "@/app/context/management/client/clientContext";
-import iconSet from "@expo/vector-icons/build/Fontisto";
 import ThemedHeaderText from "../../helper/ThemedHeaderText";
 import ButtonText from "../../helper/ButtonText";
 import InnerThemedText from "../../helper/InnerThemedText";
 import SubtitleThemedText from "../../helper/SubtitleThemedText";
+import AlertModal from "../../helper/AlertModal";
 /* This displays a client view which defines the total client a superadmin has on his contract list */
 const ClientDetailsComponent: React.FC<{
   props: ClientDetailsType;
@@ -46,6 +41,18 @@ const ClientDetailsComponent: React.FC<{
   } = useClientContext();
 
   const [siteToggle, setSiteToggle] = useState(false);
+  const [isDeleteAlertVisible, setIsDeleteAlertVisible] = useState(false);
+  const [alertConfig, setAlertConfig] = useState<{
+    title: string;
+    message: string;
+    onConfirm?: () => void;
+    onCancel?: () => void;
+  }>({
+    title: "",
+    message: "",
+    onConfirm: () => {},
+    onCancel: () => {},
+  });
 
   /**
    * Load the colors based on the devices color scheme
@@ -62,19 +69,24 @@ const ClientDetailsComponent: React.FC<{
     setSiteToggle(!siteToggle);
   };
 
+  /* Request the users confirmation before deleting the client. if they confirm, the client is deleted. else the modal is closed */
   const handleDeleteClient = async () => {
-    Alert.alert("Delete Client", `Are you sure you want to delete ${props.name} with the id ${props.client_id} and all associated contracts?`, [
-      { text: "Cancel", style: "cancel" },
-      { text: "Delete", style: "destructive", onPress: async () => {
+    setAlertConfig({
+      title: "Delete Client",
+      message: `Are you sure you want to delete ${props.name}?`,
+      onConfirm: async () => {
         try {
           await deleteClient(props.client_id);
         } catch (error) {
           console.error("Error deleting client:", error);
         }
-      } },
-    ]);
+      },
+      onCancel: () => {
+        setIsDeleteAlertVisible(false);
+      },
+    });
+    setIsDeleteAlertVisible(true);
   };
-
   return (
     <View
       style={[
@@ -87,9 +99,7 @@ const ClientDetailsComponent: React.FC<{
     >
       <View style={styles.headerSection}>
         <View style={styles.titleRow}>
-          <TouchableOpacity
-            onPress={handleDeleteClient}
-          >
+          <TouchableOpacity onPress={handleDeleteClient}>
             <MaterialIcons name="delete" size={24} color={primary} />
           </TouchableOpacity>
           <ThemedHeaderText text={props.name} />
@@ -123,18 +133,18 @@ const ClientDetailsComponent: React.FC<{
       <Pressable onPress={handleSiteToggle} style={styles.contentSection}>
         <View style={styles.infoSection}>
           <View style={styles.infoRow}>
-            <MaterialIcons name="location-on" size={16} color={'#000'} />
+            <MaterialIcons name="location-on" size={16} color={"#000"} />
             <InnerThemedText text={props.address} />
           </View>
           <InnerThemedText text={props.postcode} />
 
           <View style={[styles.infoRow, { marginTop: 12 }]}>
-            <MaterialIcons name="email" size={16} color={'#000'} />
+            <MaterialIcons name="email" size={16} color={"#000"} />
             <InnerThemedText text={props.email} />
           </View>
 
           <View style={styles.infoRow}>
-            <MaterialIcons name="phone" size={16} color={'#000'} />
+            <MaterialIcons name="phone" size={16} color={"#000"} />
             <InnerThemedText text={props.phone} />
           </View>
         </View>
@@ -190,6 +200,13 @@ const ClientDetailsComponent: React.FC<{
           </ScrollView>
         </View>
       )}
+      <AlertModal
+        title={alertConfig.title}
+        message={alertConfig.message}
+        isVisible={isDeleteAlertVisible}
+        onClose={alertConfig.onCancel}
+        onConfirm={alertConfig.onConfirm}
+      />
     </View>
   );
 };

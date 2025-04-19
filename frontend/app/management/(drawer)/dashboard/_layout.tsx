@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from "react-native";
 import React from "react";
-import DashboardProvider from "@/app/context/management/dashboard/dashboardContext";
+import DashboardProvider from "@/app/context/management/dashboard/ManagementDashboardContext";
 import { Stack } from "expo-router";
 import EmployeeProvider from "@/app/context/management/employee/employeeContext";
 

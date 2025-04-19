@@ -13,7 +13,7 @@ import OtherEmployeeOnLeaderboard from "./otherEmployeeLeaderboard";
 import { id } from "react-native-paper-dates";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { useDashboardContext } from "@/app/context/management/dashboard/dashboardContext";
+import { useDashboardContext } from "@/app/context/management/dashboard/ManagementDashboardContext";
 import { LeaderBoardData } from "@/app/types/management/dashboard";
 import ThemedHeaderText from "../../helper/ThemedHeaderText";
 import SubtitleThemedText from "../../helper/SubtitleThemedText";
@@ -47,9 +47,7 @@ const LeaderBoardComponent = () => {
   }, [topPerformers]);
 
   return (
-    <GestureHandlerRootView
-      style={[styles.container,]}
-    >
+    <GestureHandlerRootView style={[styles.container]}>
       <View>
         <ThemedHeaderText text="Top Employees" />
         <ScrollView horizontal={true} showsVerticalScrollIndicator={false}>
