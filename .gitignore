@@ -12,3 +12,5 @@ server/time-tracker/env/
 # Ignore Redis database files
 *.rdb
 .env
+
+server/time-tracker/time_tracker/settings.py
