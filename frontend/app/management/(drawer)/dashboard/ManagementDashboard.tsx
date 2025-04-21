@@ -4,15 +4,15 @@ import {
   Pressable,
   StyleSheet,
   Text,
+  ToastAndroid,
   TouchableOpacity,
   View,
 } from "react-native";
 import React, { useState } from "react";
-import ContractChartComponent from "@/app/component/management/dashboard/contractChart";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { useDashboardContext } from "@/app/context/management/dashboard/ManagementDashboardContext";
-import EmployeeAnalyticsComponent from "@/app/component/management/employees/employeeAnalytics";
+import EmployeeAnalyticsComponent from "@/app/component/management/employees/EmployeeAnalytics";
 import { AntDesign, MaterialIcons } from "@expo/vector-icons";
 import WebDashboard from "./WebDashboard";
 import MobileDashboard from "./MobileDashboard";
@@ -21,9 +21,6 @@ import { useAuth } from "@/app/authentication";
 const MainManagementDashboard = () => {
   const { isRegisterCompany, setIsRegisterCompany } = useAuth();
   const {
-    selectedEmployeeData,
-    employeeTaskDetails,
-    employeeWorkLog,
     isLoading,
     isModalVisible,
     setIsModalVisible,
@@ -60,12 +57,8 @@ const MainManagementDashboard = () => {
                 </Pressable>
               </View>
 
-              {selectedEmployeeData && !isLoading && (
-                <EmployeeAnalyticsComponent
-                  employeeData={selectedEmployeeData}
-                  taskDetails={employeeTaskDetails}
-                  workLog={employeeWorkLog}
-                />
+              {!isLoading && (
+                <EmployeeAnalyticsComponent />
               )}
             </View>
           </Modal>

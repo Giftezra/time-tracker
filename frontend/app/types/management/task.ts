@@ -31,6 +31,8 @@ export interface OpenTaskProps {
   task_end_time?: string;
   created_by?: string;
   task_created_at?: string;
+  required_number_of_staff?: number;
+  total_number_of_staff?: number;
 }
 
 export interface TaskDetailsProps {
@@ -60,8 +62,11 @@ export interface CreateTaskInterface {
   description?: string;
   start_time: { hours: number; minutes: number };
   end_time: { hours: number; minutes: number };
-  dates: Date[];
+  start_date: Date;
+  end_date: Date;
   amount: number;
+  total_number_of_staff?: number;
+  required_number_of_staff?: number;
 }
 
 export interface ContractListType {
@@ -87,10 +92,8 @@ export default interface ActiveTaskContextType {
   render_popup_button: (id: string, onPress: () => void) => JSX.Element;
   isLoading: boolean;
   getContractList: () => Promise<ContractListType[]>;
-  onDateDismiss: () => void;
   onStartTimeDismiss: () => void;
   onEndTimeDismiss: () => void;
-  onConfirmDate: (params: any) => void;
   onConfirmStartTime: ({
     hours,
     minutes,
@@ -105,16 +108,13 @@ export default interface ActiveTaskContextType {
     hours: number;
     minutes: number;
   }) => void;
-  handleDateDisplay: () => void;
   handleStartTimeDisplay: () => void;
   handleEndTimeDisplay: () => void;
   getAvailableEmployees: () => Promise<EmployeeType[] | undefined>;
-  dateVisible: boolean;
   startTimeVisible: boolean;
   endTimeVisible: boolean;
   startTime: { hours: number; minutes: number };
   endTime: { hours: number; minutes: number };
-  dates: Date[];
   collectNewTaskData: (key: keyof CreateTaskInterface, value: string) => void;
   taskData: CreateTaskInterface | undefined;
   terminateTask: (task: ActiveTaskType | undefined) => void;
@@ -129,4 +129,16 @@ export default interface ActiveTaskContextType {
   setEditTask: (task: OpenTaskProps | null) => void;
   updateTask: (task: OpenTaskProps) => Promise<void>;
   handleTaskCreation: () => Promise<void>;
+  startDateVisible: boolean;
+  endDateVisible: boolean;
+  startDates: Date | null;
+  endDates: Date | null;
+  onConfirmStartDate: (params: { date?: Date }) => void;
+  onConfirmEndDate: (params: { date?: Date }) => void;
+  onStartDateDismiss: () => void;
+  onEndDateDismiss: () => void;
+  handleStartDateDisplay: () => void;
+  handleEndDateDisplay: () => void;
+  handleShiftCreation: () => Promise<void>;
+  deleteTask: (taskId: string) => Promise<void>;
 }

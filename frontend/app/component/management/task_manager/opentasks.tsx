@@ -23,6 +23,7 @@ const OpenTaskComponents = () => {
     openAssignTaskModal,
     setEditTask,
     setIsEditTaskModalVisible,
+    deleteTask,
   } = useManagementTask();
 
   const innerBackground = useThemeColor({}, "innerBackground");
@@ -31,7 +32,10 @@ const OpenTaskComponents = () => {
   return (
     <View style={styles.maincontainer}>
       <View style={styles.header}>
-        <SearchInputContainer placeholder="Search by task ID or status" text="Search"/>
+        <SearchInputContainer
+          placeholder="Search by task ID or status"
+          text="Search"
+        />
       </View>
 
       <ScrollView
@@ -53,15 +57,35 @@ const OpenTaskComponents = () => {
               <View style={styles.taskHeader}>
                 <View style={styles.taskTitleContainer}>
                   <ThemedHeaderText text={task.contract_name || ""} />
-                  <Pressable
-                    style={[styles.priorityBadge]}
-                    onPress={() => {
-                      setEditTask(task);
-                      setIsEditTaskModalVisible(true);
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      gap: 10,
+                      alignItems: "center",
                     }}
                   >
-                    <MaterialIcons name="edit" size={16} color={highlight} />
-                  </Pressable>
+                    <Pressable
+                      style={[styles.priorityBadge]}
+                      onPress={() => {
+                        setEditTask(task);
+                        setIsEditTaskModalVisible(true);
+                      }}
+                    >
+                      <MaterialIcons name="edit" size={16} color={highlight} />
+                    </Pressable>
+                    <Pressable
+                      style={[styles.priorityBadge]}
+                      onPress={() => {
+                        deleteTask(task.task_id || "");
+                      }}
+                    >
+                      <MaterialIcons
+                        name="delete"
+                        size={16}
+                        color={'red'}
+                      />
+                    </Pressable>
+                  </View>
                 </View>
                 <Text style={[styles.dateText, { color: highlight }]}>
                   Created: {task.task_created_at}
@@ -100,6 +124,14 @@ const OpenTaskComponents = () => {
                       End: {task.task_end_date}
                     </Text>
                   </View>
+                </View>
+                <View style={styles.detailRow}>
+                  <Text style={[styles.detailText, { color: highlight }]}>
+                    Required: {`${(task.required_number_of_staff)}`}
+                  </Text>
+                  <Text style={[styles.detailText, { color: highlight }]}>  
+                    Total: {`${(task.total_number_of_staff)}`}
+                  </Text>
                 </View>
               </View>
 
@@ -170,9 +202,14 @@ const styles = StyleSheet.create({
     fontFamily: "BarlowRegular",
   },
   priorityBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+    padding: 10,
+    borderRadius: 20,
+    borderWidth: 1,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   highPriority: {
     backgroundColor: "rgba(255, 59, 48, 0.15)",

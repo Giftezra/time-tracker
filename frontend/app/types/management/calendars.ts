@@ -18,7 +18,7 @@ export interface CalendarContextType {
   getShift: (
     employeeId: number,
     date: Dayjs
-  ) => CalendarShiftType[] | "No shift";
+  ) => CalendarShiftType[] | null;
   cancelShift: () => Promise<void>;
   emailShiftReport: (startDate: string, endDate: string) => Promise<void>;
   activeShift: CalendarShiftType | undefined;
@@ -32,6 +32,7 @@ export interface CalendarContextType {
     formattedEndTime: string
   ) => Promise<void>;
   approveShift: () => Promise<void>;
+  filterShifts: (name: string) => CalendarShiftType[];
 }
 
 export interface CalendarShiftType {

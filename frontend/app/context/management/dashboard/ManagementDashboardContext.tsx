@@ -1,11 +1,11 @@
 import {
   BarData,
-  DashboardContextType,
   EmployeeOnLeaveInterface,
   EventItem,
   LeaderBoardData,
   TaskStatistics,
 } from "@/app/types/management/dashboard";
+import DashboardContextType from "@/app/types/management/dashboard";
 import { loadUserData, userData } from "@/app/utils/loadData";
 import { useContext, createContext, useState, useEffect } from "react";
 import axios from "axios";
@@ -29,15 +29,8 @@ const DashboardContext = createContext<DashboardContextType | undefined>(
  * Manages the state and data fetching for the dashboard features
  */
 const DashboardProvider = ({ children }: { children: React.ReactNode }) => {
-  // Import the useEmployeeContext hook and import the methods from the context to be used in the component
-  const {
-    retrieveEmployeeWithId,
-    retrieveEmployeeTaskDetails,
-    retrieveEmployeeWorkLog,
-  } = useEmployeeContext();
-
-  // Authentication instance for API calls
   const { axiosInstance, user } = useAuth();
+
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isModalVisible, setIsModalVisible] = useState<boolean>(false);
   const [unavailableEmployees, setUnavailableEmployees] = useState<
@@ -48,25 +41,12 @@ const DashboardProvider = ({ children }: { children: React.ReactNode }) => {
   const [selectedYear, setSelectedYear] = useState<number>(
     new Date().getFullYear()
   );
-
   const [topPerformers, setTopPerformers] = useState<LeaderBoardData[]>([]);
   const [todayEvents, setTodayEvents] = useState<EventItem[]>([]);
-
   const [employeeId, setEmployeeId] = useState<string>("");
-
-  // State for task statistics
-  const [taskStats, setTaskStats] = useState<TaskStatistics>({
-    completed: 0,
-    ongoing: 0,
-    pending: 0,
-    assigned: 0,
-    total: 0,
-  });
-
-  // Add state for employee data
-  const [selectedEmployeeData, setSelectedEmployeeData] = useState<any>(null);
-  const [employeeTaskDetails, setEmployeeTaskDetails] = useState<any>(null);
-  const [employeeWorkLog, setEmployeeWorkLog] = useState<any>(null);
+  const [taskStats, setTaskStats] = useState<TaskStatistics | undefined>(
+    undefined
+  );
 
   /**
    * Fetch the data for the selected employee when the employeeId changes.
@@ -75,32 +55,32 @@ const DashboardProvider = ({ children }: { children: React.ReactNode }) => {
    * @param employeeId - The id of the employee to fetch data for
    * @returns void
    */
-  useEffect(() => {
-    if (employeeId) {
-      const fetchEmployeeData = async () => {
-        try {
-          setIsLoading(true);
-          const employeeData = await retrieveEmployeeWithId(employeeId);
-          const taskDetails = await retrieveEmployeeTaskDetails(employeeId);
-          const workLog = await retrieveEmployeeWorkLog(employeeId);
+  // useEffect(() => {
+  //   if (employeeId) {
+  //     const fetchEmployeeData = async () => {
+  //       try {
+  //         setIsLoading(true);
+  //         const employeeData = await retrieveEmployeeWithId(employeeId);
+  //         const taskDetails = await retrieveEmployeeTaskDetails(employeeId);
+  //         const workLog = await retrieveEmployeeWorkLog(employeeId);
 
-          setSelectedEmployeeData(employeeData);
-          setEmployeeTaskDetails(taskDetails);
-          setEmployeeWorkLog(workLog);
-        } catch (error) {
-          console.error("Error fetching employee data:", error);
-        } finally {
-          setIsLoading(false);
-        }
-      };
-      fetchEmployeeData();
-    }
-  }, [
-    employeeId,
-    retrieveEmployeeWithId,
-    retrieveEmployeeTaskDetails,
-    retrieveEmployeeWorkLog,
-  ]);
+  //         setSelectedEmployeeData(employeeData);
+  //         setEmployeeTaskDetails(taskDetails);
+  //         setEmployeeWorkLog(workLog);
+  //       } catch (error) {
+  //         console.error("Error fetching employee data:", error);
+  //       } finally {
+  //         setIsLoading(false);
+  //       }
+  //     };
+  //     fetchEmployeeData();
+  //   }
+  // }, [
+  //   employeeId,
+  //   retrieveEmployeeWithId,
+  //   retrieveEmployeeTaskDetails,
+  //   retrieveEmployeeWorkLog,
+  // ]);
 
   /**
    * Fetch the contract statistics for the selected year when the component mounts.
@@ -115,9 +95,6 @@ const DashboardProvider = ({ children }: { children: React.ReactNode }) => {
       try {
         const stats = await fetchContractStatistics(selectedYear);
         setContractStats(stats);
-
-        const unavailableEmployees = await fetchUnavailableEmployees();
-        setUnavailableEmployees(unavailableEmployees);
         await fetchTaskStatistics();
         await fetchTopPerformers();
         await fetchTodayEvents();
@@ -168,7 +145,6 @@ const DashboardProvider = ({ children }: { children: React.ReactNode }) => {
       }
       return transformedData;
     } catch (error) {
-      console.error("Error fetching contract statistics:", error);
       return [];
     } finally {
       setIsLoading(false);
@@ -180,11 +156,8 @@ const DashboardProvider = ({ children }: { children: React.ReactNode }) => {
    * @returns Promise<EmployeeOnLeaveInterface[]> - List of unavailable employees
    */
   const fetchUnavailableEmployees = async () => {
-    const currentDate = new Date().toISOString().split("T")[0];
     try {
-      const response = await axiosInstance.get("api/get/employees/on/leave/", {
-        params: { date: currentDate },
-      });
+      const response = await axiosInstance.get("api/get/employees/on/leave/");
       return response.data.unavailable_employees;
     } catch (error) {
       console.error("Error fetching unavailable employees:", error);
@@ -248,9 +221,6 @@ const DashboardProvider = ({ children }: { children: React.ReactNode }) => {
     todayEvents,
     employeeId,
     setEmployeeId,
-    selectedEmployeeData,
-    employeeTaskDetails,
-    employeeWorkLog,
     isModalVisible,
     setIsModalVisible,
   };

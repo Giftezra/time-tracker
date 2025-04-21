@@ -2,10 +2,10 @@ from django.urls import path
 from .view.account.authentication import register_owner, lookup_address
 from .view.main.dashboard import update_company, delete_company, get_task_statistics, get_top_performers, get_today_events, get_contract_statistics,  get_employees_on_leave, get_today_events
 from .view.main.profile import create_company, update_user_preferences, update_owner_company_details
-from .view.main.employees import employee_display, get_shift_details, get_all_employees, get_employee_with_id, get_employee_task_details, get_employee_work_log, onboard_employee, remove_employee
+from .view.main.employees import employee_display, get_shift_details, get_employee_with_id, get_employee_task_details, get_employee_work_log, onboard_employee, remove_employee
 from .view.main.client import create_client, create_contract, getContractsAndJobDetails, getClientAndContracts, update_contract, complete_contract, delete_contract, update_client, delete_client
-from .view.main.task_manager import get_active_tasks, get_clients_shifts, create_shift, create_task, assign_task, terminate_shift, approve_task, get_all_contracts, get_all_open_task, start_shift, update_task, get_available_employees
-from .view.main.calender import get_shifts, email_shift_report, cancel_shift, update_shift, approve_shift 
+from .view.main.task_manager import get_active_tasks, get_clients_shifts, create_shift, create_task, assign_task, terminate_shift, approve_task, get_all_contracts, get_all_open_task, start_shift, update_task, get_available_employees, delete_task
+from .view.main.calender import get_shifts, email_shift_report, cancel_shift, update_shift, approve_shift, get_all_employees
 from .view.main.payment import create_payment_sheet, get_subscription_tiers, get_current_plan, update_subscription_plan, get_subscription_history
 from .view.main.notification import NotificationTokenView, NotificationView
 from .view.account.login import CustomTokenObtainPairView
@@ -38,6 +38,7 @@ urlpatterns = [
     path('complete/contract/', complete_contract, name='complete_contract'),
     path('delete/company/', delete_company, name='delete_company'),
     path('delete/contract/', delete_contract, name='delete_contract'),
+    path('delete/task/', delete_task, name='delete_task'),
     path('delete/client/', delete_client, name='delete_client'),
     path('email/shift/report/', email_shift_report, name='email_shift_report'),
     path('get/shifts/', get_shifts, name='get_shifts'),

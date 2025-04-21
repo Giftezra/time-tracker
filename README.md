@@ -1,6 +1,10 @@
-# Time Tracker
+# Time Tracker Application
 
-A shift management system that helps organizations track employee work hours, manage schedules, and monitor attendance.
+A comprehensive time tracking solution built with React Native (Expo) for the
+frontend and Django for the backend. This application helps businesses manage
+employee schedules, track work hours, and handle various management tasks.
+
+## Project Structure
 
 ## Features
 
@@ -27,8 +31,9 @@ A shift management system that helps organizations track employee work hours, ma
 ## Technologies Used
 
 - Frontend: React.js
-- Backend: Node.js
-- Database: MongoDB
+- Backend: Django
+- Database: SQLite for local development and PostgreSQL for production
+- Messaging: Firebase for Android and Apple Push Notifications for iOS
 - Authentication: JWT
 
 ## Contributing
@@ -41,10 +46,10 @@ A shift management system that helps organizations track employee work hours, ma
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
+for details.
 
 ## Support
 
-For support, please email support@timetracker.com or open an issue in the repository.
-
-
+For support, please email support@timetracker.com or open an issue in the
+repository.

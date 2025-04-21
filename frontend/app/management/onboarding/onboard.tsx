@@ -15,25 +15,19 @@ import {
 } from "react-native";
 import React from "react";
 import { router } from "expo-router";
-
+import MobileLandingPage from "@/app/component/helper/onboarding/MobileLandingPage";
 const OnboardingPageComponent = () => {
   return (
     <View style={styles.mainContainer}>
-      <View style={styles.container}>
-        <TouchableOpacity
-          style={styles.buttons}
-          onPress={() => router.push("/management/onboarding/login")}
-        >
-          <Text style={styles.buttoText}>sign in</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.buttons}
-          onPress={() => router.push("/management/onboarding/registration")}
-        >
-          <Text style={styles.buttoText}>sign up</Text>
-        </TouchableOpacity>
-      </View>
+      {Platform.OS === "web" ? (
+        <View style={styles.container}>
+          <Text>Hello</Text>
+        </View>
+      ) : (
+        <View style={styles.container}>
+          <MobileLandingPage />
+        </View>
+      )}
     </View>
   );
 };
@@ -43,14 +37,12 @@ export default OnboardingPageComponent;
 const styles = StyleSheet.create({
   mainContainer: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    width: "100%",
   },
 
   container: {
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 30,
+    flex: 1,
+    width: "100%",
   },
 
   buttons: {

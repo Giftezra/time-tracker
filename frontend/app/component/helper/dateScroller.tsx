@@ -118,8 +118,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     backgroundColor: "#1a1a1a",
-    borderRadius: 10,
-    padding: 10,
+    borderRadius: 5,
+    padding: 5,
     marginVertical: 12,
     borderWidth: 1,
     borderColor: "#333333",
@@ -163,7 +163,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: "#e0e0e0",
     fontFamily: "BarlowMedium",
-    letterSpacing: 0.2,
   },
   selectedDateText: {
     color: "#0066ff",

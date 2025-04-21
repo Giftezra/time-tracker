@@ -64,43 +64,6 @@ def employee_display(request):
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
     
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-@admin_required
-@ratelimit(key='user', rate='10/m', block=True, method=['GET'])
-def get_all_employees(request):
-    """ This method will return a list of all employees in the company. 
-     It will only return theier employee id and name """
-    
-    try:
-        if request.user.is_owner:
-            company = get_object_or_404(Company, owner=request.user)
-        elif request.user.is_admin:
-            staff_member = get_object_or_404(Staff, user=request.user)
-            company = staff_member.company
-        else:
-            return Response({'error': 'You are not authorized to access this resource'}, status=status.HTTP_403_FORBIDDEN)
-    except Company.DoesNotExist as e:
-            return Response({'error': 'Company not found'}, status=status.HTTP_404_NOT_FOUND)
-    # Get the cache key for the employees list
-    cache_key = get_cache_key('employees_list', company.id)
-    cache_data = cache.get(cache_key)
-    if cache_data:
-        return Response({'employees': cache_data}, status=status.HTTP_200_OK)
-    
-    try:
-        staff_members = Staff.objects.filter(company=company)
-        employee_list = [{
-            'employee_id': staff.id,
-            'employee_name': staff.user.get_full_name()
-        } for staff in staff_members]
-        # Cache the employees list for 1 hour
-        cache.set(cache_key, employee_list, timeout=settings.CACHE_TIMEOUT)
-
-        return Response({'employees': employee_list}, status=status.HTTP_200_OK)
-    except Exception as e:
-        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         
 
 @api_view(['GET'])

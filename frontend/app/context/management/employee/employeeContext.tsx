@@ -32,9 +32,15 @@ const EmployeeProvider: React.FC<{
     undefined
   );
   const [employeeId, setEmployeeId] = useState<string>("");
-  const [employeeData, setEmployeeData] = useState<EmployeeDetailsInterface|undefined>(undefined);
-  const [taskDetails, setTaskDetails] = useState<TaskDetailsProps|undefined>(undefined);
-  const [workLog, setWorkLog] = useState<WorklogInterface|undefined>(undefined);
+  const [employeeData, setEmployeeData] = useState<
+    EmployeeDetailsInterface | undefined
+  >(undefined);
+  const [taskDetails, setTaskDetails] = useState<TaskDetailsProps | undefined>(
+    undefined
+  );
+  const [workLog, setWorkLog] = useState<WorklogInterface | undefined>(
+    undefined
+  );
   const [isAlertVisible, setIsAlertVisible] = useState<boolean>(false);
   const [alertConfig, setAlertConfig] = useState<AlertConfig>();
 
@@ -101,7 +107,16 @@ const EmployeeProvider: React.FC<{
           setWorkLog(workLogData);
           setEmployeeData(employeeDetails);
         } catch (error: any) {
-          console.error("Error fetching employee data:", error);
+          setIsAlertVisible(true);
+          setAlertConfig({
+            title: "Error",
+            message:
+              error.response.data.message || "Failed to fetch employee data",
+            onConfirm: () => {
+              setIsAlertVisible(false);
+            },
+            isVisible: true,
+          });
         } finally {
           setIsLoading(false);
         }
@@ -132,13 +147,17 @@ const EmployeeProvider: React.FC<{
    */
   const getAllEmployees = async (): Promise<EmployeeDetailsInterface[]> => {
     try {
+      setIsLoading(true);
       const response = await axiosInstance.get(`/api/get/employee/display/`);
+      console.log("response", response.data.employee_list);
       return response.data.employee_list;
     } catch (error: any) {
       console.error("Error fetching employees:", error);
       throw new Error("Failed to fetch employees");
+    } finally {
+      setIsLoading(false);
     }
-  };  
+  };
   /**
    * Get the employee details given the employee id from the server.
    * @param id: string The id of the employee to be fetched.

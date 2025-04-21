@@ -10,7 +10,6 @@ import {
   ActivityIndicator,
   Alert,
   Dimensions,
-  Platform,
   View,
   Text,
 } from "react-native";
@@ -24,10 +23,11 @@ import {
   UserResponseType,
   OwnerOnboardingType,
 } from "@/app/types/management/onboarding";
-import { storeData, loadUserData } from "@/app/utils/loadData";
+import { loadUserData, storeData } from "./utils/loadData";
 import Constants from "expo-constants";
 import BASE_URL from "@/app/utils/urls";
 import AlertModal from "./component/helper/AlertModal";
+import AlertConfig from "./types/management/AlertConfig";
 
 /**
  * AuthContext provides authentication state and methods throughout the application.
@@ -67,6 +67,10 @@ const PREFERRED_ROLE_KEY = "preferred_role";
  * @param {ReactNode} props.children - Child components to be wrapped by the provider
  */
 const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+  const [isAlertVisible, setIsAlertVisible] = useState<boolean>(false);
+  const [alertConfig, setAlertConfig] = useState<AlertConfig | undefined>(
+    undefined
+  );
   /**
    * Manage font loading state using the useLoadedFonts hook to load all fonts.
    * Return an activity screenwhen fonts are not loaded.
@@ -113,16 +117,6 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     Dimensions.get("window").width
   );
 
-  const [alertConfig, setAlertConfig] = useState<{
-    title: string;
-    message: string;
-    onConfirm: () => void;
-  }>({
-    title: "",
-    message: "",
-    onConfirm: () => {},
-  });
-
   /**
    * Use the hook to set the width and screen width of the window using listeners to listen to changes in the window width.
    */
@@ -163,32 +157,29 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return Promise.reject(error);
       }
     );
-
-    // Response interceptor
+    /* Response interceptor
+     * This is to handle the 401 error and refresh the token.
+     * This is to avoid the user being logged out due to token expiration.
+       */
     const responseIntercept = axiosInstance.interceptors.response.use(
       (response) => {
         return response;
       },
       async (error: AxiosError) => {
         const originalRequest = error.config as any;
-
-        // Check if error is 401 and we haven't tried refreshing yet
         if (error.response?.status === 401 && refreshToken && originalRequest) {
           try {
             const response = await axiosInstance.post("/api/token/refresh/", {
               refresh: refreshToken,
             });
-
             const newToken = response.data.access;
             setToken(newToken);
-
             // Retry the original request with new token
             if (originalRequest.headers) {
               originalRequest.headers.Authorization = `Bearer ${newToken}`;
             }
             return axiosInstance(originalRequest);
           } catch (refreshError) {
-            console.error("Token refresh failed:", refreshError);
             await signOut();
             return Promise.reject(refreshError);
           }
@@ -197,8 +188,10 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     );
 
-    // Setup periodic token refresh (every 5 minutes)
-    // Set the token returned to the state
+    /* Setup periodic token refresh (every 5 minutes).
+     * This is to ensure that the token is refreshed before it expires.
+     * This is to avoid the user being logged out due to token expiration.
+     */
     const setupTokenRefresh = () => {
       if (refreshToken) {
         refreshTimeout = setInterval(async () => {
@@ -209,7 +202,6 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             const newToken = response.data.access;
             setToken(newToken);
           } catch (error) {
-            console.error("Periodic token refresh failed:", error);
             await signOut();
           }
         }, 5 * 60 * 1000);
@@ -241,11 +233,9 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         if (storedToken && storedUser && storedRefreshToken) {
           setToken(storedToken);
           setRefreshToken(storedRefreshToken);
-
           axiosInstance.defaults.headers.common[
             "Authorization"
           ] = `Bearer ${storedToken}`;
-
           setUser(storedUser);
           setIsAuthenticated(true);
           setRole(
@@ -257,14 +247,12 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               ? "manager"
               : ""
           );
-
-          // Redirect based on user role and preferences
+          /* Redirect based on user role and preferences  */
           if (storedUser.is_owner) {
             router.replace(
               "/management/(drawer)/dashboard/ManagementDashboard"
             );
           } else if (storedUser.is_admin && storedUser.is_employee) {
-            // Check for preferred role before showing bridge
             if (preferredRole === "admin") {
               router.replace(
                 "/management/(drawer)/dashboard/ManagementDashboard"
@@ -281,22 +269,25 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               "/management/(drawer)/dashboard/ManagementDashboard"
             );
           } else if (storedUser.is_superuser) {
-            Alert.alert("Error", "Superuser Not Allowed");
-            await signOut();
+            setIsAlertVisible(true);
+            setAlertConfig({
+              title: "Superuser login is not allowed",
+              message: "Please try a different email address.",
+              onConfirm: async () => {
+                await signOut();
+                setIsAlertVisible(false);
+              },
+              isVisible: true,
+            });
           }
         }
       } catch (error) {
-        console.error("Error initializing auth:", error);
         await signOut();
       }
     };
 
     initializeAuth();
   }, []);
-
-  /**
-   * Authentication Methods
-   */
 
   /**
    * Authenticates a user with their email and password.
@@ -310,58 +301,44 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = async (email: string, password: string): Promise<void> => {
     email = email.toLowerCase();
     const loginData = { email, password };
-    console.log("BASE_URL", BASE_URL());
     try {
       const response = await axios.post(`${BASE_URL()}/api/token/`, loginData);
-
       const data = response.data;
-      if (!data) {
-        throw new Error("No data returned");
-      }
-
+      
       const user: UserResponseType = data.user;
-
-      // Prevent superuser login
       if (user.is_superuser) {
+        setIsAlertVisible(true);
         setAlertConfig({
           title: "Superuser login is not allowed",
           message: "Please try a different email address.",
-          onConfirm: () => setIsAlertModalVisible(false),
+          onConfirm: () => setIsAlertVisible(false),
+          isVisible: true,
         });
-        setIsAlertModalVisible(true);
         return;
       }
-
-      // Store tokens in AsyncStorage first
-      await storeData(data);
-
-      // Configure axios instance immediately with the new token
+      await storeData(data); // Store the data in the AsyncStorage
       axiosInstance.defaults.headers.common[
         "Authorization"
       ] = `Bearer ${data.access}`;
-
       setIsAuthenticated(true);
+      setUser(user);
       setRole(
         user.is_owner
-          ? "owner"
+          ? "Owner"
           : user.is_employee
-          ? "staff"
+          ? "Staff"
           : user.is_admin
-          ? "manager"
+          ? "Manager"
           : ""
       );
-
       // Handle routing based on user role
       if (user.is_owner) {
         router.replace("/management/(drawer)/dashboard/ManagementDashboard");
       } else if (user.is_admin && user.is_employee) {
-        // Show bridge screen only when user has both admin and employee roles
         router.replace("/management/bridge");
       } else if (user.is_employee) {
-        // Regular employee goes directly to staff dashboard
         router.replace("/staff/(drawer)/dashboard/StaffDashboard");
       } else if (user.is_admin) {
-        // Admin-only goes directly to management dashboard
         router.replace("/management/(drawer)/dashboard/ManagementDashboard");
       }
     } catch (error) {
@@ -370,18 +347,40 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const status = error.response?.status;
         switch (status) {
           case 400:
-            console.log("Invalid credentials");
-            alert("invalid credentials");
+            setIsAlertVisible(true);
+            setAlertConfig({
+              title: "Invalid credentials",
+              message: "Please try a different email address or password.",
+              onConfirm: () => setIsAlertVisible(false),
+              isVisible: true,
+            });
             break;
           case 401:
-            setPasswordError(true);
+            setIsAlertVisible(true);
+            setAlertConfig({
+              title: "Did you forget your password?",
+              message: "Please try a different email address or password.",
+              onConfirm: () => setIsAlertVisible(false),
+              isVisible: true,
+            });
             break;
           case 404:
-            Alert.alert("Error", "User not found");
+            setIsAlertVisible(true);
+            setAlertConfig({
+              title: "User not found",
+              message: "Please try a different email address.",
+              onConfirm: () => setIsAlertVisible(false),
+              isVisible: true,
+            });
             break;
           default:
-            console.error("Error: ", error);
-            Alert.alert("Error", "An unexpected error occurred");
+            setIsAlertVisible(true);
+            setAlertConfig({
+              title: "Error",
+              message: "An unexpected error occurred",
+              onConfirm: () => setIsAlertVisible(false),
+              isVisible: true,
+            });
         }
       }
     }
@@ -407,7 +406,7 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       "user",
       PREFERRED_ROLE_KEY,
     ]);
-    router.replace("/management/onboarding/login");
+    router.replace("/management/onboarding/onboard");
   };
 
   /**
@@ -450,30 +449,38 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       );
       // Route to the login screen if the user is created successfully
       if (response.status === 201) {
+        setIsAlertVisible(true);
         setAlertConfig({
-          title: "Registration Successful",
-          message:
-            "You have successfully registered as an owner. Please login to continue.",
+          title: "Success",
+          message: response.data.message,
           onConfirm: () => {
             router.replace("/management/onboarding/login");
             setIsAlertModalVisible(false);
           },
+          isVisible: true,
         });
-        setIsAlertModalVisible(true);
       }
     } catch (error) {
       if (axios.isAxiosError(error)) {
         const status = error.response?.status;
         if (status === 400) {
+          setIsAlertVisible(true);
           setAlertConfig({
             title: "User Already Exists",
             message: "Please try a different email address.",
             onConfirm: () => setIsAlertModalVisible(false),
+            isVisible: true,
           });
-          setIsAlertModalVisible(true);
+          return;
         } else {
-          console.error("Error: ", error);
-          Alert.alert("Error", "An unexpected error occurred");
+          setIsAlertVisible(true);
+          setAlertConfig({
+            title: "Error",
+            message:
+              error.response?.data?.error || "An unexpected error occurred",
+            onConfirm: () => setIsAlertModalVisible(false),
+            isVisible: true,
+          });
         }
       }
     }
@@ -588,6 +595,8 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     isAddressModalVisible,
     alertConfig,
     setAlertConfig,
+    isAlertVisible,
+    setIsAlertVisible,
     isAlertModalVisible,
     setIsAlertModalVisible,
     isRegisterCompany,
@@ -600,6 +609,14 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         children
       ) : (
         <ActivityIndicator size="large" color="black" />
+      )}
+      {isAlertVisible && (
+        <AlertModal
+          title={alertConfig?.title || ""}
+          message={alertConfig?.message || ""}
+          onConfirm={alertConfig?.onConfirm}
+          isVisible={alertConfig?.isVisible || false}
+        />
       )}
     </AuthContext.Provider>
   );

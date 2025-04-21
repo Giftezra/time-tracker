@@ -30,7 +30,7 @@ const CheckoutContext = createContext<CheckoutContextType | undefined>(
 
 const PaymentContext = ({ children }: { children: React.ReactNode }) => {
   const user = userData();
-  const { axiosInstance } = useAuth();
+  const { axiosInstance, setIsAlertVisible, setAlertConfig } = useAuth();
 
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
   const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
@@ -85,21 +85,12 @@ const PaymentContext = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   // Billing address state
-  const [billingAddress, setBillingAddress] = useState<BillingAddress>({
-    fullName: "",
-    address: "",
-    postcode: "",
-    city: "",
-    country: "",
-    phone: "",
-  });
-  const [paymentDetails, setPaymentDetails] = useState<PaymentDetails>({
-    cardNumber: "",
-    expiryDate: "",
-    cvv: "",
-    name: "",
-    email: "",
-  });
+  const [billingAddress, setBillingAddress] = useState<
+    BillingAddress | undefined
+  >();
+  const [paymentDetails, setPaymentDetails] = useState<
+    PaymentDetails | undefined
+  >(undefined);
 
   const handleBillingAddress = (field: keyof BillingAddress, value: string) => {
     setBillingAddress((prev: any) => ({ ...prev, [field]: value }));
@@ -119,7 +110,12 @@ const PaymentContext = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  // Add function to calculate final price
+  /**
+   * Calculate the final price for the subscription plan.
+   * @param plan - The subscription plan to calculate the price for.
+   * @param period - The billing period to calculate the price for.
+   * @returns The final price for the subscription plan.
+   */
   const calculateFinalPrice = (
     plan: SubscriptionPlanTiers | null,
     period: "monthly" | "annually"
@@ -137,6 +133,11 @@ const PaymentContext = ({ children }: { children: React.ReactNode }) => {
     return basePrice;
   };
 
+  /**
+   * Get the yearly discount for the subscription plan.
+   * @param planName - The name of the subscription plan.
+   * @returns The yearly discount for the subscription plan.
+   */
   const getYearlyDiscount = (planName: string) => {
     switch (planName.toLowerCase()) {
       case "basic":
@@ -171,6 +172,8 @@ const PaymentContext = ({ children }: { children: React.ReactNode }) => {
 
   /**
    * Fetch the payment sheet details from the server.
+   * Convert the price to cents for Stripe.
+   * Return the response from the server.
    */
   const fetchPaymentSheetDetails = async () => {
     try {
@@ -265,37 +268,68 @@ const PaymentContext = ({ children }: { children: React.ReactNode }) => {
 
       if (error) {
         if (error.code === PaymentSheetError.Canceled) {
-          Alert.alert("Payment sheet cancelled");
+          setIsAlertVisible(true);
+          setAlertConfig({
+            title: "Payment sheet cancelled",
+            message: error.message,
+            onConfirm: () => setIsAlertVisible(false),
+            isVisible: true,
+          });
         } else if (error.code === PaymentSheetError.Failed) {
-          Alert.alert("Error opening payment sheet:", error.message);
+          setIsAlertVisible(true);
+          setAlertConfig({
+            title: "Payment sheet failed",
+            message: error.message,
+            onConfirm: () => setIsAlertVisible(false),
+            isVisible: true,
+          });
         } else if (error.code === PaymentSheetError.Timeout) {
-          Alert.alert("Payment sheet timeout");
+          setIsAlertVisible(true);
+          setAlertConfig({
+            title: "Payment sheet timeout",
+            message: error.message,
+            onConfirm: () => setIsAlertVisible(false),
+            isVisible: true,
+          });
         }
       } else {
         // Payment was successful
         console.log("Payment successful");
         const updated = await updateSubscriptionPlan();
         if (updated) {
-          Alert.alert(
-            "Success",
-            "Your subscription has been updated successfully!"
-          );
-          setShowCheckout(false);
-          setCurrentPage("My Plans");
+          setIsAlertVisible(true);
+          setAlertConfig({
+            title: "Payment successful",
+            message: "Your subscription has been updated successfully!",
+            onConfirm: () => {
+              setIsAlertVisible(false);
+              setShowCheckout(false);
+              setCurrentPage("My Plans");
+            },
+            isVisible: true,
+          });
         } else {
-          Alert.alert(
-            "Error",
-            "Payment successful but failed to update subscription. Please contact support."
-          );
+          setIsAlertVisible(true);
+          setAlertConfig({
+            title: "Payment successful",
+            message:
+              "Payment successful but failed to update subscription. Please contact support.",
+            onConfirm: () => setIsAlertVisible(false),
+            isVisible: true,
+          });
         }
       }
     } catch (error) {
-      console.error("Error opening payment sheet:", error);
+      console.log("Error opening payment sheet:", error);
     } finally {
       setIsCheckoutLoading(false);
     }
   };
 
+  /**
+   * Fetch the current plan from the server.
+   * Set the current plan to the state immediately.
+   */
   const fetchCurrentPlan = async () => {
     try {
       const response = await axiosInstance.get("/api/get/current/plan/");
@@ -304,17 +338,22 @@ const PaymentContext = ({ children }: { children: React.ReactNode }) => {
         setCurrentPlan(currentPlan);
       }
     } catch (error) {
-      console.error("Error fetching current plan:", error);
+      console.log("Error fetching current plan:", error);
     }
   };
 
-  const fetchSubscriptionHistory = async (): Promise<SubscriptionHistoryInterface[]> => {
+  const fetchSubscriptionHistory = async (): Promise<
+    SubscriptionHistoryInterface[]
+  > => {
     try {
-      const response = await axiosInstance.get("/api/get/subscription/history/");
+      const response = await axiosInstance.get(
+        "/api/get/subscription/history/"
+      );
       if (response.status === 200) {
-        const history: SubscriptionHistoryInterface[] = response.data.subscription_history;
+        const history: SubscriptionHistoryInterface[] =
+          response.data.subscription_history;
         return history;
-      }else{
+      } else {
         return [];
       }
     } catch (error) {

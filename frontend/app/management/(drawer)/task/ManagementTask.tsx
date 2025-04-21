@@ -49,7 +49,6 @@ const MainEmployeeTaskManager = () => {
   } = useManagementTask();
 
   const { screenWidth, windowWidth } = useAuth();
-
   const secondaryColor = useThemeColor({}, "secondaryColor");
   const highlight = useThemeColor({}, "highlight");
   const [toggleView, setToggleView] = useState<string>("open tasks");
@@ -166,14 +165,13 @@ const MainEmployeeTaskManager = () => {
         <Modal
           visible={assignTaskModalVisible}
           animationType="slide"
-          transparent={true}
         >
           <View style={[styles.modalContent]}>
             <TouchableOpacity
               style={styles.modalCloseButton}
               onPress={() => setAssignTaskModalVisible(false)}
             >
-              <AntDesign name="close" size={24} color={'#fff'} />
+              <AntDesign name="close" size={24} color={'#000'} />
             </TouchableOpacity>
             {selectedTask && (
               <AssignTaskModal
@@ -189,7 +187,6 @@ const MainEmployeeTaskManager = () => {
           <Modal
             visible={isEditTaskModalVisible}
             animationType="slide"
-            transparent={true}
             style={styles.modalOverlay}
           >
             <View style={[styles.modalContent]}>
@@ -197,7 +194,7 @@ const MainEmployeeTaskManager = () => {
                 style={styles.modalCloseButton}
                 onPress={() => setIsEditTaskModalVisible(false)}
               >
-                <AntDesign name="close" size={24} color={'#fff'} />
+                <AntDesign name="close" size={24} color={'#000'} />
               </TouchableOpacity>
             </View>
 
@@ -305,8 +302,7 @@ const styles = StyleSheet.create({
   },
 
   modalContent: {
-    borderRadius: 10,
-    padding: 5,
+    padding: 10,
   },
 
   modalCloseButton: {

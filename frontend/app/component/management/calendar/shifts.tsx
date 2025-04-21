@@ -82,12 +82,14 @@ const CalendarShiftComponent = () => {
               style={[
                 styles.shiftCell,
                 {
-                  minHeight: Array.isArray(shifts) ? shifts.length * 30 : 30,
+                  minHeight: shifts?.length ? shifts.length * 30 : 30,
                 },
               ]}
             >
-              {typeof shifts === "string" ? (
-                <Text style={styles.shiftCellText}>{shifts}</Text>
+              {!shifts ? (
+                <View style={{ borderEndWidth: 1,gap:2}}>
+                  <Text style={styles.shiftCellText}>No shifts</Text>
+                </View>
               ) : (
                 <View style={styles.multipleShiftsContainer}>
                   {shifts.map(
@@ -175,23 +177,23 @@ const CalendarShiftComponent = () => {
     );
   };
 
-  const hasAnyShifts = employees.some(employee => {
-    return weekDays.some(day => {
+  const hasAnyShifts = employees.some((employee) => {
+    return weekDays.some((day) => {
       const shifts = getShift(Number(employee.employee_id), day);
-      return shifts && (typeof shifts === 'object' ? shifts.length > 0 : false);
+      return shifts !== null && shifts.length > 0;
     });
   });
 
   if (!hasAnyShifts) {
     return (
-      <View style={[styles.emptyContainer,]}>
-        <Text>No shifts found</Text>
+      <View style={[styles.emptyContainer]}>
+        <Text>No shifts </Text>
       </View>
     );
   }
 
   return (
-    <View style={[styles.mainContainer, { backgroundColor: "red" }]}>
+    <View style={[styles.mainContainer, {backgroundColor:innerBackgroundColor}]}>
       {/* Weekdays Header contains the week display */}
       <View style={styles.topheaderRow}>
         <Text style={[styles.weekdayText, { color: text }]}>Employees</Text>

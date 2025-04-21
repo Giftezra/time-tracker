@@ -1,15 +1,14 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 import React, { useEffect, useState } from "react";
-import { useDashboardContext } from "@/app/context/management/dashboard/ManagementDashboardContext";
 import { router } from "expo-router";
-import { userData } from "@/app/utils/loadData";
 import InnerThemedText from "../../helper/InnerThemedText";
 import SubtitleThemedText from "../../helper/SubtitleThemedText";
 import ThemedHeaderText from "../../helper/ThemedHeaderText";
 import ButtonText from "../../helper/ButtonText";
+import { userData } from "@/app/utils/loadData";
+
 const DashboardWelcomeHeader = () => {
   const user = userData();
-
   const [role, setRole] = useState<string>("");
 
   useEffect(() => {

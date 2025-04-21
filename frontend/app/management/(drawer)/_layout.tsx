@@ -80,7 +80,7 @@ export default function MainManagementLayout() {
           </Pressable>
         ) : (
           <Text style={{ color: background, fontFamily: "BarlowRegular" }}>
-            Home
+            
           </Text>
         )}
       </View>
@@ -102,7 +102,7 @@ export default function MainManagementLayout() {
         </View>
         <View style={{ flex: 1, alignItems: "flex-end" }}>
           <Pressable onPress={() => setShowVersion(!showVersion)}>
-            <Ionicons name="information-circle" size={20} color={background} />
+            <Text style={{ fontSize: 20, color:'red '}}>ℹ️</Text>
           </Pressable>
         </View>
       </View>

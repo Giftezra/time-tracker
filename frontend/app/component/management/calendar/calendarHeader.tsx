@@ -1,3 +1,16 @@
+/**
+ * CalendarHeader Component
+ *
+ * A comprehensive header component for the calendar view that provides:
+ * - Search functionality for shifts
+ * - Week navigation controls
+ * - Date range selection for reports
+ * - Print/export functionality for shift reports
+ *
+ * The component uses the CalendarContext for managing calendar-related state and operations.
+ * It includes a modal for date range selection and supports both web and mobile platforms
+ * with appropriate UI/UX patterns for each.
+ */
 import {
   Pressable,
   StyleSheet,
@@ -9,13 +22,22 @@ import {
   Platform,
 } from "react-native";
 import React, { useState } from "react";
-import { AntDesign, MaterialCommunityIcons } from "@expo/vector-icons";
+import {
+  AntDesign,
+  FontAwesome,
+  MaterialCommunityIcons,
+} from "@expo/vector-icons";
 import SearchInputContainer from "../../helper/SearchInput";
 import { useCalendar } from "@/app/context/management/calendar/calendarContext";
 import AlertConfig from "@/app/types/management/AlertConfig";
 import AlertModal from "../../helper/AlertModal";
 
+/**
+ * CalendarHeader component for managing calendar view and shift reports
+ * @returns {JSX.Element} The rendered CalendarHeader component
+ */
 const CalendarHeader = () => {
+  // Destructure calendar context values
   const {
     schedule,
     getShift,
@@ -32,6 +54,7 @@ const CalendarHeader = () => {
     emailShiftReport,
   } = useCalendar();
 
+  // Local state management
   const [isAlertVisible, setIsAlertVisible] = useState(false);
   const [alertConfig, setAlertConfig] = useState<AlertConfig | undefined>(
     undefined
@@ -40,6 +63,8 @@ const CalendarHeader = () => {
   const [sendingReportError, setSendingReportError] = useState<string | null>(
     null
   );
+
+  // Date selection state
   const [selectedStartDate, setSelectedStartDate] = useState({
     day: 1,
     month: 1,
@@ -50,13 +75,16 @@ const CalendarHeader = () => {
     month: 1,
     year: 2024,
   });
+
+  // Date picker options
   const days = Array.from({ length: 31 }, (_, i) => i + 1);
   const months = Array.from({ length: 12 }, (_, i) => i + 1);
   const years = Array.from({ length: 50 }, (_, i) => 2020 + i);
 
   /**
-   * Call the emailShiftReport method to send the report to the user's email address.
-   * The emailShiftReport method is a method that is defined in the useCalendar hook and expects a startDate and endDate both of type string.
+   * Handles the print/export functionality for shift reports
+   * Sends the report to the user's email address after confirmation
+   * Supports both web and mobile platforms with appropriate confirmation dialogs
    */
   const handlePrint = async () => {
     const startDate = `${selectedStartDate.year}-${selectedStartDate.month}-${selectedStartDate.day}`;
@@ -74,7 +102,7 @@ const CalendarHeader = () => {
       }
     };
 
-    // If the platform is web, use the window.confirm method to ask the user if they want to proceed
+    // Platform-specific confirmation handling
     if (Platform.OS === "web") {
       if (
         window.confirm(
@@ -101,15 +129,18 @@ const CalendarHeader = () => {
     }
   };
 
-  const hasAnyShifts = employees.some((employee) => {
-    return weekDays.some((day) => {
-      const shifts = getShift(Number(employee.employee_id), day);
-      return shifts && (typeof shifts === "object" ? shifts.length > 0 : false);
-    });
-  });
+  // Check if there are any shifts to enable/disable print functionality
+  const hasAnyShifts =
+    employees?.some((employee) => {
+      return weekDays.some((day) => {
+        const shifts = getShift(Number(employee.employee_id), day);
+        return shifts && (Array.isArray(shifts) ? shifts.length > 0 : false);
+      });
+    }) ?? false;
 
   return (
     <View style={[styles.mainContainer, { padding: 5 }]}>
+      {/* Search input section */}
       <View style={styles.searchContainer}>
         <SearchInputContainer
           onPress={() => console.log("search")}
@@ -120,6 +151,7 @@ const CalendarHeader = () => {
         />
       </View>
 
+      {/* Header title section */}
       <View style={[styles.rowContainer, { columnGap: 10, marginBottom: 10 }]}>
         <Text
           style={{
@@ -131,47 +163,35 @@ const CalendarHeader = () => {
         >
           shifts
         </Text>
-        <Pressable
-          onPress={() => handleSchedule("shifts")}
-          style={
-            schedule === "shifts"
-              ? { borderBottomWidth: 2, borderBottomColor: "black" }
-              : {}
-          }
+
+        <Text
+          style={{
+            fontSize: 13,
+            fontWeight: "500",
+            fontFamily: "BarlowRegular",
+            textTransform: "capitalize",
+          }}
         >
-          <Text
-            style={{
-              fontSize: 13,
-              fontWeight: "500",
-              fontFamily: "BarlowRegular",
-              textTransform: "capitalize",
-            }}
-          >
-            shifts
-          </Text>
-        </Pressable>
+          shifts
+        </Text>
       </View>
 
-      {/* This part contains the date management role */}
+      {/* Week navigation and actions section */}
       <View
         style={[
           styles.rowContainer,
           { justifyContent: "space-between", width: "100%" },
         ]}
       >
+        {/* Week navigation controls */}
         <View
           style={[
             styles.rowContainer,
             { justifyContent: "center", columnGap: 10 },
           ]}
         >
-          <Pressable style={{ padding: 10 }}>
-            <AntDesign
-              name="left"
-              size={12}
-              color="black"
-              onPress={gotoPreviousWeek}
-            />
+          <Pressable style={{ padding: 10 }} onPress={gotoPreviousWeek}>
+            <Text style={{ fontSize: 20 }}>⬅️</Text>
           </Pressable>
           <Text
             style={{
@@ -183,34 +203,32 @@ const CalendarHeader = () => {
           >
             {weekRange}
           </Text>
-          <Pressable style={{ padding: 10 }}>
-            <AntDesign
-              name="right"
-              size={12}
-              color="black"
-              onPress={gotoNextWeek}
-            />
+          <Pressable style={{ padding: 10 }} onPress={gotoNextWeek}>
+            <Text style={{ fontSize: 20 }}>➡️</Text>
           </Pressable>
         </View>
 
+        {/* Action buttons */}
         <View
           style={[
             styles.rowContainer,
             { columnGap: 20, justifyContent: "flex-end", marginEnd: 5 },
           ]}
         >
-          <Pressable>
-            <MaterialCommunityIcons
-              name="file-account-outline"
-              size={24}
-              color="black"
-            />
-          </Pressable>
           <Pressable
             onPress={() => setIsPrintModalVisible(true)}
             disabled={!hasAnyShifts}
+            style={({ pressed }) => [
+              styles.iconButton,
+              pressed && styles.iconButtonPressed,
+              !hasAnyShifts && styles.iconButtonDisabled,
+            ]}
           >
-            <MaterialCommunityIcons name="printer" size={24} color="black" />
+            <FontAwesome
+              name="print"
+              size={24}
+              color={hasAnyShifts ? "#4CAF50" : "#E0E0E0"}
+            />
           </Pressable>
           <Pressable>
             <MaterialCommunityIcons
@@ -222,7 +240,7 @@ const CalendarHeader = () => {
         </View>
       </View>
 
-      {/* Display the modal for the user to select a date range to print or access the report */}
+      {/* Date range selection modal */}
       <Modal
         visible={isPrintModalVisible}
         transparent={true}
@@ -234,6 +252,7 @@ const CalendarHeader = () => {
             <Text style={styles.modalTitle}>Select Date Range</Text>
 
             <View style={styles.dateSection}>
+              {/* Start date picker */}
               <Text style={styles.dateLabel}>Start Date:</Text>
               <View style={styles.datePickerContainer}>
                 <ScrollView
@@ -319,6 +338,7 @@ const CalendarHeader = () => {
                 </ScrollView>
               </View>
 
+              {/* End date picker */}
               <Text style={styles.dateLabel}>End Date:</Text>
               <View style={styles.datePickerContainer}>
                 <ScrollView
@@ -402,6 +422,7 @@ const CalendarHeader = () => {
                 </ScrollView>
               </View>
 
+              {/* Action buttons */}
               <View style={styles.buttonContainer}>
                 <Pressable
                   style={[styles.button, styles.cancelButton]}
@@ -420,6 +441,8 @@ const CalendarHeader = () => {
           </View>
         </View>
       </Modal>
+
+      {/* Alert modal for confirmations */}
       {isAlertVisible && (
         <AlertModal
           isVisible={alertConfig?.isVisible || false}
@@ -435,17 +458,18 @@ const CalendarHeader = () => {
 
 export default CalendarHeader;
 
+/**
+ * Styles for the CalendarHeader component
+ */
 const styles = StyleSheet.create({
   mainContainer: {
     flex: 1,
   },
-
   rowContainer: {
     flexGrow: 1,
     flexDirection: "row",
     alignItems: "center",
   },
-
   modalContainer: {
     flex: 1,
     justifyContent: "center",
@@ -529,5 +553,18 @@ const styles = StyleSheet.create({
   searchContainer: {
     marginBottom: 10,
     width: "100%",
+  },
+  iconButton: {
+    padding: 10,
+    borderRadius: 12,
+    backgroundColor: "rgba(76, 175, 80, 0.1)", // Light green background
+  },
+  iconButtonPressed: {
+    backgroundColor: "rgba(76, 175, 80, 0.2)", // Darker green when pressed
+    transform: [{ scale: 0.95 }],
+  },
+  iconButtonDisabled: {
+    backgroundColor: "#F5F5F5", // Light gray background when disabled
+    opacity: 0.7,
   },
 });

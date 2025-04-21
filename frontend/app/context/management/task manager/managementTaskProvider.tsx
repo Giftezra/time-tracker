@@ -45,11 +45,9 @@ const ManagementTaskProvider = ({
 }: {
   children: React.ReactNode;
 }) => {
-  const { axiosInstance } = useAuth();
+  const { axiosInstance, setIsAlertVisible, setAlertConfig } = useAuth();
   // Create a date object for the current date
   const currentDate = new Date();
-
-  // MAnage the state for the data collected which will be used to create a new task
   const [taskData, setTaskData] = useState<CreateTaskInterface | undefined>(
     undefined
   );
@@ -73,16 +71,15 @@ const ManagementTaskProvider = ({
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [assignTaskModalVisible, setAssignTaskModalVisible] = useState(false);
   const [selectedTask, setSelectedTask] = useState<OpenTaskProps | null>(null);
-  const [dates, setDates] = useState<Date[]>([]);
   const [startTime, setStartTime] = useState({ hours: 0, minutes: 0 });
   const [endTime, setEndTime] = useState({ hours: 0, minutes: 0 });
-  const [dateVisible, setDateVisible] = useState(false);
   const [startTimeVisible, seStartTimeVisible] = useState(false);
   const [endTimeVisible, setEndTimeVisible] = useState(false);
-  const [isAlertVisible, setIsAlertVisible] = useState<boolean>(false);
-  const [alertConfig, setAlertConfig] = useState<AlertConfig | undefined>(
-    undefined
-  );
+  // Add new state for start and end dates
+  const [startDateVisible, setStartDateVisible] = useState(false);
+  const [endDateVisible, setEndDateVisible] = useState(false);
+  const [startDates, setStartDates] = useState<Date | null>(null);
+  const [endDates, setEndDates] = useState<Date | null>(null);
 
   /**
    * Method opens the modal and sets the task selected
@@ -178,17 +175,8 @@ const ManagementTaskProvider = ({
    * @returns {Promise<EmployeeType[]>}
    */
   const getAvailableEmployees = async (): Promise<EmployeeType[]> => {
-    // Format date as YYYY-MM-DD
-    const formattedDate = currentDate.toISOString().split("T")[0];
     try {
-      const response = await axiosInstance.get(
-        "/api/get/available/employees/",
-        {
-          params: {
-            current_date: formattedDate,
-          },
-        }
-      );
+      const response = await axiosInstance.get("/api/get/available/employees/");
       const employees: EmployeeType[] = response.data.available_employees;
       return employees;
     } catch (error: any) {
@@ -360,56 +348,6 @@ const ManagementTaskProvider = ({
   );
 
   /**
-   * Method is used to handle how the task end time is seleced by the user.
-   */
-  const onConfirmEndTime = useCallback(
-    ({ hours, minutes }: { hours: number; minutes: number }) => {
-      setEndTimeVisible(false);
-      setEndTime({ hours, minutes });
-      collectNewTaskData("end_time", { hours, minutes });
-      console.log({ hours, minutes });
-    },
-    [setEndTimeVisible]
-  );
-
-  /**
-   * Method to confirm the date selected.
-   * @param params is used to get the dates selected as an array
-   */
-  const on_confirm_date = useCallback((params: any) => {
-    const selectedDates = params.dates || [];
-    setDates(selectedDates);
-    // Update taskData with the selected dates
-    collectNewTaskData("dates", selectedDates);
-    setDateVisible(false);
-    console.log("[on-confirm-date]", selectedDates);
-  }, []);
-
-  const on_date_dismiss = useCallback(() => {
-    setDateVisible(false);
-  }, [setDateVisible]);
-
-  const on_start_time_dismiss = useCallback(() => {
-    seStartTimeVisible(false);
-  }, [seStartTimeVisible]);
-
-  const on_end_time_dismiss = useCallback(() => {
-    setEndTimeVisible(false);
-  }, [setEndTimeVisible]);
-
-  const handleDateDisplay = () => {
-    setDateVisible(!dateVisible);
-  };
-
-  const handleStartTimeDisplay = () => {
-    seStartTimeVisible(!startTimeVisible);
-  };
-
-  const handleEndTimeDisplay = () => {
-    setEndTimeVisible(!endTimeVisible);
-  };
-
-  /**
    * Method is used to handle the task clicked event.
    * the method sets the task clicked state to true and sets the employee details
    * selected in the state
@@ -434,6 +372,16 @@ const ManagementTaskProvider = ({
    * Check the fields for accuracy and display an alert for incorrect fields and fields that are missing.
    * If all fields are correct, then create a the task or shift and display a success alert.
    */
+  const formatDates = (dates: Date) => {
+    return dates.toISOString().split("T")[0];
+  };
+
+  const formatTimes = (times: { hours: number; minutes: number }) => {
+    return `${times.hours.toString().padStart(2, "0")}:${times.minutes
+      .toString()
+      .padStart(2, "0")}`;
+  };
+
   const handleTaskCreation = async () => {
     if (!taskData) {
       setIsAlertVisible(true);
@@ -464,15 +412,11 @@ const ManagementTaskProvider = ({
       }
 
       // Check if the dates exist in taskData
-      if (
-        !taskData.dates ||
-        !Array.isArray(taskData.dates) ||
-        taskData.dates.length === 0
-      ) {
+      if (!taskData.start_date || !taskData.end_date) {
         setIsAlertVisible(true);
         setAlertConfig({
           title: "Error",
-          message: "Please select at least one date",
+          message: "Please select start and end dates",
           onConfirm() {
             setIsAlertVisible(false);
           },
@@ -484,14 +428,18 @@ const ManagementTaskProvider = ({
       // Check if all dates are in the future
       const now = new Date();
       now.setHours(0, 0, 0, 0);
-      // Reset time to start of day for date comparison
-      const hasPastDate = taskData.dates.some((date) => {
-        const taskDate = new Date(date);
-        taskDate.setHours(0, 0, 0, 0);
-        return taskDate < now;
-      });
 
-      if (hasPastDate) {
+      // Check if start_date or end_date is in the past
+      const startDate = new Date(taskData.start_date);
+      const endDate = new Date(taskData.end_date);
+      startDate.setHours(0, 0, 0, 0);
+      endDate.setHours(0, 0, 0, 0);
+
+      if (
+        taskData.start_date &&
+        taskData.end_date &&
+        (startDate < now || endDate < now)
+      ) {
         setIsAlertVisible(true);
         setAlertConfig({
           title: "Invalid Dates",
@@ -501,7 +449,6 @@ const ManagementTaskProvider = ({
           },
           isVisible: true,
         });
-        setIsAlertVisible(true);
         return;
       }
 
@@ -512,6 +459,15 @@ const ManagementTaskProvider = ({
           start_time: { hours: 0, minutes: 0 },
           end_time: { hours: 0, minutes: 0 },
         });
+        setIsAlertVisible(true);
+        setAlertConfig({
+          title: "Error",
+          message: "Start and end time are required",
+          onConfirm() {
+            setIsAlertVisible(false);
+          },
+          isVisible: true,
+        });
         return;
       }
 
@@ -521,61 +477,52 @@ const ManagementTaskProvider = ({
       const endMinutes =
         taskData.end_time.hours * 60 + taskData.end_time.minutes;
 
-      if (endMinutes <= startMinutes) {
-        setIsAlertVisible(true);
-        setAlertConfig({
-          title: "Invalid Times",
-          message: "End time must be after start time",
-          onConfirm() {
-            setIsAlertVisible(false);
-          },
-          isVisible: true,
-        });
-        return;
+      // Check if the start date and end date are the same date then ensure that the start time is before the end time
+      const isSameDate =
+        taskData.start_date.toISOString().split("T")[0] ===
+        taskData.end_date.toISOString().split("T")[0];
+      if (isSameDate) {
+        const startMinutes = taskData.start_time.minutes;
+        const endMinutes = taskData.end_time.minutes;
+        const endHours = taskData.end_time.hours;
+        const startHours = taskData.start_time.hours;
+        if (
+          startHours > endHours ||
+          (startHours === endHours && startMinutes >= endMinutes)
+        ) {
+          setIsAlertVisible(true);
+          setAlertConfig({
+            title: "Invalid Times",
+            message: "Start time must be before end time",
+            onConfirm() {
+              setIsAlertVisible(false);
+            },
+            isVisible: true,
+          });
+          return;
+        }
       }
-
-      // Format dates for API
-      const formattedDates = taskData.dates.map(
-        (date) => date.toISOString().split("T")[0]
-      );
 
       const formattedData = {
         ...taskData,
-        dates: formattedDates,
-        start_date: formattedDates[0],
-        end_date: formattedDates[formattedDates.length - 1],
-        amount: Number(taskData.amount), // Ensure amount is a number
+        start_date: formatDates(taskData.start_date),
+        end_date: formatDates(taskData.end_date),
+        start_time: formatTimes(taskData.start_time),
+        end_time: formatTimes(taskData.end_time),
       };
-
-      console.log("Sending request with data:", formattedData); // Add logging
-
-      const endpoint =
-        taskData.employee_id && taskData.employee_id.length > 0
-          ? "/api/create/shift/"
-          : "/api/create/task/";
-
-      const response = await axiosInstance.post(endpoint, {
+      const response = await axiosInstance.post("/api/create/task/", {
         data: formattedData,
       });
 
       console.log("Response received:", response.data); // Add logging
 
       if (response.status === 201) {
-        const message = `${taskData.employee_id ? "Shift" : "Task"} ${
-          response.data.message
-        } \n ${
-          response.data.successful_assignments?.length > 0
-            ? "Employees assigned successfully"
-            : ""
-        }`;
-
         setIsAlertVisible(true);
         setAlertConfig({
           title: "Success",
-          message: message,
+          message: response.data.message,
           onConfirm() {
             setIsAlertVisible(false);
-            // Clear form data after successful creation
             setTaskData(undefined);
           },
           isVisible: true,
@@ -602,6 +549,329 @@ const ManagementTaskProvider = ({
     }
   };
 
+  /**
+   * Create a new shift on the server based on the data passed in the taskData state.
+   * Check all inputs are validated before creating the shift.
+   * Display an alert for any errors in the inputs.
+   * If all inputs are valid, create the shift and display a success alert.
+   * Refresh the data after creation.
+   */
+  const handleShiftCreation = async () => {
+    if (!taskData) {
+      setIsAlertVisible(true);
+      setAlertConfig({
+        title: "Error",
+        message: "Task data is undefined",
+        onConfirm() {
+          setIsAlertVisible(false);
+        },
+        isVisible: true,
+      });
+      return;
+    }
+
+    try {
+      // Check if the amount is greater than 0 or display an error if it is not
+      if (!taskData.amount || taskData.amount <= 0) {
+        setIsAlertVisible(true);
+        setAlertConfig({
+          title: "Error",
+          message: "Amount must be greater than 0",
+          onConfirm() {
+            setIsAlertVisible(false);
+          },
+          isVisible: true,
+        });
+        return;
+      }
+
+      // Check if the dates exist in taskData
+      if (!taskData.start_date || !taskData.end_date) {
+        setIsAlertVisible(true);
+        setAlertConfig({
+          title: "Error",
+          message: "Please select start and end dates",
+          onConfirm() {
+            setIsAlertVisible(false);
+          },
+          isVisible: true,
+        });
+        return;
+      }
+
+      // Check if all dates are in the future
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+
+      // Check if start_date or end_date is in the past
+      const startDate = new Date(taskData.start_date);
+      const endDate = new Date(taskData.end_date);
+      startDate.setHours(0, 0, 0, 0);
+      endDate.setHours(0, 0, 0, 0);
+
+      if (
+        taskData.start_date &&
+        taskData.end_date &&
+        (startDate < now || endDate < now)
+      ) {
+        setIsAlertVisible(true);
+        setAlertConfig({
+          title: "Invalid Dates",
+          message: "Task dates cannot be in the past",
+          onConfirm() {
+            setIsAlertVisible(false);
+          },
+          isVisible: true,
+        });
+        return;
+      }
+
+      // Check if the start date and end date are the same date then ensure that the start time is before the end time
+      const isSameDate =
+        taskData.start_date.toISOString().split("T")[0] ===
+        taskData.end_date.toISOString().split("T")[0];
+      if (isSameDate) {
+        const startMinutes = taskData.start_time.minutes;
+        const endMinutes = taskData.end_time.minutes;
+        const endHours = taskData.end_time.hours;
+        const startHours = taskData.start_time.hours;
+        if (
+          startHours > endHours ||
+          (startHours === endHours && startMinutes >= endMinutes)
+        ) {
+          setIsAlertVisible(true);
+          setAlertConfig({
+            title: "Invalid Times",
+            message: "Start time must be before end time",
+            onConfirm() {
+              setIsAlertVisible(false);
+            },
+            isVisible: true,
+          });
+          return;
+        }
+      }
+
+      // Validate that end time is after start time
+      const startMinutes =
+        taskData.start_time.hours * 60 + taskData.start_time.minutes;
+      const endMinutes =
+        taskData.end_time.hours * 60 + taskData.end_time.minutes;
+
+      if (taskData.start_date < taskData.end_date) {
+        if (endMinutes <= startMinutes) {
+          setIsAlertVisible(true);
+          setAlertConfig({
+            title: "Invalid Times",
+            message: "End time must be after start time",
+            onConfirm() {
+              setIsAlertVisible(false);
+            },
+            isVisible: true,
+          });
+          return;
+        }
+      }
+
+      const formattedData = {
+        ...taskData,
+        start_date: formatDates(taskData.start_date),
+        end_date: formatDates(taskData.end_date),
+        start_time: formatTimes(taskData.start_time),
+        end_time: formatTimes(taskData.end_time),
+        employee_id: taskData.employee_id,
+      };
+      const response = await axiosInstance.post("/api/create/shift/", {
+        data: formattedData,
+      });
+      if (response.status === 201) {
+        // Format the success and failure messages
+        const successMessage =
+          response.data.successful_assignments?.length > 0
+            ? `Successfully assigned employees: ${response.data.successful_assignments.join(
+                ", "
+              )}`
+            : "";
+
+        const failureMessage =
+          response.data.failed_assignments?.length > 0
+            ? `Failed assignments:\n${response.data.failed_assignments
+                .map(
+                  (failure: { employee_id: string; reason: string }) =>
+                    `- Employee ${failure.employee_id}: ${failure.reason}`
+                )
+                .join("\n")}`
+            : "";
+
+        const message = [response.data.message, successMessage, failureMessage]
+          .filter(Boolean)
+          .join("\n\n");
+
+        setIsAlertVisible(true);
+        setAlertConfig({
+          title: "Shift Creation Status",
+          message: message,
+          onConfirm() {
+            setIsAlertVisible(false);
+            setTaskData(undefined);
+          },
+          isVisible: true,
+        });
+
+        // Refresh data after creation
+        const unassignedTasks = await getOpenTasks();
+        setUnassignedTask(unassignedTasks);
+      }
+    } catch (error: any) {
+      console.error("Error creating task/shift:", error); // Add error logging
+      const message =
+        error.response?.data?.error ||
+        "An error occurred while creating the task/shift";
+      setIsAlertVisible(true);
+      setAlertConfig({
+        title: "Error",
+        message: message,
+        onConfirm() {
+          setIsAlertVisible(false);
+        },
+        isVisible: true,
+      });
+    }
+  };
+
+  const deleteTask = async (taskId: string) => {
+    if (!taskId) {
+      setIsAlertVisible(true);
+      setAlertConfig({
+        title: "Error",
+        message: "Task ID is undefined",
+        onConfirm() {
+          setIsAlertVisible(false);
+        },
+        isVisible: true,
+      });
+      return;
+    }
+
+    // Show confirmation dialog first
+    setIsAlertVisible(true);
+    setAlertConfig({
+      title: "Delete Task",
+      message: "Are you sure you want to delete this task?",
+      onConfirm: async () => {
+        try {
+          setIsLoading(true); // Add loading state
+          const response = await axiosInstance.delete(`/api/delete/task/`, {
+            data: {
+              task_id: taskId,
+            },
+          });
+
+          if (response.status === 200) {
+            // Optimistically update the UI by filtering out the deleted task
+            setUnassignedTask((prev) =>
+              prev.filter((task) => task.task_id !== taskId)
+            );
+
+            // Then fetch the latest data from server
+            const unassignedTasks = await getOpenTasks();
+            setUnassignedTask(unassignedTasks);
+
+            setIsAlertVisible(true);
+            setAlertConfig({
+              title: "Success",
+              message: response.data.message,
+              onConfirm() {
+                setIsAlertVisible(false);
+              },
+              isVisible: true,
+            });
+          }
+        } catch (error: any) {
+          setIsAlertVisible(true);
+          setAlertConfig({
+            title: "Error",
+            message:
+              error.response?.data?.error ||
+              "An error occurred while deleting the task",
+            onConfirm() {
+              setIsAlertVisible(false);
+            },
+            isVisible: true,
+          });
+        } finally {
+          setIsLoading(false); // Clear loading state
+        }
+      },
+      onClose: () => {
+        setIsAlertVisible(false);
+      },
+      isVisible: true,
+    });
+  };
+  
+
+  // Update the handlers to match DatePickerModal's expected types
+  const onConfirmStartDate = useCallback((params: { date?: Date }) => {
+    if (params.date) {
+      setStartDates(params.date);
+      collectNewTaskData("start_date", params.date);
+    }
+    setStartDateVisible(false);
+  }, []);
+
+  const onConfirmEndDate = useCallback((params: { date?: Date }) => {
+    if (params.date) {
+      setEndDates(params.date);
+      collectNewTaskData("end_date", params.date);
+    }
+    setEndDateVisible(false);
+  }, []);
+
+  const onStartDateDismiss = useCallback(() => {
+    setStartDateVisible(false);
+  }, []);
+
+  const onEndDateDismiss = useCallback(() => {
+    setEndDateVisible(false);
+  }, []);
+
+  const handleStartDateDisplay = () => {
+    setStartDateVisible(!startDateVisible);
+  };
+
+  const handleEndDateDisplay = () => {
+    setEndDateVisible(!endDateVisible);
+  };
+  /**
+   * Method is used to handle how the task end time is seleced by the user.
+   */
+  const onConfirmEndTime = useCallback(
+    ({ hours, minutes }: { hours: number; minutes: number }) => {
+      setEndTimeVisible(false);
+      setEndTime({ hours, minutes });
+      collectNewTaskData("end_time", { hours, minutes });
+      console.log({ hours, minutes });
+    },
+    [setEndTimeVisible]
+  );
+
+  const on_start_time_dismiss = useCallback(() => {
+    seStartTimeVisible(false);
+  }, [seStartTimeVisible]);
+
+  const on_end_time_dismiss = useCallback(() => {
+    setEndTimeVisible(false);
+  }, [setEndTimeVisible]);
+
+  const handleStartTimeDisplay = () => {
+    seStartTimeVisible(!startTimeVisible);
+  };
+
+  const handleEndTimeDisplay = () => {
+    setEndTimeVisible(!endTimeVisible);
+  };
+
   const value: ActiveTaskContextType = {
     employeeList,
     contractList,
@@ -617,21 +887,16 @@ const ManagementTaskProvider = ({
     isLoading,
     getContractList,
     getAvailableEmployees,
-    onConfirmDate: on_confirm_date,
     onConfirmStartTime,
     onConfirmEndTime,
-    onDateDismiss: on_date_dismiss,
     onStartTimeDismiss: on_start_time_dismiss,
     onEndTimeDismiss: on_end_time_dismiss,
-    handleDateDisplay,
     handleStartTimeDisplay,
     handleEndTimeDisplay,
-    dateVisible,
     startTimeVisible,
     endTimeVisible,
     startTime,
     endTime,
-    dates,
     collectNewTaskData,
     taskData,
     terminateTask,
@@ -646,21 +911,23 @@ const ManagementTaskProvider = ({
     setEditTask,
     updateTask,
     handleTaskCreation,
+    startDateVisible,
+    endDateVisible,
+    startDates,
+    endDates,
+    onConfirmStartDate,
+    onConfirmEndDate,
+    onStartDateDismiss,
+    onEndDateDismiss,
+    handleStartDateDisplay,
+    handleEndDateDisplay,
+    handleShiftCreation,
+    deleteTask,
   };
 
   return (
     <ManagementTaskContext.Provider value={value}>
       {children}
-      {/* Display the alert modal when the isAlertVisible state is true */}
-      {isAlertVisible && (
-        <AlertModal
-          isVisible={isAlertVisible}
-          title={alertConfig?.title || ""}
-          message={alertConfig?.message || ""}
-          onClose={() => setIsAlertVisible(false)}
-          onConfirm={alertConfig?.onConfirm}
-        />
-      )}
     </ManagementTaskContext.Provider>
   );
 };

@@ -62,6 +62,7 @@ const LoginComponent = () => {
             placeholder="password"
             secureTextEntry={isPasswordVisible}
             autoComplete="password"
+            onSubmit={() => handleLogin()}
           />
         </View>
 
@@ -77,8 +78,14 @@ const LoginComponent = () => {
             </Text>
           </View>
         )}
-        {/* Navigate to the page on the user role passed as prop after login */}
 
+        <View style={styles.forgottenPasswordContainer}>
+          <Text style={styles.forgottenPasswordText}>forgotten password?</Text>
+          <TouchableOpacity>
+            <Text style={[styles.forgottenPasswordText, { color: "blue" }]}>click here</Text>
+          </TouchableOpacity>
+        </View>
+        {/* Navigate to the page on the user role passed as prop after login */}
         <TouchableOpacity
           style={[styles.button, { backgroundColor: inactivebtn }]}
           onPress={handleLogin}
@@ -134,7 +141,7 @@ const styles = StyleSheet.create({
     flexDirection: "column",
     justifyContent: "space-around",
     alignItems: "center",
-    rowGap: 10,
+    gap:5
   },
 
   inputContainer: {
@@ -203,5 +210,21 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     fontFamily: "BarlowRegular",
     marginHorizontal: 4,
+  },
+
+  forgottenPasswordContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 5,
+  },
+  
+  forgottenPasswordText: {
+    fontSize: 12,
+    fontWeight: "500",
+    fontFamily: "BarlowRegular",
+    textTransform: "lowercase",
+    letterSpacing: 0.5,
+    marginTop: 5,
   },
 });

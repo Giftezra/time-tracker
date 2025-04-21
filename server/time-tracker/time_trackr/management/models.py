@@ -263,6 +263,9 @@ class Task(models.Model):
     amount = models.DecimalField(max_digits=5, decimal_places=2)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    total_number_of_staff = models.PositiveIntegerField(default=0)
+    required_number_of_staff = models.PositiveIntegerField(default=0)
+    is_completed = models.BooleanField(default=False)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='task_creator')
     selected_by = models.ManyToManyField('staff.Staff', 
         related_name='task_selected_by', 
@@ -288,8 +291,15 @@ class Task(models.Model):
                 for shift in incomplete_shifts:
                     shift.auto_complete()
 
+    def check_staff_count(self):
+        if self.total_number_of_staff == self.required_number_of_staff:
+            self.status = 'completed'
+            self.is_completed = True
+            self.save()
+
     def save(self, *args, **kwargs):
         self.check_and_update_status()
+        self.check_staff_count()
         super().save(*args, **kwargs)
         
 

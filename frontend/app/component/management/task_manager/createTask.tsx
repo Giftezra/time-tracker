@@ -23,26 +23,32 @@ const CreateTaskComponent = () => {
   const {
     contractList,
     employeeList,
-    onConfirmDate,
     onConfirmStartTime,
     onConfirmEndTime,
-    onDateDismiss,
     onStartTimeDismiss,
     onEndTimeDismiss,
-    handleDateDisplay,
     handleStartTimeDisplay,
     handleEndTimeDisplay,
-    dateVisible,
     startTimeVisible,
     endTimeVisible,
     isLoading,
-    dates,
     startTime,
     endTime,
     collectNewTaskData,
     taskData,
     getAvailableEmployees: get_available_employees,
     handleTaskCreation,
+    startDateVisible,
+    endDateVisible,
+    startDates,
+    endDates,
+    onConfirmStartDate,
+    onConfirmEndDate,
+    onStartDateDismiss,
+    onEndDateDismiss,
+    handleStartDateDisplay,
+    handleEndDateDisplay,
+    handleShiftCreation,
   } = useManagementTask();
 
   const primary = useThemeColor({}, "primaryColor");
@@ -320,14 +326,18 @@ const CreateTaskComponent = () => {
       {/* The view contains the date and time selection components */}
       <View style={{ width: "100%" }}>
         <Text style={[styles.headerText, { color: text }]}>
-          select date and time
+          select dates and times
         </Text>
 
         {/* Display selected dates and times */}
         <View style={styles.selectedTimeContainer}>
           <Text style={[styles.detailText]}>
-            Selected Dates:{" "}
-            {dates.map((date) => date.toLocaleDateString()).join(", ")}
+            Start Date:
+            {startDates ? startDates.toLocaleDateString() : "Not selected"}
+          </Text>
+          <Text style={[styles.detailText]}>
+            End Date:
+            {endDates ? endDates.toLocaleDateString() : "Not selected"}
           </Text>
           <Text style={[styles.detailText]}>
             Start Time: {startTime.hours}:
@@ -340,7 +350,32 @@ const CreateTaskComponent = () => {
         </View>
 
         <View style={{ flex: 1 }}>
-          <ButtonComponent title="date" onPress={handleDateDisplay} />
+          <View style={[styles.dateTimeButtonContainer]}>
+            <TouchableOpacity
+              onPress={handleStartDateDisplay}
+              style={[
+                styles.dateTimeButton,
+                { backgroundColor: innerBackground },
+              ]}
+            >
+              <Text style={[styles.dateTimeButtonText, { color: text }]}>
+                Start Date
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={handleEndDateDisplay}
+              style={[
+                styles.dateTimeButton,
+                { backgroundColor: innerBackground },
+              ]}
+            >
+              <Text style={[styles.dateTimeButtonText, { color: text }]}>
+                End Date
+              </Text>
+            </TouchableOpacity>
+          </View>
+
           <View style={[styles.dateTimeButtonContainer]}>
             <TouchableOpacity
               onPress={handleStartTimeDisplay}
@@ -369,13 +404,24 @@ const CreateTaskComponent = () => {
         </View>
 
         <DatePickerModal
-          visible={dateVisible}
-          onDismiss={onDateDismiss}
-          onConfirm={onConfirmDate}
-          mode="multiple"
-          locale={"en"}
+          visible={startDateVisible}
+          onDismiss={onStartDateDismiss}
+          onConfirm={onConfirmStartDate}
+          mode="single"
+          locale="en"
           animationType="slide"
-          label="Select date"
+          label="Select start date"
+          saveLabel="Save"
+        />
+
+        <DatePickerModal
+          visible={endDateVisible}
+          onDismiss={onEndDateDismiss}
+          onConfirm={onConfirmEndDate}
+          mode="single"
+          locale="en"
+          animationType="slide"
+          label="Select end date"
           saveLabel="Save"
         />
 
@@ -420,11 +466,20 @@ const CreateTaskComponent = () => {
           />
 
           <TextInputComponent
-            placeholder="Task Serial"
+            placeholder="SD1233"
             text="Task Serial"
             setValue={(value: string) => {
               collectNewTaskData("task_serial", value);
             }}
+          />
+
+          <TextInputComponent
+            placeholder="0"
+            text="Required Number of Staff"
+            setValue={(value: string) => {
+              collectNewTaskData("required_number_of_staff", value);
+            }}
+            keyboardType="numeric"
           />
         </View>
         {error && (
@@ -438,11 +493,19 @@ const CreateTaskComponent = () => {
               ? "Create Task"
               : "Create Shift"
           }
+          /* Create the task or shift based on the selected employees */
           onPress={() => {
-            setIsCreating(true);
-            handleTaskCreation().finally(() => {
-              setIsCreating(false);
-            });
+            if (selectedEmployees.length === 0) {
+              setIsCreating(true);
+              handleTaskCreation().finally(() => {
+                setIsCreating(false);
+              });
+            } else {
+              setIsCreating(true);
+              handleShiftCreation().finally(() => {
+                setIsCreating(false);
+              });
+            }
           }}
         />
       </View>
@@ -578,10 +641,10 @@ const styles = StyleSheet.create({
 
   dateTimeButton: {
     flex: 1,
-    padding: Platform.OS === "web" ? 14 : 16,
+    padding: Platform.OS === "web" ? 12 : 10,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 8,
+    borderRadius: 5,
     elevation: 2,
     shadowColor: "#000",
     shadowOffset: {

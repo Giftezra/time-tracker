@@ -16,7 +16,7 @@ import { useThemeColor } from "@/hooks/useThemeColor";
 import { user_image } from "@/app/utils/images";
 import { EmployeeDetailsInterface } from "@/app/types/management/employee";
 import { useEmployeeContext } from "@/app/context/management/employee/employeeContext";
-import EmployeeAnalyticsComponent from "./employeeAnalytics";
+import EmployeeAnalyticsComponent from "./EmployeeAnalytics";
 
 const EmployeeDisplayComponent: React.FC<EmployeeDetailsInterface> = (
   props

@@ -1,10 +1,7 @@
 from rest_framework.decorators import api_view, permission_classes  
 from rest_framework.permissions import IsAuthenticated
-from ...models import User,Company,Shift
-from ...serializer import UserSerializer
-
+from management.models import Company,Shift
 from .decorators import admin_required
-
 from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 from django.conf import settings
@@ -18,10 +15,14 @@ from reportlab.lib.styles import getSampleStyleSheet
 from django.core.mail import EmailMessage, send_mail
 import io
 from datetime import datetime
+from django.core.cache import cache
+from django_ratelimit.decorators import ratelimit
+from management.helpers import get_cache_key
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 @admin_required
+@ratelimit(key='user', rate='30/m', block=True, method=['GET'])
 def get_shifts(request):
     """
     Retrieve all shifts for a company based on user authorization.
@@ -49,10 +50,15 @@ def get_shifts(request):
             company = employee.company
         else:
             return Response({'error': 'You are not authorized to access this resource'}, status=status.HTTP_403_FORBIDDEN)
+        
+        # Get the cache key for the shifts list
+        cache_key = get_cache_key('shifts_list', company.id)
+        cache_data = cache.get(cache_key)
+        if cache_data:
+            return Response({'shifts': cache_data}, status=status.HTTP_200_OK)
             
         # Get all contracts and tasksassociated with the company using the filter method to filter the associated company shifts.
         shifts = Shift.objects.filter(task__contract__client__company=company)
-        
         if not shifts:
             return Response({'error': 'No shifts found'}, status=status.HTTP_200_OK)
         
@@ -74,6 +80,8 @@ def get_shifts(request):
                     'tast_serial' : shift.task.task_serial,
                     'client': shift.task.contract.client.name,
                 })
+        # Cache the shifts list for 5 minutes
+        cache.set(cache_key, shift_list, timeout=settings.CACHE_TIMEOUT)
         return Response({'shifts': shift_list}, status=status.HTTP_200_OK)
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -427,6 +435,44 @@ def approve_shift(request):
         return Response({'message': 'Shift timesheet approved successfully'}, status=status.HTTP_200_OK)
     except TimeSheet.DoesNotExist:
         return Response({'error': 'No timesheet found for this shift and employee'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@admin_required
+@ratelimit(key='user', rate='10/m', block=True, method=['GET'])
+def get_all_employees(request):
+    """ This method will return a list of all employees in the company. 
+     It will only return theier employee id and name """
+    
+    try:
+        if request.user.is_owner:
+            company = get_object_or_404(Company, owner=request.user)
+        elif request.user.is_admin:
+            staff_member = get_object_or_404(Staff, user=request.user)
+            company = staff_member.company
+        else:
+            return Response({'error': 'You are not authorized to access this resource'}, status=status.HTTP_403_FORBIDDEN)
+    except Company.DoesNotExist as e:
+            return Response({'error': 'Company not found'}, status=status.HTTP_404_NOT_FOUND)
+    # Get the cache key for the employees list
+    cache_key = get_cache_key('employees_list', company.id)
+    cache_data = cache.get(cache_key)
+    if cache_data:
+        return Response({'employees': cache_data}, status=status.HTTP_200_OK)
+    
+    try:
+        staff_members = Staff.objects.filter(company=company)
+        employee_list = [{
+            'employee_id': staff.id,
+            'employee_name': staff.user.get_full_name()
+        } for staff in staff_members]
+        # Cache the employees list for 1 hour
+        cache.set(cache_key, employee_list, timeout=settings.CACHE_TIMEOUT)
+
+        return Response({'employees': employee_list}, status=status.HTTP_200_OK)
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
     

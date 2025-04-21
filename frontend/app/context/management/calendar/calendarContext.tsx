@@ -15,8 +15,8 @@ import {
 } from "react";
 import { th } from "react-native-paper-dates";
 import { useAuth } from "@/app/authentication";
-import { Alert } from "react-native";
-
+import { View, Text } from "react-native";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 dayjs.extend(isSameOrBefore);
 dayjs.extend(isSameOrAfter);
 
@@ -27,7 +27,7 @@ const CalendarContext = createContext<CalendarContextType | undefined>(
 const CalendarContextProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
-  const { axiosInstance } = useAuth();
+  const { axiosInstance, setIsAlertVisible, setAlertConfig } = useAuth();
   const [schedule, setSchedule] = useState<string>("shifts");
   const [timeFrame, setTimeFrame] = useState<string>("week");
   const [search, setSearch] = useState("");
@@ -42,8 +42,8 @@ const CalendarContextProvider: React.FC<{ children: ReactNode }> = ({
    */
   useEffect(() => {
     const fetchDate = async () => {
-      setLoading(true);
       try {
+        setLoading(true);
         const employees = await getAllEmployees();
         setEmployees(employees);
         const shifts = await getAllShifts();
@@ -92,6 +92,7 @@ const CalendarContextProvider: React.FC<{ children: ReactNode }> = ({
     try {
       const response = await axiosInstance.get("/api/get/all/employees/");
       const employees = response.data.employees;
+      console.log("employees", employees);
       return employees;
     } catch (error) {
       console.error("Error fetching employees:", error);
@@ -104,10 +105,11 @@ const CalendarContextProvider: React.FC<{ children: ReactNode }> = ({
     try {
       const response = await axiosInstance.get("/api/get/shifts");
       const shifts = response.data.shifts;
-      return shifts;
+      console.log("shifts", shifts);
+      return shifts || [];
     } catch (error) {
       console.error("Error fetching shifts:", error);
-      throw error;
+      throw [];
     }
   };
 
@@ -115,14 +117,17 @@ const CalendarContextProvider: React.FC<{ children: ReactNode }> = ({
    * Returns all shifts for the employee that overlap with the given date
    * @param employeeId - The ID of the employee to find shifts for
    * @param date - The date to check for shifts
-   * @returns Array of matching shifts for the employee or "No shift" if none found
+   * @returns Array of matching shifts for the employee or null if none found
    */
-  const getShift = (employeeId: number, date: dayjs.Dayjs) => {
-    const dateStr = date.format("YYYY-MM-DD");
+  const getShift = (
+    employeeId: number,
+    date: dayjs.Dayjs
+  ): CalendarShiftType[] | null => {
+    if (!shifts || shifts.length === 0 || employeeId === undefined) {
+      return null;
+    }
 
-    // Find all shifts where:
-    // 1. The employee is assigned AND
-    // 2. The date falls within the shift's start_date to end_date range
+    const dateStr = date.format("YYYY-MM-DD");
     const matchingShifts = shifts.filter(
       (shift) =>
         shift.employeeId === employeeId &&
@@ -130,12 +135,7 @@ const CalendarContextProvider: React.FC<{ children: ReactNode }> = ({
         dayjs(shift.end_date).isSameOrAfter(dateStr)
     );
 
-    // Sort shifts by start time
-    matchingShifts.sort((a, b) => {
-      return (a.start_time || "").localeCompare(b.start_time || "");
-    });
-
-    return matchingShifts.length > 0 ? matchingShifts : "No shift";
+    return matchingShifts.length > 0 ? matchingShifts : null;
   };
 
   /** Method is used to cancel the shift on the server.
@@ -150,13 +150,20 @@ const CalendarContextProvider: React.FC<{ children: ReactNode }> = ({
         employee_id: activeShift?.employeeId,
       });
       if (response.status === 200) {
-        Alert.alert("Shift cancellation status", response.data.message);
+        setIsAlertVisible(true);
+        setAlertConfig({
+          title: "Shift cancellation status",
+          message: response.data.message,
+          onConfirm: async () => {
+            setIsAlertVisible(false);
+          },
+          isVisible: true,
+        });
         const shifts = await getAllShifts();
-        setShifts(shifts)
+        setShifts(shifts);
         setShifts(shifts);
         setShowEditShiftModal(false);
       }
-
     } catch (error) {
       console.error("Error cancelling shift:", error);
       throw error;
@@ -177,9 +184,15 @@ const CalendarContextProvider: React.FC<{ children: ReactNode }> = ({
         employee_id: activeShift?.employeeId,
       });
       if (response.status === 200) {
-        Alert.alert("Shift approval status", response.data.message);
-        await getAllShifts();
-        setShowEditShiftModal(false);
+        setIsAlertVisible(true);
+        setAlertConfig({
+          title: "Shift approval status",
+          message: response.data.message,
+          onConfirm: async () => {
+            setIsAlertVisible(false);
+          },
+          isVisible: true,
+        });
       }
     } catch (error) {
       console.error("Error approving shift:", error);
@@ -188,17 +201,23 @@ const CalendarContextProvider: React.FC<{ children: ReactNode }> = ({
   };
 
   /**
-   * This method is used to filter the shifts bases on the name of the employee
-   * @param name - the name of the employee
-   * @returns the filtered shifts
+   * This method is used to filter the shifts based on the name of the employee
+   * @param name - the name of the employee to search for
+   * @returns the filtered shifts for matching employees
    */
-  const filterShifts = (name: string) => {
-    const filteredShifts = employees.filter((employee) =>
-      employee.employee_name
-        .toString()
-        .toLowerCase()
-        .includes(name.toLowerCase())
+  const filterShifts = (name: string): CalendarShiftType[] => {
+    if (!name.trim()) return shifts;
+    const matchingEmployees = employees.filter((employee) =>
+      employee.employee_name.toLowerCase().includes(name.toLowerCase())
     );
+    const filteredShifts = shifts.filter((shift) =>
+      matchingEmployees.some(
+        (employee) =>
+          shift?.employeeId !== undefined &&
+          parseInt(employee.employee_id) === shift.employeeId
+      )
+    );
+
     return filteredShifts;
   };
 
@@ -234,9 +253,15 @@ const CalendarContextProvider: React.FC<{ children: ReactNode }> = ({
         end_time: formattedEndTime,
       });
       if (response.status === 200) {
-        Alert.alert("Shift update status", response.data.message);
-        await getAllShifts();
-        setShowEditShiftModal(false);
+        setIsAlertVisible(true);
+        setAlertConfig({
+          title: "Shift update status",
+          message: response.data.message,
+          onConfirm: async () => {
+            setIsAlertVisible(false);
+          },
+          isVisible: true,
+        });
       }
     } catch (error) {
       console.error("Error updating shift:", error);
@@ -286,6 +311,7 @@ const CalendarContextProvider: React.FC<{ children: ReactNode }> = ({
     handleActiveShift,
     updateShift,
     approveShift,
+    filterShifts,
   };
 
   return (

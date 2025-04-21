@@ -22,12 +22,8 @@ import EditShiftComponent from "@/app/component/management/calendar/editshift";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 const ManagementCalendar = () => {
-  const {
-    schedule,
-    showEditShiftModal,
-    setShowEditShiftModal,
-    activeShift,
-  } = useCalendar();
+  const { schedule, showEditShiftModal, setShowEditShiftModal, activeShift } =
+    useCalendar();
 
   const { windowWidth } = useAuth();
 
@@ -56,9 +52,14 @@ const ManagementCalendar = () => {
               {schedule === "shifts" &&
                 /* Render the view in a scrollview horizontally for mobile */
                 (Platform.OS === "web" ? (
-                  <View style={{ flexGrow: 1, marginEnd: 5 }}>
+                  <ScrollView
+                    style={{ flexGrow: 1, marginEnd: 5 }}
+                    horizontal={true}
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={{ flexGrow: 1 }}
+                  >
                     <CalendarShiftComponent />
-                  </View>
+                  </ScrollView>
                 ) : (
                   <ScrollView
                     style={{ flexGrow: 1 }}

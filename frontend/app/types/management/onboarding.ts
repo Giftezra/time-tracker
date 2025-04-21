@@ -1,5 +1,5 @@
 import { AxiosInstance } from "axios";
-
+import AlertConfig from "./AlertConfig";
 export interface EmployeeOnboardingType {
   firstName: string;
   lastName: string;
@@ -113,18 +113,12 @@ export default interface AuthContextType {
   isLoading: boolean;
   isAddressVisible: boolean;
   isAddressModalVisible: boolean;
-  alertConfig: {
-    title: string;
-    message: string;
-    onConfirm: () => void;
-  };
-  setAlertConfig: (config: {
-    title: string;
-    message: string;
-    onConfirm: () => void;
-  }) => void;
+  alertConfig: AlertConfig | undefined;
+  setAlertConfig: (config: AlertConfig) => void;
   isAlertModalVisible: boolean;
   setIsAlertModalVisible: (visible: boolean) => void;
   isRegisterCompany: boolean;
   setIsRegisterCompany: (visible: boolean) => void;
+  isAlertVisible: boolean;
+  setIsAlertVisible: (visible: boolean) => void;
 }

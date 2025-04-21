@@ -25,18 +25,12 @@ const EditTaskComponent = ({
   props: OpenTaskProps;
   onPress: () => void;
 }) => {
-  const { updateTask } = useManagementTask();
+  const { updateTask} = useManagementTask();
 
   const [day, setDay] = useState(1);
   const [month, setMonth] = useState(1);
   const [year, setYear] = useState(2024);
-  const [taskDetails, setTaskDetails] = useState({
-    contract_name: props.contract_name || "",
-    contract_address: props.contract_address || "",
-    contract_postcode: props.contract_postcode || "",
-    task_description: props.task_description || "",
-    task_serial: props.task_serial || "",
-  });
+  const [taskDetails, setTaskDetails] = useState<OpenTaskProps|undefined>(undefined);
 
   const [isTimePickerVisible, setIsTimePickerVisible] = useState(false);
 
@@ -72,6 +66,7 @@ const EditTaskComponent = ({
       contract_postcode: props.contract_postcode || "",
       task_description: props.task_description || "",
       task_serial: props.task_serial || "",
+      required_number_of_staff: props.required_number_of_staff || 0,
     });
     // Ensure the hook is only called when the props change.
   }, [props]);
@@ -99,21 +94,7 @@ const EditTaskComponent = ({
         .padStart(2, "0")}`,
       task_start_date: props.task_start_date,
     };
-    try {
-      const response = await updateTask(newTaskDetails);
-      if (response) {
-        Alert.alert("Success", response.message, [
-          {
-            text: "OK",
-            onPress: onPress,
-          },
-        ]);
-      }
-    } catch (error) {
-      Alert.alert("Error", "An error occurred while updating the task", [
-        { text: "OK" },
-      ]);
-    }
+    updateTask(newTaskDetails);
   };
 
   return (
@@ -132,7 +113,7 @@ const EditTaskComponent = ({
           <TextInputComponent
             text="Task Serial"
             placeholder="Enter Task Serial"
-            value={taskDetails.task_serial}
+            value={taskDetails?.task_serial}
             setValue={(text) =>
               setTaskDetails((prev) => ({ ...prev, task_serial: text }))
             }
@@ -141,7 +122,7 @@ const EditTaskComponent = ({
           <TextInputComponent
             text="Contract Name"
             placeholder="Enter Contract Name"
-            value={taskDetails.contract_name}
+            value={taskDetails?.contract_name}
             setValue={(text) =>
               setTaskDetails((prev) => ({ ...prev, contract_name: text }))
             }
@@ -150,7 +131,7 @@ const EditTaskComponent = ({
           <TextInputComponent
             text="Address"
             placeholder="Enter Address"
-            value={taskDetails.contract_address}
+            value={taskDetails?.contract_address}
             setValue={(text) =>
               setTaskDetails((prev) => ({ ...prev, contract_address: text }))
             }
@@ -159,7 +140,7 @@ const EditTaskComponent = ({
           <TextInputComponent
             text="Postcode"
             placeholder="Enter Postcode"
-            value={taskDetails.contract_postcode}
+            value={taskDetails?.contract_postcode}
             setValue={(text) =>
               setTaskDetails((prev) => ({ ...prev, contract_postcode: text }))
             }
@@ -168,12 +149,21 @@ const EditTaskComponent = ({
           <TextInputComponent
             text="Description"
             placeholder="Enter Description"
-            value={taskDetails.task_description}
+            value={taskDetails?.task_description}
             setValue={(text) =>
               setTaskDetails((prev) => ({ ...prev, task_description: text }))
             }
             isMultiline={true}
             lines={4}
+          />
+
+          <TextInputComponent
+            text="Required Number of Staff"
+            placeholder="Enter Required Number of Staff"
+            value={taskDetails?.required_number_of_staff?.toString()}
+            setValue={(text) =>
+              setTaskDetails((prev) => ({ ...prev, required_number_of_staff: parseInt(text) }))
+            }
           />
 
           <View style={styles.timeSection}>

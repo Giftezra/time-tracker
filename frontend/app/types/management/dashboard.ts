@@ -51,7 +51,7 @@ export interface TaskStatistics {
   total: number;
 }
 
-export interface DashboardContextType {
+export default interface DashboardContextType {
   user: any;
   contractStats: BarData[];
   isLoading: boolean;
@@ -59,7 +59,7 @@ export interface DashboardContextType {
   setSelectedYear: (year: number) => void;
   selectedYear: number;
   unavailableEmployees: EmployeeOnLeaveInterface[];
-  taskStats: TaskStatistics;
+  taskStats?: TaskStatistics;
   fetchTaskStatistics: () => Promise<void>;
   topPerformers: LeaderBoardData[];
   todayEvents: EventItem[];
@@ -67,9 +67,6 @@ export interface DashboardContextType {
   setEmployeeId: (id: string) => void;
   isModalVisible: boolean;
   setIsModalVisible: (visible: boolean) => void;
-  selectedEmployeeData: any;
-  employeeTaskDetails: any;
-  employeeWorkLog: any;
 }
 
 export interface LeaderBoardData {

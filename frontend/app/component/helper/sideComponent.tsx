@@ -14,6 +14,7 @@ import { router } from "expo-router";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useAuth } from "@/app/authentication";
 import RegisterCompanyComponent from "@/app/management/onboarding/registerCompany";
+import { userData } from "@/app/utils/loadData";
 
 const SideComponent = ({ closeDrawer }: { closeDrawer?: () => void }) => {
   const {
@@ -22,16 +23,14 @@ const SideComponent = ({ closeDrawer }: { closeDrawer?: () => void }) => {
     signOut,
     role,
     setPreferredRole,
-    user,
     setIsRegisterCompany,
   } = useAuth();
+  const user = userData();
 
-  const [profilePopup, setProfilePopup] = useState<boolean>(false);
   const text = useThemeColor({}, "text");
   const icon = useThemeColor({}, "icon");
   const otherText = useThemeColor({}, "otherText");
   const background = useThemeColor({}, "innerBackground");
-
   const [isAdmin, setIsAdmin] = useState(() => {
     return role === "admin";
   });
@@ -225,15 +224,14 @@ const SideComponent = ({ closeDrawer }: { closeDrawer?: () => void }) => {
       >
         <Text style={styles.signoutText}>
           {user?.first_name
-            ? `${user.first_name} click to`
+            ? `${user.first_name}`
             : "Click to sign out"}
         </Text>
-
         <View style={styles.buttons}>
           <MaterialIcons name="logout" size={20} color={icon} />
           {/* Conditionally render the texts when the window width is over 50% */}
           {windowWidth >= screenWidth / 2 && (
-            <Text style={[styles.buttonText, { color: text }]}>signout</Text>
+            <Text style={[styles.buttonText, { color: text, fontSize:18 }]}>signout</Text>
           )}
         </View>
       </TouchableOpacity>
@@ -275,25 +273,33 @@ const styles = StyleSheet.create({
   },
 
   buttonText: {
-    fontSize: Platform.OS === "web" ? 10 : 15,
+    fontSize: 15,
     fontWeight: "600",
     fontFamily: "BarlowRegular",
     textTransform: "capitalize",
   },
 
   signoutContainer: {
+    flexDirection: "row",
+    justifyContent: "space-around",
     padding: 5,
     alignItems: "center",
     borderRadius: 5,
     borderWidth: 1,
-    shadowOffset: { width: 0, height: 1.5 },
+    marginVertical: 10,
+    marginHorizontal: 10,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 2,
+    shadowColor: "rgba(0,0,0,0.1)",
+    elevation: 3,
   },
 
   signoutText: {
-    fontSize: Platform.OS === "web" ? 10 : 14,
+    fontSize: 14,
     fontFamily: "BarlowRegular",
     fontWeight: "600",
     textTransform: "capitalize",
+    color: "white",
   },
 
   headerTexts: {

@@ -8,7 +8,7 @@ export interface OwnerDetails {
 
 export default interface CheckoutContextType {
   ownerAddress: OwnerDetails | undefined;
-  billingAddress: BillingAddress;
+  billingAddress?: BillingAddress;
   handleBillingAddress: (field: keyof BillingAddress, value: string) => void;
   savedCards: CardType[];
   selectedCard: string;
@@ -24,7 +24,7 @@ export default interface CheckoutContextType {
   setShowCheckout: (show: boolean) => void;
   billingDetails: BillingDetails;
   setBillingDetails: (details: BillingDetails) => void;
-  paymentDetails: PaymentDetails;
+  paymentDetails?: PaymentDetails;
   setPaymentDetails: (details: PaymentDetails) => void;
   currentPage: string;
   setCurrentPage: (page: string) => void;

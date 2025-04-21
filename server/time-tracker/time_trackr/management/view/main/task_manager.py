@@ -27,20 +27,17 @@ def create_task(request):
     data = request.data.get('data', {})
     try:
         # Validate required fields
-        required_fields = ['contract_id', 'start_time', 'end_time', 'dates', 'amount', 'task_serial', 'description']
+        required_fields = ['contract_id', 'start_time', 'end_time', 'start_date', 'end_date', 'amount', 'task_serial', 'description', 'required_number_of_staff']
         for field in required_fields:
             if not data.get(field):
                 return Response({'error': f'{field} is required'}, status=status.HTTP_400_BAD_REQUEST)
         
         contract = get_object_or_404(Contracts, id=data['contract_id'])
-        
-        # Convert date strings to datetime.date objects
-        try:
-            start_date = datetime.strptime(data['dates'][0], '%Y-%m-%d').date()
-            end_date = datetime.strptime(data['dates'][-1], '%Y-%m-%d').date()
-        except ValueError:
-            return Response({'error': 'Invalid date format. Use YYYY-MM-DD'}, status=status.HTTP_400_BAD_REQUEST)
-        
+        # Properly format the dates and times
+        start_date = datetime.strptime(data['start_date'], '%Y-%m-%d').date()
+        end_date = datetime.strptime(data['end_date'], '%Y-%m-%d').date()
+        start_time = datetime.strptime(data['start_time'], '%H:%M').time()
+        end_time = datetime.strptime(data['end_time'], '%H:%M').time()
         # Create the task
         task = Task.objects.create(
             contract=contract,
@@ -48,13 +45,14 @@ def create_task(request):
             description=data['description'],
             start_date=start_date,  # Use converted date
             end_date=end_date,      # Use converted date
-            start_time=f"{data['start_time']['hours']}:{data['start_time']['minutes']}",
-            end_time=f"{data['end_time']['hours']}:{data['end_time']['minutes']}",
+            start_time=start_time,
+            end_time=end_time,
             amount=data['amount'],
+            total_number_of_staff=0,
+            required_number_of_staff=data['required_number_of_staff'],
             created_by=request.user,
             status='pending'
         )
-        
         return Response({
             'message': 'Task created successfully',
             'task_id': task.id
@@ -69,6 +67,7 @@ def create_task(request):
 @admin_required
 @ratelimit(key='user', rate='50/h', method=['POST'], block=True)
 def create_shift(request):
+    print("request.data", request.data)
     """Creates a new shift and assigns it to specified employees after creating a task."""
     if not request.data:
         return Response({'error': 'Please provide shift details'}, status=status.HTTP_400_BAD_REQUEST)
@@ -76,51 +75,78 @@ def create_shift(request):
     data = request.data.get('data', {})
     
     try:
-        # Convert date strings to datetime.date objects before creating task
-        if 'dates' in data and data['dates']:
-            try:
-                data['dates'] = [
-                    datetime.strptime(date, '%Y-%m-%d').date() 
-                    for date in data['dates']
-                ]
-            except ValueError:
-                return Response({'error': 'Invalid date format. Use YYYY-MM-DD'}, 
-                              status=status.HTTP_400_BAD_REQUEST)
-        
-        # Create task first
-        task_response = create_task(request)
-        if task_response.status_code != status.HTTP_201_CREATED:
-            return task_response
-        
-        task = Task.objects.get(id=task_response.data['task_id'])
-        
+        # Validate required fields
+        required_fields = ['contract_id', 'start_time', 'end_time', 'start_date', 'end_date', 'amount', 'task_serial', 'description', 'employee_id', 'required_number_of_staff']
+        for field in required_fields:
+            if not data.get(field):
+                return Response({'error': f'{field} is required'}, status=status.HTTP_400_BAD_REQUEST)
+        print("data", data)
+        # Get the contract using the contract id
+        contract = get_object_or_404(Contracts, id=data['contract_id'])
+        # Properly format the dates and times
+        start_date = datetime.strptime(data['start_date'], '%Y-%m-%d').date()
+        end_date = datetime.strptime(data['end_date'], '%Y-%m-%d').date()
+        start_time = datetime.strptime(data['start_time'], '%H:%M').time()
+        end_time = datetime.strptime(data['end_time'], '%H:%M').time()
+        #Get the length of the employee_id array
+        employee_id_str = data['employee_id']
+        employee_id = [int(id.strip()) for id in employee_id_str.split(',') if id.strip().isdigit()]
+        employee_id_length = len(employee_id)
+        print("employee_id_length", employee_id_length)
+        # Create the task then save it to the database
+        # Use the id of the task to create the shifts
+        task = Task.objects.create(
+            contract=contract,
+            task_serial=data['task_serial'],
+            description=data['description'],
+            start_date=start_date,
+            end_date=end_date,
+            start_time=start_time,
+            end_time=end_time,
+            total_number_of_staff=0,
+            required_number_of_staff=data['required_number_of_staff'],
+            amount=data['amount'],
+            created_by=request.user,
+            status='pending'
+        )
+        # Check that the number of employees is equal to the required number of staff
+        # If the number of employees is more than the required number of staff, return an error
+        # Delete the task from the database
+        # But do not create the shifts
+        if employee_id_length > int(task.required_number_of_staff):
+            task.delete()
+            return Response({'error': f'Cannot assign {employee_id_length} staff to a task that requires {task.required_number_of_staff} staff'}, status=status.HTTP_400_BAD_REQUEST)
+
         # Now create shifts for each employee
-        employee_ids = data.get('employee_id', [])
-        if not employee_ids:
-            return Response({'error': 'At least one employee must be selected'}, 
-                          status=status.HTTP_400_BAD_REQUEST)
-        
+        # Get the employee ids from the request data and create a shift for each employee
         successful_assignments = []
         failed_assignments = []
-        
-        for emp_id in employee_ids:
+        for emp_id in employee_id:
             try:
                 employee = Staff.objects.get(id=emp_id)
-                
-                # Check for availability and create shift
+                # There is no need to check if the employee is available as only available employees are selected
                 shift = Shift.objects.create(
                     task=task,
                     status='pending',
+                    start_date=start_date,
+                    end_date=end_date,
                     created_by=request.user
                 )
+                # Add the employee to the shift
                 shift.staff.add(employee)
                 successful_assignments.append(emp_id)
-                
+                task.total_number_of_staff += 1
+                task.save() # Increment the total number of staff and save the task
             except Exception as e:
                 failed_assignments.append({
                     'employee_id': emp_id,
                     'error': str(e)
                 })
+
+        # If the number of employees is equal to the required number of staff, update the task status to completed
+        if not successful_assignments:
+            task.delete()
+            return Response({'error': 'No employees were assigned to the task'}, status=status.HTTP_400_BAD_REQUEST)
         
         return Response({
             'message': 'Shift created successfully',
@@ -232,7 +258,7 @@ def get_all_open_task(request):
         # Get all tasks associated with the contracts that are not completed
         tasks = Task.objects.filter(
             contract__client__company=company,
-            status__in=['pending', 'assigned', 'selected']  # Include all non-completed statuses
+            is_completed=False
         )
         
         for task in tasks:
@@ -246,6 +272,8 @@ def get_all_open_task(request):
                 'task_start_date': task.start_date,
                 'task_end_date': task.end_date,
                 'created_by': task.created_by.get_full_name(),
+                'total_number_of_staff': task.total_number_of_staff,
+                'required_number_of_staff': task.required_number_of_staff,
                 'created_at': task.created_at,
             })
         # Cache the data for 5 minutes
@@ -267,13 +295,13 @@ def assign_task(request):
     if not request.data:
         return Response({'error': 'Please provide the task details'}, status=status.HTTP_400_BAD_REQUEST)
     
-    staff_ids = request.data.get('staff_ids', [])  # Expect an array of staff IDs
+    staff_ids = request.data.get('staff_ids', [])
     task_id = request.data.get('task_id')
+    start_date = request.data.get('start_date')
+    end_date = request.data.get('end_date')
     # Return an error if no staff ids are provided
     if not staff_ids:
         return Response({'error': 'Please select at least one staff member'}, status=status.HTTP_400_BAD_REQUEST)
-    
-
     try:
         task = get_object_or_404(Task, id=task_id)
         
@@ -292,23 +320,32 @@ def assign_task(request):
         # Check if the staff is available during the task period
         # Create a new shift and assign the task to the staff
         # Update the staff availability for the task duration
+        total_number_of_staff = len(staff_ids)
         for staff_id in staff_ids:
             try:
                 staff = get_object_or_404(Staff, id=staff_id)
 
+                # Check if the number of staff being assigned is more than the total number of staff required for the task
+                if total_number_of_staff >= task.required_number_of_staff:
+                    failed_assignments.append({
+                        'staff_id': staff_id,
+                        'reason': 'Cannot assign more staff than the required number of staff'
+                    })
+                    continue
+
                 # Check if staff is on leave during the task period
                 leave_exists = Leave.objects.filter(
                     staff=staff,
-                    start_date__lte=task.end_date,
-                    end_date__gte=task.start_date,
+                    start_date__lte=start_date,
+                    end_date__gte=end_date,
                     status__in=['pending', 'approved', 'on_leave']
                 ).exists()
 
                 # Check if staff is available during the task period
                 availability = Availability.objects.filter(
                     staff=staff,
-                    start_date__lte=task.start_date,
-                    end_date__gte=task.end_date,
+                    start_date__lte=start_date,
+                    end_date__gte=end_date,
                     start_time__lte=task.start_time,
                     end_time__gte=task.end_time,
                     availability_status='available'
@@ -321,10 +358,20 @@ def assign_task(request):
                     })
                     continue
 
+                # Check if the staff is already assigned to the task
+                # If the staff is already assigned to the task, return an error on the failed assignments list
+                if Shift.objects.filter(task=task, staff=staff).exists():
+                    failed_assignments.append({
+                        'staff_id': staff_id,
+                        'reason': 'Staff is already assigned to the task'
+                    })
+                    continue
                 # Create the shift and assign the task
                 shift = Shift.objects.create(
                     task=task,
                     status='pending',
+                    start_date=start_date,
+                    end_date=end_date,
                     created_by=request.user
                 )
                 shift.staff.add(staff)
@@ -333,15 +380,14 @@ def assign_task(request):
                 # Update staff availability for the task duration
                 new_unavailability = Availability.objects.create(
                     staff=staff,
-                    start_date=task.start_date,
-                    end_date=task.end_date,
+                    start_date=start_date,
+                    end_date=end_date,
                     start_time=task.start_time,
                     end_time=task.end_time,
                     availability_status='unavailable',
                     note=f'Assigned to task {task.task_serial}'
                 )
                 new_unavailability.save()
-
                 successfully_assigned.append(staff_id)
 
             except Staff.DoesNotExist:
@@ -640,17 +686,24 @@ def update_task(request):
         data = request.data.get('data')
         if not data:
             return Response({'error': 'No data provided'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        required_fields = ['task_id', 'task_serial', 'contract_name', 'contract_address', 'contract_postcode', 'task_description', 'task_start_time', 'task_end_time', 'task_end_date', 'task_start_date', 'required_number_of_staff']
+        for field in required_fields:
+            if not data.get(field):
+                return Response({'error': f'{field} is required'}, status=status.HTTP_400_BAD_REQUEST)
 
         # Get required fields with validation
         task_id = data.get('task_id')
-        if not task_id:
-            return Response({'error': 'task_id is required'}, status=status.HTTP_400_BAD_REQUEST)
-
-        # Get the task Object and validate it exists
         try:
             task = get_object_or_404(Task, id=task_id)
         except Task.DoesNotExist:
             return Response({'error': 'Task not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Format the dates and times
+        start_date = datetime.strptime(data['task_start_date'], '%Y-%m-%d').date()
+        end_date = datetime.strptime(data['task_end_date'], '%Y-%m-%d').date()
+        start_time = datetime.strptime(data['task_start_time'], '%H:%M').time()
+        end_time = datetime.strptime(data['task_end_time'], '%H:%M').time()
 
         # Update fields if provided
         if 'task_serial' in data:
@@ -664,13 +717,15 @@ def update_task(request):
         if 'task_description' in data:
             task.description = data['task_description']
         if 'task_start_time' in data:
-            task.start_time = data['task_start_time']
+            task.start_time = start_time
         if 'task_end_time' in data:
-            task.end_time = data['task_end_time']
+            task.end_time = end_time
         if 'task_end_date' in data:
-            task.end_date = data['task_end_date']
+            task.end_date = end_date
         if 'task_start_date' in data:
-            task.start_date = data['task_start_date']
+            task.start_date = start_date
+        if 'required_number_of_staff' in data:
+            task.required_number_of_staff = data['required_number_of_staff']
 
         # Save both task and contract
         task.contract.save()
@@ -694,14 +749,9 @@ def get_available_employees(request):
     3. Have no shifts assigned during the requested time period
     """
     try:
-        # Get current_date from request params
-        current_date_str = request.GET.get('current_date')
-        if not current_date_str:
-            return Response({'error': 'current_date parameter is required'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        # Parse the date string into datetime objects
-        now = datetime.strptime(current_date_str, '%Y-%m-%d')
-        later = now + timedelta(days=1)
+        # Get current date using timezone-aware datetime
+        now = timezone.localtime().date()
+
         # Get the user company
         try:
             if hasattr(request.user, 'is_owner') and request.user.is_owner:
@@ -716,12 +766,11 @@ def get_available_employees(request):
         
         # Get the cache key for the employees list
         # Return the employees list from cache if it exists 
-        cache_key = get_cache_key('available_employees', company.id, now.date())
+        cache_key = get_cache_key('available_employees', company.id, now)
         cache_data = cache.get(cache_key)
         if cache_data:
             return Response({'employees': cache_data}, status=status.HTTP_200_OK)
 
-        
         # Get staff members who:
         # 1. Belong to the company
         # 2. Have availability set for this period
@@ -733,26 +782,42 @@ def get_available_employees(request):
         ).exclude(
             # Exclude staff who are on leave
             staff_leave__status__in=['pending', 'approved', 'on_leave'],
-            staff_leave__start_date__lte=now.date(),
-            staff_leave__end_date__gte=now.date()
+            staff_leave__start_date__lte=now,
+            staff_leave__end_date__gte=now
         ).exclude(
             # Exclude staff who have shifts during this period
             shift_staff__status__in=['assigned', 'started'],
-            shift_staff__task__start_date=now.date(),
-            #shift_staff__task__end_date=later.date()
+            shift_staff__task__start_date=now
         ).distinct()
-        print("Available users:", available_users)
 
         available_employees = [{
             'employee_name': staff.user.get_full_name(),
             'employee_id': staff.id,
         } for staff in available_users]
+        print("available_employees", available_employees)
+        
         # Cache the employees list for 1 hour
         cache.set(cache_key, available_employees, timeout=settings.CACHE_TIMEOUT)
         return Response({'available_employees': available_employees}, status=status.HTTP_200_OK)
-    except ValueError:
-        return Response({'error': 'Invalid date format. Use YYYY-MM-DD'}, status=status.HTTP_400_BAD_REQUEST)
+        
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+@admin_required
+@ratelimit(key='user', rate='100/h', method=['DELETE'])
+def delete_task(request):
+    """Deletes a task."""
+    try:
+        task_id = request.data.get('task_id')
+        if not task_id:
+            return Response({'error': 'task_id is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        task = get_object_or_404(Task, id=task_id)
+        task.delete()
+        return Response({'message': 'Task deleted successfully'}, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)

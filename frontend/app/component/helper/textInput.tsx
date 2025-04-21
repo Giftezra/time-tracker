@@ -13,7 +13,7 @@ const TextInputComponent = ({
   autoComplete,
   editable,
   keyboardType,
-  uppercase,
+  onSubmit,
 }: {
   text: string;
   placeholder: string | undefined;
@@ -22,7 +22,7 @@ const TextInputComponent = ({
   isMultiline?: boolean;
   lines?: number;
   secureTextEntry?: boolean;
-  uppercase?: boolean;
+  onSubmit?: () => void;
   autoComplete?:
     | "additional-name"
     | "address-line1"
@@ -85,19 +85,20 @@ const TextInputComponent = ({
       <View
         style={[
           styles.textheader,
-          { backgroundColor: isFocused || value ? textinput : "transparent" },
+          { backgroundColor: isFocused || value ? textinput : "transparent", borderRadius: 5, },
         ]}
       >
         <Text style={[styles.text, { color: secondaryColor }]}>
           {isFocused || value ? text : ""}
         </Text>
       </View>
-      <View style={[styles.textInputContainer, { backgroundColor: textinput,}]}>
+      <View style={[styles.textInputContainer, { backgroundColor: textinput }]}>
         <TextInput
           value={value}
           onChangeText={setValue}
+          onSubmitEditing={onSubmit}
           placeholder={placeholder}
-          style={[styles.textInput]}
+          style={styles.textInput}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           multiline={isMultiline}

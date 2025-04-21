@@ -14,7 +14,7 @@ from management.models import Shift
 from management.helpers import send_notification
 
 @shared_task
-def send_staff_onboard_email(company_name, first_name, email, temporary_password, role, recipient_email):
+def send_staff_onboard_email(self,company_name, first_name, email, temporary_password, role, recipient_email):
   """ Method will send an email to the staff member with the onboarding details which will include the app store and play store urls
    to enable them to download the app and login to the app """
   context = {
@@ -39,7 +39,7 @@ def send_staff_onboard_email(company_name, first_name, email, temporary_password
 
 
 @shared_task
-def send_owner_onboarding_email(email):
+def send_owner_onboarding_email(self,email):
   """ Method will send an email to the owner with the onboarding details which will include the app store and play store urls
    to enable them to download the app and login to the app """
   context = {
@@ -60,7 +60,7 @@ def send_owner_onboarding_email(email):
 
 
 @shared_task
-def send_create_company_email(name, registration_number, email, service_helpline):
+def send_create_company_email(self,name, registration_number, email, service_helpline):
   """ Method will send an email to the owner with the onboarding details which will include the app store and play store urls
    to enable them to download the app and login to the app """
   context = {
@@ -70,7 +70,7 @@ def send_create_company_email(name, registration_number, email, service_helpline
     'service_helpline': service_helpline,
     'login_url': settings.LOGIN_URL
   }
-  html_message = render_to_string('emails/create_email_confirmation.html', context)
+  html_message = render_to_string(self, 'emails/create_email_confirmation.html', context)
   plain_message = strip_tags(html_message)
   send_mail(
     subject='Company Created Successfully',
@@ -83,7 +83,7 @@ def send_create_company_email(name, registration_number, email, service_helpline
 
 
 @shared_task
-def send_contract_created_email(client_name, contract_name, start_date, end_date, email):
+def send_contract_created_email(self,client_name, contract_name, start_date, end_date, email):
   """ Method will send an email to the owner with the onboarding details which will include the app store and play store urls
    to enable them to download the app and login to the app """
   context = {
@@ -93,7 +93,7 @@ def send_contract_created_email(client_name, contract_name, start_date, end_date
     'end_date': end_date,
     'login_url': settings.LOGIN_URL
   }
-  html_message = render_to_string('emails/create_contract.html', context)
+  html_message = render_to_string(self, 'emails/create_contract.html', context)
   plain_message = strip_tags(html_message)
   send_mail(
     subject='A Team Member Has Created A New Contract',
@@ -106,7 +106,7 @@ def send_contract_created_email(client_name, contract_name, start_date, end_date
 
 
 @shared_task
-def send_client_created_email(client_name, client_contact_number, client_email, services, email):
+def send_client_created_email(self,client_name, client_contact_number, client_email, services, email):
   """ Method will send an email to the owner with the onboarding details which will include the app store and play store urls
    to enable them to download the app and login to the app """
   context = {
@@ -116,7 +116,7 @@ def send_client_created_email(client_name, client_contact_number, client_email, 
     'services': services,
     'login_url': settings.LOGIN_URL
   }
-  html_message = render_to_string('emails/create_client.html', context)
+  html_message = render_to_string(self, 'emails/create_client.html', context)
   plain_message = strip_tags(html_message)
   send_mail(
     subject='A Team Member Has Created A New Client',
@@ -129,7 +129,7 @@ def send_client_created_email(client_name, client_contact_number, client_email, 
 
 
 @shared_task
-def send_contract_updated_email(contract_name, client_name, old_end_date, new_end_date, recipient_emails):
+def send_contract_updated_email(self,contract_name, client_name, old_end_date, new_end_date, recipient_emails):
     """Send email notification when a contract is updated"""
     subject = f'Contract Updated: {contract_name}'
     context = {
@@ -139,7 +139,7 @@ def send_contract_updated_email(contract_name, client_name, old_end_date, new_en
         'new_end_date': new_end_date
     }
     
-    html_content = render_to_string('emails/contract_updated_email.html', context)
+    html_content = render_to_string(self, 'emails/contract_updated_email.html', context)
     text_content = strip_tags(html_content)
     
     email = EmailMultiAlternatives(
@@ -154,7 +154,7 @@ def send_contract_updated_email(contract_name, client_name, old_end_date, new_en
 
 
 @shared_task
-def send_trial_ending_email(company_name, days_left, owner_email):
+def send_trial_ending_email(self,company_name, days_left, owner_email):
     """Send email notification to company owner about trial period ending"""
     context = {
         'company_name': company_name,
@@ -163,7 +163,7 @@ def send_trial_ending_email(company_name, days_left, owner_email):
         'support_email': settings.SUPPORT_EMAIL,
     }
     
-    html_message = render_to_string('emails/trial_ending_notification.html', context)
+    html_message = render_to_string(self, 'emails/trial_ending_notification.html', context)
     plain_message = strip_tags(html_message)
     
     send_mail(
@@ -177,8 +177,8 @@ def send_trial_ending_email(company_name, days_left, owner_email):
 
 
 
-# Create a Celery task or cron job
-def calculate_overage():
+@shared_task
+def calculate_overage(self):
     companies = Company.objects.all()
     
     for company in companies:
@@ -212,8 +212,8 @@ def calculate_overage():
             
 
               
-
-def generate_bills():
+@shared_task
+def generate_bills(self):
     subscriptions = SubscriptionPlan.objects.filter(is_active=True)
     
     for sub in subscriptions:
@@ -250,7 +250,7 @@ def generate_bills():
             sub.save()
 
 @shared_task
-def send_shift_reminder_to_users():
+def send_shift_reminder_to_users(self):
     """ This method will send a reminder to users that have shifts starting in the next 12 hours """
     try:
         # Get shifts starting in next 12 hours that are assigned
@@ -275,7 +275,7 @@ def send_shift_reminder_to_users():
         return False
 
 @shared_task 
-def check_late_shift_signins():
+def check_late_shift_signins(self):
     """ Check for shifts that should have started but staff haven't signed in """
     try:
         # Get shifts that should have started in last hour but still in assigned status

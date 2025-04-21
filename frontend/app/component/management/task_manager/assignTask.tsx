@@ -14,6 +14,7 @@ import { OpenTaskProps } from "@/app/types/management/task";
 import { FlatList } from "react-native-gesture-handler";
 import { useManagementTask } from "@/app/context/management/task manager/managementTaskProvider";
 import { useAuth } from "@/app/authentication";
+import DateScroller from "@/app/component/helper/dateScroller";
 
 const AssignTaskModal = ({
   task,
@@ -22,15 +23,33 @@ const AssignTaskModal = ({
   task: OpenTaskProps;
   onClose: () => void;
 }) => {
-  const { axiosInstance } = useAuth();
+  const { axiosInstance, setIsAlertVisible, setAlertConfig } = useAuth();
   const { employeeList } = useManagementTask();
-
   const [selectedEmployees, setSelectedEmployees] = useState<EmployeeType[]>(
     []
   );
   const [employeeToggle, setEmployeeToggle] = useState(false);
-
   const handleEmployeeDisplay = () => setEmployeeToggle(!employeeToggle);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showStartDatePicker, setShowStartDatePicker] = useState(false);
+  const [showEndDatePicker, setShowEndDatePicker] = useState(false);
+
+  // Parse task dates and set initial state
+  const parseDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return {
+      day: date.getDate(),
+      month: date.getMonth() + 1,
+      year: date.getFullYear(),
+    };
+  };
+
+  // Replace the existing startDate and endDate state initialization
+  const [startDate, setStartDate] = useState(
+    parseDate(task.task_start_date || "")
+  );
+  const [endDate, setEndDate] = useState(parseDate(task.task_end_date || ""));
+
   const innerBackground = useThemeColor({}, "innerBackground");
   const text = useThemeColor({}, "text");
   const primaryColor = useThemeColor({}, "primaryColor");
@@ -50,35 +69,200 @@ const AssignTaskModal = ({
     });
   };
 
+  const formatDate = (date: typeof startDate) => {
+    return `${String(date.day).padStart(2, "0")}-${String(date.month).padStart(
+      2,
+      "0"
+    )}-${date.year}`;
+  };
+
+  const dateSection = (
+    <View style={styles.datesContainer}>
+      <View style={styles.dateRow}>
+        <Text style={[styles.text, { color: "black" }]}>Start Date:</Text>
+        <Pressable
+          style={styles.dateButton}
+          onPress={() => setShowStartDatePicker(true)}
+        >
+          <Text style={styles.dateButtonText}>{formatDate(startDate)}</Text>
+          <Text style={styles.calendarIcon}>📅</Text>
+        </Pressable>
+      </View>
+
+      <View style={styles.dateRow}>
+        <Text style={[styles.text, { color: "black" }]}>End Date:</Text>
+        <Pressable
+          style={styles.dateButton}
+          onPress={() => setShowEndDatePicker(true)}
+        >
+          <Text style={styles.dateButtonText}>{formatDate(endDate)}</Text>
+          <Text style={styles.calendarIcon}>📅</Text>
+        </Pressable>
+      </View>
+
+      {showStartDatePicker && (
+        <View style={styles.datePickerOverlay}>
+          <View style={styles.datePickerContainer}>
+            <DateScroller
+              day={startDate.day}
+              month={startDate.month}
+              year={startDate.year}
+              onChangeDay={(day) => setStartDate((prev) => ({ ...prev, day }))}
+              onChangeMonth={(month) =>
+                setStartDate((prev) => ({ ...prev, month }))
+              }
+              onChangeYear={(year) =>
+                setStartDate((prev) => ({ ...prev, year }))
+              }
+            />
+            <TouchableOpacity
+              style={styles.confirmDateButton}
+              onPress={() => setShowStartDatePicker(false)}
+            >
+              <Text style={styles.confirmDateText}>Confirm</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
+      {showEndDatePicker && (
+        <View style={styles.datePickerOverlay}>
+          <View style={styles.datePickerContainer}>
+            <DateScroller
+              day={endDate.day}
+              month={endDate.month}
+              year={endDate.year}
+              onChangeDay={(day) => setEndDate((prev) => ({ ...prev, day }))}
+              onChangeMonth={(month) =>
+                setEndDate((prev) => ({ ...prev, month }))
+              }
+              onChangeYear={(year) => setEndDate((prev) => ({ ...prev, year }))}
+            />
+            <TouchableOpacity
+              style={styles.confirmDateButton}
+              onPress={() => setShowEndDatePicker(false)}
+            >
+              <Text style={styles.confirmDateText}>Confirm</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+    </View>
+  );
+
   /**
-   * Used to assigned the selected task to a list of employees
-   * Return the response from the server and show the alert to the user based on the response
-   * If the response is success, show the alert to the user and close the modal
-   * If the response is error, show the alert to the user and close the modal
+   * Handles the assignment of a task to selected employees.
+   * Makes an API call to assign the task and processes the response to show appropriate messages.
+   *
+   * The response can include:
+   * - Successful assignments: List of employee IDs who were successfully assigned
+   * - Failed assignments: List of employee IDs and reasons why assignment failed
+   * - General success/error messages
+   *
+   * @returns {Promise<void>}
    */
   const handleAssignTask = async () => {
+    // Validate that employees are selected before proceeding
     if (selectedEmployees.length === 0) {
-      Alert.alert("Error", "Please select at least one employee");
+      setIsAlertVisible(true);
+      setAlertConfig({
+        title: "Error",
+        message: "Please select at least one employee",
+        onConfirm: () => setIsAlertVisible(false),
+        isVisible: true,
+      });
       return;
     }
 
+    // Format dates for API request
+    const startDateString = `${startDate.year}-${String(
+      startDate.month
+    ).padStart(2, "0")}-${String(startDate.day).padStart(2, "0")}`;
+    const endDateString = `${endDate.year}-${String(endDate.month).padStart(
+      2,
+      "0"
+    )}-${String(endDate.day).padStart(2, "0")}`;
+
     try {
-      // Get array of employee IDs
+      // Prepare employee IDs for the request
       const employeeIds = selectedEmployees.map((emp) => emp.employee_id);
-      // Call the context method to assign task
+
+      // Make API call to assign task
       const response = await axiosInstance.post("/api/assign/task/", {
         task_id: task.task_id,
         staff_ids: employeeIds,
+        start_date: startDateString,
+        end_date: endDateString,
       });
+
       if (response.status === 200) {
-        Alert.alert("Task Assignment", response.data);
-        onClose();
-      } else {
-        Alert.alert("Error", "Failed to assign task. Please try again.");
+        // Process successful response
+        let messageComponents = [];
+
+        // Add main response message if it exists
+        if (response.data.message) {
+          messageComponents.push(response.data.message);
+        }
+
+        // Add successful assignments message if any
+        if (response.data.successful_assignments?.length > 0) {
+          // Map employee IDs to names for better readability
+          const successfulNames = response.data.successful_assignments
+            .map(
+              (id: string) =>
+                selectedEmployees.find((emp) => emp.employee_id === id)
+                  ?.employee_name
+            )
+            .filter(Boolean)
+            .join(", ");
+
+          messageComponents.push(
+            `Successfully assigned employees: ${successfulNames}`
+          );
+        }
+
+        // Add failed assignments message if any
+        if (response.data.failed_assignments?.length > 0) {
+          const failureMessages = response.data.failed_assignments
+            .map((failure: { employee_id: string; reason: string }) => {
+              const employeeName =
+                selectedEmployees.find(
+                  (emp) => emp.employee_id === failure.employee_id
+                )?.employee_name || failure.employee_id;
+              return `- ${employeeName}: ${failure.reason}`;
+            })
+            .join("\n");
+
+          messageComponents.push(`Failed assignments:\n${failureMessages}`);
+        }
+
+        // Show success alert with combined message
+        setIsAlertVisible(true);
+        setAlertConfig({
+          title: "Task Assignment Results",
+          message: messageComponents.join("\n\n"),
+          onConfirm: () => {
+            setIsAlertVisible(false);
+            onClose(); // Close modal only on confirmation
+          },
+          isVisible: true,
+        });
       }
-    } catch (error) {
-      Alert.alert("Error", "Failed to assign task. Please try again.");
-      console.error("Error assigning task:", error);
+    } catch (error: any) {
+      // Handle error response
+      const errorMessage = error.response?.data?.message
+        ? typeof error.response.data.message === "object"
+          ? JSON.stringify(error.response.data.message)
+          : String(error.response.data.message)
+        : "Failed to assign task. Please try again.";
+
+      setIsAlertVisible(true);
+      setAlertConfig({
+        title: "Error",
+        message: errorMessage,
+        onConfirm: () => setIsAlertVisible(false),
+        isVisible: true,
+      });
     }
   };
 
@@ -91,18 +275,9 @@ const AssignTaskModal = ({
         {task.contract_name}
       </Text>
       <Text style={[styles.text, { color: "black" }]}>{task.task_serial}</Text>
-      <View style={styles.dateContainer}>
-        <Text style={[styles.text, { color: "black" }]}>Start Date:</Text>
-        <Text style={[styles.text, { color: "black" }]}>
-          {task.task_start_date}
-        </Text>
-      </View>
-      <View style={styles.dateContainer}>
-        <Text style={[styles.text, { color: "black" }]}>End Date:</Text>
-        <Text style={[styles.text, { color: "black" }]}>
-          {task.task_end_date}
-        </Text>
-      </View>
+
+      {dateSection}
+
       {/* Contains the details of the selected task */}
       <View
         style={[
@@ -181,7 +356,7 @@ const AssignTaskModal = ({
             }}
           />
         )}
-      </View> 
+      </View>
       <TouchableOpacity
         onPress={handleAssignTask}
         style={[
@@ -333,5 +508,71 @@ const styles = StyleSheet.create({
   chipText: {
     fontSize: Platform.OS === "web" ? 10 : 14,
     fontFamily: "BarlowRegular",
+  },
+
+  datesContainer: {
+    width: "100%",
+    marginVertical: 10,
+  },
+
+  dateRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginVertical: 5,
+    paddingHorizontal: 10,
+  },
+
+  dateButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f5f5f5",
+    padding: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#ddd",
+  },
+
+  dateButtonText: {
+    fontSize: 16,
+    marginRight: 10,
+    color: "#333",
+  },
+
+  calendarIcon: {
+    fontSize: 18,
+  },
+
+  datePickerOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 1000,
+  },
+
+  datePickerContainer: {
+    backgroundColor: "white",
+    padding: 5,
+    borderRadius: 10,
+    width: "90%",
+    alignItems: "center",
+  },
+
+  confirmDateButton: {
+    backgroundColor: "#0066ff",
+    padding: 10,
+    borderRadius: 8,
+    marginTop: 15,
+    width: "100%",
+    alignItems: "center",
+  },
+
+  confirmDateText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "600",
   },
 });

@@ -11,7 +11,7 @@ import React from "react";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { SubscriptionPlanTiers } from "@/app/types/management/payment";
-import CustomizePlan from "./CustomizePlan";
+
 interface Props {
   subscriptionPlan: SubscriptionPlanTiers ;
   isSelected: boolean;
@@ -78,7 +78,11 @@ const SubscriptionTierComponent = ({
 
   return (
     <TouchableOpacity
-      onPress={onSelect}
+      onPress={() => {
+        console.log("Plan selected:", subscriptionPlan.name);
+        onSelect();
+      }}
+      activeOpacity={0.7}
       style={[
         styles.container,
         isSelected && styles.selectedContainer,
