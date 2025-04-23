@@ -117,8 +117,8 @@ export default function MainManagementLayout() {
         <MessageProvider>
           {Platform.OS !== "web" && <Header />}
           <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="dashboard" options={{ headerShown: false }}/>
-            <Stack.Screen name="calendar" options={{ headerShown: false }}/>
+            <Stack.Screen name="dashboard" options={{ headerShown: false }} />
+            <Stack.Screen name="calendar" options={{ headerShown: false }} />
             <Stack.Screen name="client" options={{ headerShown: false }} />
             <Stack.Screen name="employee" options={{ headerShown: false }} />
             <Stack.Screen name="messages" options={{ headerShown: false }} />
@@ -136,22 +136,28 @@ export default function MainManagementLayout() {
 
       {/* Display the drawer when the user clicks on the menu button in the header, and also contains the close button to close the drawer */}
       {showDrawer && (
-        <View style={styles.sideComponent}>
-          <ScrollView
-            style={{ flex: 1 }}
-            contentContainerStyle={{ flexGrow: 1 }}
-            showsVerticalScrollIndicator={true}
-            nestedScrollEnabled={true}
-          >
-            <SideComponent closeDrawer={() => setShowDrawer(false)} />
-          </ScrollView>
+        <>
           <Pressable
-            style={styles.closeDrawer}
+            style={styles.overlay}
             onPress={() => setShowDrawer(false)}
-          >
-            <Ionicons name="close" size={24} color={background} />
-          </Pressable>
-        </View>
+          />
+          <View style={styles.sideComponent}>
+            <ScrollView
+              style={{ flex: 1 }}
+              contentContainerStyle={{ flexGrow: 1 }}
+              showsVerticalScrollIndicator={true}
+              nestedScrollEnabled={true}
+            >
+              <SideComponent closeDrawer={() => setShowDrawer(false)} />
+            </ScrollView>
+            <Pressable
+              style={styles.closeDrawer}
+              onPress={() => setShowDrawer(false)}
+            >
+              <Text>❌</Text>
+            </Pressable>
+          </View>
+        </>
       )}
     </SafeAreaView>
   );
@@ -171,6 +177,16 @@ const styles = StyleSheet.create({
 
   leftbuttons: {
     padding: 5,
+  },
+
+  overlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    zIndex: 99,
   },
 
   versioncontainer: {
@@ -209,13 +225,6 @@ const styles = StyleSheet.create({
     backgroundColor: "gray",
     padding: 10,
     shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
   },
 
   versionText: {

@@ -5,7 +5,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useSideComponentContext } from "@/app/context/staff/sideComponentProvider";
 
@@ -37,7 +37,30 @@ const LiveEventComponent = () => {
   const highlight = useThemeColor({}, "highlight");
   const icon = useThemeColor({}, "icon");
   const innerBackground = useThemeColor({}, "innerBackground");
+  const [currentTime, setCurrentTime] = useState("");
 
+  /* Start the timer when the shift starts */
+  useEffect(() => {
+    if (event.status === "started" && event.start_time) {
+      const timer = setInterval(() => {
+        const now = new Date();
+        const hours = now.getHours().toString().padStart(2, "0");
+        const minutes = now.getMinutes().toString().padStart(2, "0");
+        setCurrentTime(`${hours}:${minutes}`);
+      }, 1000);
+
+      return () => clearInterval(timer);
+    }
+  }, [event.status]);
+
+  // Format the time to HH:mm
+  const formatTime = (timeString: string) => {
+    if (!timeString) return "";
+    const [hours, minutes] = timeString.split(":");
+    return `${hours}:${minutes}`;
+  };
+
+  /* Handle the start shift button press by calling the start shift api and then updating the shifts states by calling the fetchUpcomingShifts function */
   const handleStartPress = async () => {
     if (!event.shift_id) return;
     setIsStarting(true);
@@ -51,6 +74,7 @@ const LiveEventComponent = () => {
     }
   };
 
+  /* End the shift by calling the end shift api and then updating the shifts states by calling the fetchUpcomingShifts function */
   const handleEndPress = async () => {
     if (!event.shift_id) return;
     setIsEnding(true);
@@ -114,7 +138,7 @@ const LiveEventComponent = () => {
               <Text style={[styles.eventText, { color: text }]}>now</Text>
             </TouchableOpacity>
             <Text style={[styles.contractName, { color: text }]}>
-              {event.contract_name}
+              {event.contract_name || "No contract name"}
             </Text>
           </View>
         </View>
@@ -124,18 +148,24 @@ const LiveEventComponent = () => {
         <View style={styles.timeContainer}>
           <View style={styles.timeBlock}>
             <Text style={[styles.eventTimeText, { color: text }]}>
-              {event.start_time}
+              {event.status === "started"
+                ? currentTime
+                : formatTime(event.start_time || "")}
             </Text>
             <Text style={[styles.timePeriod, { color: secondaryColor }]}>
-              am
+              {parseInt(event.start_time?.split(":")[0] || "0") >= 12
+                ? "pm"
+                : "am"}
             </Text>
           </View>
           <View style={styles.timeBlock}>
             <Text style={[styles.eventTimeText, { color: text }]}>
-              {event.end_time}
+              {formatTime(event.end_time || "")}
             </Text>
             <Text style={[styles.timePeriod, { color: secondaryColor }]}>
-              pm
+              {parseInt(event.end_time?.split(":")[0] || "0") >= 12
+                ? "pm"
+                : "am"}
             </Text>
           </View>
         </View>
@@ -168,7 +198,11 @@ const LiveEventComponent = () => {
           ]}
         >
           <Text style={[styles.buttonText, { color: text }]}>
-            {isStarting ? "Starting..." : event.status === "started" ? "Started" : "start"}
+            {isStarting
+              ? "Starting..."
+              : event.status === "started"
+              ? "Started"
+              : "start"}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -183,7 +217,11 @@ const LiveEventComponent = () => {
           ]}
         >
           <Text style={[styles.buttonText, { color: text }]}>
-            {isEnding ? "Ending..." : event.status !== "started" ? "Ended" : "end"}
+            {isEnding
+              ? "Ending..."
+              : event.status !== "started"
+              ? "Ended"
+              : "end"}
           </Text>
         </TouchableOpacity>
       </View>

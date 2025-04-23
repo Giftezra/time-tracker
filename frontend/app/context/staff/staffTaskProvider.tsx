@@ -1,17 +1,10 @@
 import { useContext, createContext, useState, ReactNode, useMemo } from "react";
-import {
+import TaskProviderInterface, {
   TaskDetailsInterface,
   TaskInterface,
-  TaskProviderInterface,
 } from "@/app/types/staff/task";
-import { BASE_URL } from "@/app/utils/urls";
-import { Alert } from "react-native";
-import { TaskDetailsProps } from "@/app/types/management/task";
 import { useAuth } from "@/app/authentication";
-
-/**
- * Creata  new context for the task.
- */
+import { MarkedDatesType } from "@/app/types/staff/availability";
 const TaskContext = createContext<TaskProviderInterface | undefined>(undefined);
 
 /**
@@ -19,52 +12,15 @@ const TaskContext = createContext<TaskProviderInterface | undefined>(undefined);
  */
 const StaffTaskProvider = ({ children }: { children: ReactNode }) => {
   // Import the axiosInstance from the AuthProvider
-  const { axiosInstance } = useAuth();
+  const { axiosInstance, setAlertConfig, setIsAlertVisible } = useAuth();
+  const [markedDates, setMarkedDates] = useState<MarkedDatesType>({});
 
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [taskDates, setTaskDates] = useState<any[]>([]);
   const [tasks, setTasks] = useState<TaskInterface[]>([]);
-  const [taskDetials, setTaskDetials] = useState<TaskDetailsInterface>({
-    id: "",
-    task_serial: "",
-    site_name: "",
-    site_address: "",
-    site_postcode: "",
-    site_city: "",
-    start_time: "",
-    end_time: "",
-    start_date: "",
-    description: "",
-    pay: "",
-    department: "",
-  });
-
-  /**
-   * This is the marked dates object that is used to mark the days returned from the server as occupied days where there is an active task.
-   * The selected date is marked with a red color to indicate that the user has a task on that day.
-   */
-  const markedDates = useMemo(() => {
-    // Convert taskDates array into an object for react-native-calendars
-    return taskDates.reduce((acc: { [key: string]: any }, date) => {
-      acc[date] = {
-        marked: true, // Show a dot
-        dotColor: "blue", // Customize dot color
-      };
-      return acc;
-    }, {});
-  }, [taskDates]); // Only depend on taskDates
-
-  /**
-   * Manage the state of the selected date
-   * @param id
-   * @returns
-   */
-  const handleDayPressEvent = (day: Date) => {
-    return {
-      date: day,
-      tasks: [], // Assuming tasks is an empty array for now
-    };
-  };
+  const [taskDetails, setTaskDetails] = useState<
+    TaskDetailsInterface | undefined
+  >(undefined);
 
   /**
    * Toggle the modal display
@@ -79,24 +35,36 @@ const StaffTaskProvider = ({ children }: { children: ReactNode }) => {
    * The unassigned tasks will then be marked on the calendar with a different color to indicate that the user can apply for the task.
    * @param month: The month selected by the user
    */
-  const handleMonthChangeEvent = async (month: any): Promise<any[]> => {
+  const handleMonthChangeEvent = async (month: any) => {
     try {
-      const response = await axiosInstance.get("/api/get/task/dates/", {
+      const response = await axiosInstance.get("/api/get/monthly/tasks/", {
         params: { year: month.year, month: month.month },
       });
 
-      if (response.data.task_dates) {
-        setTaskDates(response.data.task_dates); // Update taskDates state
-      } else {
-        alert(response.data.message);
-        setTaskDates([]); // Clear if no dates
-      }
-
-      return response.data.task_dates || [];
-    } catch (error) {
+      setIsAlertVisible(true);
+      setAlertConfig({
+        title: "Success",
+        message: response.data.message || "Tasks fetched successfully",
+        onConfirm() {
+          setIsAlertVisible(false);
+          setMarkedDates(response.data.marked_dates || {});
+        },
+        isVisible: true,
+        type: "success",
+      });
+    } catch (error: any) {
       console.log(error);
-      setTaskDates([]); // Clear on error
-      return [];
+      setIsAlertVisible(true);
+      setAlertConfig({
+        title: "Error",
+        message: error.response?.data?.error || "Failed to fetch tasks",
+        onConfirm() {
+          setIsAlertVisible(false);
+          setMarkedDates({});
+        },
+        isVisible: true,
+        type: "error",
+      });
     }
   };
 
@@ -107,23 +75,41 @@ const StaffTaskProvider = ({ children }: { children: ReactNode }) => {
    * @param day is the selected day by the user
    */
   const handleDaySelectedEvent = async (day: any) => {
+    if (isDateDisabled(day.dateString, markedDates)) {
+      return; // Ignore press on disabled dates
+    }
+    
     try {
-      // Create the response object to get the available tasks for the selected day
-      const response = await axiosInstance.get("/api/get/available/tasks/", {
+      const response = await axiosInstance.get("/api/get/day/tasks/", {
         params: {
-          // Pass the day params
           day: day.day,
         },
       });
-      if (response.data.tasks) {
-        setTasks(response.data.tasks);
-      } else {
-        alert(response.data.message);
-        setTasks([]);
-      }
-    } catch (error) {
+
+      setIsAlertVisible(true);
+      setAlertConfig({
+        title: "Success",
+        message: response.data.message || "Tasks fetched successfully",
+        onConfirm() {
+          setIsAlertVisible(false);
+          setTasks(response.data.tasks || []);
+        },
+        isVisible: true,
+        type: "success",
+      });
+    } catch (error: any) {
       console.log(error);
-      setTasks([]);
+      setIsAlertVisible(true);
+      setAlertConfig({
+        title: "Error",
+        message: error.response?.data?.error || "Failed to fetch tasks",
+        onConfirm() {
+          setIsAlertVisible(false);
+          setTasks([]);
+        },
+        isVisible: true,
+        type: "error",
+      });
     }
   };
 
@@ -133,7 +119,7 @@ const StaffTaskProvider = ({ children }: { children: ReactNode }) => {
    * fetch the task details from the server and display the task details to the user.
    * @param id is the task id assigned to the user
    */
-  const handleTaskDetails = async (id: string) => {
+  const getCompleteTaskDetails = async (id: string) => {
     console.log("id", id);
     try {
       const response = await axiosInstance.get("/api/get/task/details", {
@@ -142,7 +128,7 @@ const StaffTaskProvider = ({ children }: { children: ReactNode }) => {
         },
       });
       if (response.data.task_details) {
-        setTaskDetials(response.data.task_details);
+        setTaskDetails(response.data.task_details);
         setIsModalVisible(true);
       } else {
       }
@@ -156,10 +142,13 @@ const StaffTaskProvider = ({ children }: { children: ReactNode }) => {
    * It returns the time difference in hours and minutes.
    */
   const calculateTimeDifference = () => {
-    const [startHour, startMinute] = taskDetials.start_time
+    if (!taskDetails?.start_time || !taskDetails?.end_time)
+      return "0 hours 0 minutes";
+
+    const [startHour, startMinute] = taskDetails.start_time
       .split(":")
       .map(Number);
-    const [endHour, endMinute] = taskDetials.end_time.split(":").map(Number);
+    const [endHour, endMinute] = taskDetails.end_time.split(":").map(Number);
 
     const startTimeInMinutes = startHour * 60 + startMinute;
     const endTimeInMinutes = endHour * 60 + endMinute;
@@ -175,9 +164,11 @@ const StaffTaskProvider = ({ children }: { children: ReactNode }) => {
    * This methood is used to calculate when the shift is bound to start, given the current date and time.
    */
   const calculateTaskStartTime = () => {
+    if (!taskDetails?.start_time || !taskDetails?.start_date)
+      return "0 hours 0 minutes";
     const currentDateTime = new Date();
-    const taskStartDate = new Date(taskDetials.start_date);
-    const [startHour, startMinute] = taskDetials.start_time
+    const taskStartDate = new Date(taskDetails?.start_date || "");
+    const [startHour, startMinute] = taskDetails?.start_time
       .split(":")
       .map(Number);
 
@@ -209,25 +200,29 @@ const StaffTaskProvider = ({ children }: { children: ReactNode }) => {
         `/api/apply/task/?task_id=${id}`
       );
       alert(response.data.message);
-    } catch (error:any) {
+    } catch (error: any) {
       console.log(error);
-      // Add better error handling
       alert(error.response?.data?.error || "Failed to apply for task");
     }
   };
 
+  const isDateDisabled = (dateString: string, markedDates: any) => {
+    return markedDates[dateString]?.marked;
+  };
+
   const value: TaskProviderInterface = {
     isModalVisible,
-    handleTaskDetails,
+    getCompleteTaskDetails,
     handleModalDisplay,
     markedDates,
     tasks,
-    taskDetials,
+    taskDetails,
     calculateTimeDifference,
     calculateTaskStartTime,
     applyForTask,
     handleMonthChangeEvent,
     handleDaySelectedEvent,
+    isDateDisabled,
   };
 
   return <TaskContext.Provider value={value}>{children}</TaskContext.Provider>;
@@ -238,7 +233,7 @@ const StaffTaskProvider = ({ children }: { children: ReactNode }) => {
  * Throw an error when the context is not used within the provider.
  * @returns
  */
-export const useTask = () => {
+export const useStaffTask = () => {
   const context = useContext(TaskContext);
   if (context === undefined) {
     throw new Error("useTask must be used within a TaskProvider");

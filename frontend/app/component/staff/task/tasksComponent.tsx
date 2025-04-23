@@ -24,23 +24,28 @@ const TasksComponent = ({
           <Text style={[styles.siteNameText, { color: otherText }]}>
             {props.site_name}
           </Text>
-          <Text style={[styles.siteNameText, { color: text }]}>
+          <Text style={[styles.addressText, { color: text }]}>
             {props.site_address}
           </Text>
         </View>
-        <Text style={[styles.text, { color: text }]}>
+        <Text style={[styles.timeText, { color: text }]}>
           {props.start_time} - {props.end_time}
         </Text>
-        <Text style={[styles.text, { color: text }]}>{props.start_date}</Text>
+        <Text style={[styles.dateText, { color: text }]}>
+          {props.start_date}
+        </Text>
       </View>
 
       <Pressable
         onPress={onPress}
-        style={[styles.viewSiteButton, { shadowColor: background }]}
+        style={({ pressed }) => [
+          styles.viewSiteButton,
+          { shadowColor: background, opacity: pressed ? 0.8 : 1 },
+        ]}
       >
-        <MaterialIcons name="arrow-right-alt" size={20} color={icons} />
+        <MaterialIcons name="arrow-right-alt" size={24} color={icons} />
         <Text style={[styles.viewmoreText, { color: otherText }]}>
-          view more
+          View More
         </Text>
       </Pressable>
     </View>
@@ -55,52 +60,79 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: 10,
-    borderRadius: 5,
-    marginVertical: 2,
-    marginHorizontal: 5,
+    padding: 16,
+    borderRadius: 12,
+    marginVertical: 6,
+    marginHorizontal: 8,
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
 
   detailsContainer: {
     flexDirection: "column",
     flexGrow: 1,
-    padding: 2,
-    marginStart: 5,
+    padding: 4,
+    marginStart: 8,
   },
 
   viewSiteButton: {
-    padding: 5,
-    borderRadius: 10,
-    borderWidth: 0.3,
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 0,
     alignItems: "center",
-    elevation: 5,
-    shadowRadius: 5,
-    shadowOpacity: 0.7,
+    backgroundColor: "#f5f5f5",
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
   },
 
   siteNameText: {
+    fontSize: 16,
+    fontWeight: "600",
+    fontFamily: "BarlowLight",
+    textTransform: "capitalize",
+    marginBottom: 4,
+  },
+
+  addressText: {
     fontSize: 14,
     fontWeight: "500",
     fontFamily: "BarlowLight",
     textTransform: "capitalize",
+    opacity: 0.9,
   },
 
-  text: {
-    fontSize: 13,
+  timeText: {
+    fontSize: 14,
     fontWeight: "600",
     fontFamily: "RobotoRegular",
-    textTransform: "lowercase",
+    marginTop: 6,
+  },
+
+  dateText: {
+    fontSize: 14,
+    fontWeight: "500",
+    fontFamily: "RobotoRegular",
+    opacity: 0.8,
+    marginTop: 2,
   },
 
   viewmoreText: {
-    fontSize: 12,
-    fontWeight: "400",
+    fontSize: 13,
+    fontWeight: "500",
     fontFamily: "BarlowLight",
     textTransform: "capitalize",
+    marginTop: 4,
   },
+
   innerContainer: {
     padding: 2,
     rowGap: 2,
-    marginBottom: 5,
+    marginBottom: 8,
   },
 });

@@ -28,9 +28,7 @@ export interface Colleague {
   staff_id: string;
 }
 
-export interface EventProviderInterface {
-  handlePress: (id: string, name: string) => void;
-  handleMessageNavigation: () => void;
+export default interface EventProviderInterface {
   isClicked: boolean;
   retrieveShiftDetails: (id: string) => Promise<void>;
   assignedShifts: EventDisplayInterface[];
@@ -40,6 +38,7 @@ export interface EventProviderInterface {
   setIsModalOpen: (isModalOpen: boolean) => void;
   acceptShift: (id: string) => Promise<void>;
   declineShift: (id: string) => Promise<void>;
+  messageColleague: (id: string, name: string) => Promise<void>;
 }
 
 export interface AgendaItem {

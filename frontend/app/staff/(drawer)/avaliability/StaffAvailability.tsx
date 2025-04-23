@@ -22,7 +22,7 @@ const StaffAvailability = () => {
 
   const openAvailability = async () => {
     setIsLoading(true);
-    try{
+    try {
       await fetchAvailabilityDates();
       setIsAvailabiltyClicked(true);
     } catch (error) {
@@ -32,24 +32,21 @@ const StaffAvailability = () => {
     }
   };
 
-
   return (
-    <SafeAreaProvider style={styles.container}>
-      <GestureHandlerRootView style={styles.container}>
-        <KeyboardAvoidingView style={styles.container} behavior="padding">
-          <ScrollView style={styles.container}>
-            <AvailabilityPageComponent onPress={openAvailability} />
-          </ScrollView>
-        </KeyboardAvoidingView>
-      </GestureHandlerRootView>
+    <View style={styles.container}>
+      <ScrollView style={styles.container}>
+        <AvailabilityPageComponent onPress={openAvailability} />
+      </ScrollView>
 
       {/* Render the availability details in a modal when clicked */}
       <Modal visible={isAvailabiltyClicked} animationType="slide">
         <View style={styles.modalContainer}>
-          <AvailabilityDetailsComponent onPress={() => setIsAvailabiltyClicked(false)} />
+          <AvailabilityDetailsComponent
+            onPress={() => setIsAvailabiltyClicked(false)}
+          />
         </View>
       </Modal>
-    </SafeAreaProvider>
+    </View>
   );
 };
 

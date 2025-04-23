@@ -353,6 +353,7 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               message: "Please try a different email address or password.",
               onConfirm: () => setIsAlertVisible(false),
               isVisible: true,
+              type: "error",
             });
             break;
           case 401:
@@ -362,6 +363,7 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               message: "Please try a different email address or password.",
               onConfirm: () => setIsAlertVisible(false),
               isVisible: true,
+              type: "error",
             });
             break;
           case 404:
@@ -371,6 +373,7 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               message: "Please try a different email address.",
               onConfirm: () => setIsAlertVisible(false),
               isVisible: true,
+              type: "error",
             });
             break;
           default:
@@ -380,6 +383,7 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               message: "An unexpected error occurred",
               onConfirm: () => setIsAlertVisible(false),
               isVisible: true,
+              type: "error",
             });
         }
       }
@@ -399,14 +403,26 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setIsAuthenticated(false);
     setRole(null);
     setUser(null);
-    // Clear all stored auth data
-    await AsyncStorage.multiRemove([
-      "token",
-      "refresh",
-      "user",
-      PREFERRED_ROLE_KEY,
-    ]);
-    router.replace("/management/onboarding/onboard");
+    setIsAlertVisible(true);
+    setAlertConfig({
+      title: "Sign Out",
+      message: "Do you want to sign out?",
+      onConfirm: async () => {
+        await AsyncStorage.multiRemove([
+          "token",
+          "refresh",
+          "user",
+          PREFERRED_ROLE_KEY,
+        ]);
+        router.replace("/management/onboarding/onboard");
+        setIsAlertVisible(false);
+      },
+      onClose: () => {
+        setIsAlertVisible(false);
+      },
+      isVisible: true,
+      type: "error",
+    });
   };
 
   /**
@@ -458,6 +474,7 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             setIsAlertModalVisible(false);
           },
           isVisible: true,
+          type: "success",
         });
       }
     } catch (error) {
@@ -470,6 +487,7 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             message: "Please try a different email address.",
             onConfirm: () => setIsAlertModalVisible(false),
             isVisible: true,
+            type: "error",
           });
           return;
         } else {
@@ -480,6 +498,7 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               error.response?.data?.error || "An unexpected error occurred",
             onConfirm: () => setIsAlertModalVisible(false),
             isVisible: true,
+            type: "error",
           });
         }
       }
@@ -616,6 +635,7 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           message={alertConfig?.message || ""}
           onConfirm={alertConfig?.onConfirm}
           isVisible={alertConfig?.isVisible || false}
+          onClose={alertConfig?.onClose}
         />
       )}
     </AuthContext.Provider>

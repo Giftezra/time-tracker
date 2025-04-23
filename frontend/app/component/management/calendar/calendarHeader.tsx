@@ -224,11 +224,7 @@ const CalendarHeader = () => {
               !hasAnyShifts && styles.iconButtonDisabled,
             ]}
           >
-            <FontAwesome
-              name="print"
-              size={24}
-              color={hasAnyShifts ? "#4CAF50" : "#E0E0E0"}
-            />
+            <Text style={{ fontSize: 20 }}>🖨️</Text>
           </Pressable>
           <Pressable>
             <MaterialCommunityIcons

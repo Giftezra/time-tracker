@@ -24,8 +24,6 @@ import CustomModal from "@/app/component/helper/customModal";
 
 import { useEventContext } from "@/app/context/staff/staffEventProvider";
 import CalendarAgendaComponent from "@/app/component/staff/events/calendarAgenda";
-import { SafeAreaProvider } from "react-native-safe-area-context";
-import { ca } from "react-native-paper-dates";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 const StaffEvent = () => {
@@ -39,37 +37,28 @@ const StaffEvent = () => {
    */
 
   return (
-    <SafeAreaProvider style={{ flex: 1 }}>
-      <GestureHandlerRootView style={{ flex: 1 }}>
-        <KeyboardAvoidingView style={{ flex: 1 }}>
-          <CalendarAgendaComponent />
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <CalendarAgendaComponent />
 
-          <Modal visible={isModalOpen} animationType="slide">
-            <View style={{ flex: 1, }}>
-              <Pressable
-                onPress={() => setIsModalOpen(false)}
-                style={({ pressed }) => [
-                  {
-                    padding: 10,
-                    opacity: pressed ? 0.5 : 1,
-                  },
-                ]}
-              >
-                <MaterialCommunityIcons name="close" size={24} color="black" />
-              </Pressable>
+      <Modal visible={isModalOpen} animationType="slide">
+        <View style={{ flex: 1 }}>
+          <Pressable
+            onPress={() => setIsModalOpen(false)}
+            style={styles.overlayCloseButton}
+          >
+            <MaterialCommunityIcons name="close" size={24} color="black" />
+          </Pressable>
 
-              {isLoading ? (
-                <View style={styles.loadingContainer}>
-                  <ActivityIndicator size="large" color="#0000ff" />
-                </View>
-              ) : (
-                shiftDetails && <EventDetailsComponent props={shiftDetails} />
-              )}
+          {isLoading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#0000ff" />
             </View>
-          </Modal>
-        </KeyboardAvoidingView>
-      </GestureHandlerRootView>
-    </SafeAreaProvider>
+          ) : (
+            shiftDetails && <EventDetailsComponent props={shiftDetails} />
+          )}
+        </View>
+      </Modal>
+    </GestureHandlerRootView>
   );
 };
 
@@ -78,6 +67,15 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+  },
+
+  overlayCloseButton: {
+    position: "absolute",
+    top: 5,
+    right: 5,
+    zIndex: 1000,
+    padding: 10,
+    borderRadius: 10,
   },
 });
 

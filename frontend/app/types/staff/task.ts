@@ -32,14 +32,15 @@ interface Response {
 
 export default interface TaskProviderInterface {
   isModalVisible: boolean;
-  handleTaskDetails: (id: string) => Promise<void>;
+  getCompleteTaskDetails: (id: string) => Promise<void>;
   handleModalDisplay: () => void;
   markedDates: any;
   tasks: TaskInterface[];
-  taskDetials: TaskDetailsInterface;
+  taskDetails: TaskDetailsInterface | undefined;
   calculateTimeDifference: () => string;
   calculateTaskStartTime: () => string;
   applyForTask: (id: string) => Promise<void>;
-  handleMonthChangeEvent: (month: Date) => Promise<any[]>;
+  handleMonthChangeEvent: (month: Date) => Promise<void>;
   handleDaySelectedEvent: (day: any) => Promise<void>;
+  isDateDisabled: (dateString: string, markedDates: any) => boolean;
 }

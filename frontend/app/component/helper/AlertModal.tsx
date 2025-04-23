@@ -7,13 +7,27 @@ const AlertModal = ({
   onConfirm,
   title,
   message,
+  type = "error",
 }: {
   isVisible: boolean;
   onClose?: () => void;
   onConfirm?: () => void;
   title: string;
   message: string;
+  type?: "success" | "error";
 }) => {
+  // Function to determine title color based on type
+  const getTitleColor = () => {
+    switch (type) {
+      case "success":
+        return "#4CAF50"; // Green color for success
+      case "error":
+        return "#FF3B30"; // Red color for error
+      default:
+        return "#FF3B30"; // Default to red
+    }
+  };
+
   return (
     <Modal
       visible={isVisible}
@@ -23,7 +37,9 @@ const AlertModal = ({
     >
       <View style={styles.overlay}>
         <View style={styles.modalContainer}>
-          <Text style={styles.title}>{title}</Text>
+          <Text style={[styles.title, { color: getTitleColor() }]}>
+            {title}
+          </Text>
           <Text style={styles.message}>{message}</Text>
 
           {/* Dislplay the button given if the props is passed */}
@@ -76,7 +92,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     fontFamily: "BarlowRegular",
     letterSpacing: 0.5,
-    color: "red",
   },
   message: {
     fontSize: 14,

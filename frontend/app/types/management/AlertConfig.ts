@@ -4,5 +4,6 @@ export default interface AlertConfig {
   onConfirm?: () => void;
   onClose?: () => void;
   isVisible: boolean;
+  type?: "success" | "error";
 }
 

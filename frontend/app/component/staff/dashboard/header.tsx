@@ -31,9 +31,6 @@ const StaffDashboardHeader = () => {
           <Image source={image} style={styles.imageContainer} />
           <View style={styles.onlineIndicator} />
         </View>
-        <Pressable style={styles.settingsButton}>
-          <AntDesign name="setting" size={24} color="#4A4A4A" />
-        </Pressable>
       </View>
 
       <View style={styles.container}>

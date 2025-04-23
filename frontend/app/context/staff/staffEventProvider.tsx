@@ -2,15 +2,15 @@ import { useContext, createContext, useState, useEffect } from "react";
 import { router } from "expo-router";
 import { ca } from "react-native-paper-dates";
 
-import {
+import EventProviderInterface, {
+  Colleague,
   EventDetailsInterface,
   EventDisplayInterface,
-  EventProviderInterface,
 } from "@/app/types/staff/event";
 
-import { MessageComponentProps } from "@/app/types/staff/messages";
 import { useAuth } from "@/app/authentication";
 import { Alert } from "react-native";
+import { useMessageContext } from "../management/messages/messageContext";
 
 /**
  * Create a new context for the event provider.
@@ -27,15 +27,13 @@ const EventContext = createContext<EventProviderInterface | undefined>(
 
 const EventProvider = ({ children }: { children: React.ReactNode }) => {
   // Import axiosinstance from the AuthProvider
-  const { axiosInstance } = useAuth();
+  const { axiosInstance, setIsAlertVisible, setAlertConfig } = useAuth();
+  const { connectWebSocket } = useMessageContext();
 
   const [isLoading, setIsLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isClicked, setIsClicked] = useState(false);
-  const [detail, setDetails] = useState<MessageComponentProps | null>({
-    id: "",
-    name: "",
-  });
+  const [detail, setDetails] = useState<Colleague | null>(null);
   const [shiftDetails, setShiftDetails] = useState<
     EventDetailsInterface | undefined
   >(undefined);
@@ -43,11 +41,6 @@ const EventProvider = ({ children }: { children: React.ReactNode }) => {
   const [assignedShifts, setAssignedShifts] = useState<EventDisplayInterface[]>(
     []
   );
-
-  const handlePress = (id: string, name: string) => {
-    setIsClicked(true);
-    setDetails({ ...detail, id, name: name });
-  };
 
   /**
    * Load the shifts using the hook as soon as the component mounts.
@@ -155,24 +148,28 @@ const EventProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   /**
-   * Method takes an id and navigates to the message screen with the id.
-   * Id is used to retrieve the user message conversation.
+   * Send a message to the colleague who is coassigned to the shift.
+   * When the user is clicked, display a modal with the message input field and a send button.
+   * @param id : The id of the colleague to send the message to.
+   * @param name : The name of the colleague to send the message to.
    */
-  const handleMessageNavigation = () => {
-    setIsClicked(false);
-    setIsModalOpen(false);
-    router.push({
-      pathname: "/staff/(drawer)/messages/main",
-      params: {
-        id: detail?.id,
-        name: detail?.name,
+  const messageColleague = async (id: string, name: string) => {
+    setIsAlertVisible(true);
+    setAlertConfig({
+      title: "Message Alert",
+      message: `Do you want send a message to ${name}?`,
+      onConfirm: async () => {
+        setIsAlertVisible(false);
+        connectWebSocket(id);
       },
+      onClose() {
+        setIsAlertVisible(false);
+      },
+      isVisible: true,
     });
   };
 
   const value: EventProviderInterface = {
-    handlePress,
-    handleMessageNavigation,
     isClicked,
     isModalOpen,
     retrieveShiftDetails,
@@ -182,6 +179,7 @@ const EventProvider = ({ children }: { children: React.ReactNode }) => {
     setIsModalOpen,
     acceptShift,
     declineShift,
+    messageColleague,
   };
 
   return (

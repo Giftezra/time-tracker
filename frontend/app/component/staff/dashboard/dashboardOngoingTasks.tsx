@@ -15,11 +15,14 @@ const DashboardOngoingTask = () => {
   const { ongoingTask, progress } = useStaffDashboard();
   const innerbackground = useThemeColor({}, "innerBackground");
   const text = useThemeColor({}, "text");
-  
+
   if (!ongoingTask) {
     return (
       <View
-        style={[styles.mainContainer, { backgroundColor: innerbackground }]}
+        style={[
+          styles.mainContainer,
+          { backgroundColor: innerbackground, alignItems: "center" },
+        ]}
       >
         <Text style={[styles.companyNameText, { color: text }]}>
           No Ongoing Shift
@@ -37,9 +40,14 @@ const DashboardOngoingTask = () => {
    * @returns
    */
   const getProgressBarColor = (progress: number) => {
-    if (progress < 0.33) return "#4CAF50"; // Green for early
-    if (progress < 0.66) return "#FFC107"; // Yellow for middle
-    return "#FF5722"; // Orange-red for late
+    switch (true) {
+      case progress < 0.33:
+        return "#4CAF50";
+      case progress < 0.66:
+        return "#FFC107";
+      default:
+        return "#FF5722";
+    }
   };
 
   // Format times for display
@@ -59,9 +67,6 @@ const DashboardOngoingTask = () => {
 
   return (
     <View style={[styles.mainContainer, { backgroundColor: innerbackground }]}>
-      <Text
-        style={[styles.companyNameText, { color: text }]}
-      >{`Your ongoing shift with ${user?.company_name}`}</Text>
       <View style={styles.container}>
         <Text style={[styles.shiftText, { color: text }]}>
           {`Current shift: ${ongoingTask?.contract_name || ""}`}
@@ -76,7 +81,9 @@ const DashboardOngoingTask = () => {
           style={styles.progressBar}
         />
         <Text style={[styles.progressText, { color: text }]}>
-          {`${Number.isFinite(progress) ? Math.round(progress * 100) : 0}% Complete`}
+          {`${
+            Number.isFinite(progress) ? Math.round(progress * 100) : 0
+          }% Complete`}
         </Text>
       </View>
     </View>

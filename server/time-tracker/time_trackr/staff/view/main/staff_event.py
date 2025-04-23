@@ -6,14 +6,14 @@ from datetime import datetime, timedelta
 from django.shortcuts import get_object_or_404
 from collections import defaultdict
 from django.db.models import Q
-
 from management.models import Shift
 from management.serializer import ShiftSerializer
-
 from staff.models import Staff
 from management.view.main.decorators import staff_required
-
-from staff.tasks import send_shift_cancellation_email
+from django_ratelimit.decorators import ratelimit
+from django.core.cache import cache
+from django.conf import settings
+from management.helpers import get_cache_key
 
 
         
@@ -21,6 +21,7 @@ from staff.tasks import send_shift_cancellation_email
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 @staff_required
+@ratelimit(key='user', rate='100/h', block=True)
 def get_shift_details(request):
     """ Method is used by the staff to get the details of a shift.
       The shift id is used to get the shift details.
@@ -31,11 +32,16 @@ def get_shift_details(request):
     # The details includes the details of their colleagues, the shift details and the amount to be paid.
     try:
         shift = Shift.objects.get(id=shift_id)
-        # Get the colleagues associated with the shift, excluding the requesting user
-        colleague_data = []
-        colleagues = shift.staff.exclude(user=request.user)
-        for colleague in colleagues:
-            colleague_data.append({
+        cache_key = get_cache_key('shift_details', shift_id)
+        cache_data = cache.get(cache_key)
+        if cache_data:
+            return Response({'shift_details': cache_data}, status=status.HTTP_200_OK)
+        
+        else:
+            colleague_data = []
+            colleagues = shift.staff.exclude(user=request.user)
+            for colleague in colleagues:
+                colleague_data.append({
                 'id': colleague.id,
                 'name': colleague.user.get_full_name(),
             })
@@ -53,6 +59,7 @@ def get_shift_details(request):
             'colleagues': colleague_data,
             'status': shift.status
         }
+        cache.set(cache_key, shift_details, timeout=settings.CACHE_TIMEOUT)
         return Response({'shift_details': shift_details}, status=status.HTTP_200_OK)
     except Shift.DoesNotExist:
         return Response({'error': 'No shift found'}, status=status.HTTP_400_BAD_REQUEST)

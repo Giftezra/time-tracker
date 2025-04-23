@@ -6,8 +6,7 @@ import {
   useState,
   useEffect,
 } from "react";
-
-import { SideComponentContextType } from "@/app/types/staff/sideComponent";
+import SideComponentContextType from "@/app/types/staff/sideComponent";
 import {
   CurrentDate,
   LiveEventInterface,
@@ -16,6 +15,7 @@ import { Alert, Linking } from "react-native";
 import { userData } from "@/app/utils/loadData";
 import { useAuth } from "@/app/authentication";
 import { useLocation } from "../management/LocationProvider";
+import { LocationServices } from "@/app/services/LocationServices";
 
 const SideComponentContext = createContext<
   SideComponentContextType | undefined
@@ -27,7 +27,7 @@ const SideComponentProvider = ({ children }: { children: ReactNode }) => {
     month: new Date().toLocaleString("default", { month: "short" }),
     day: new Date().getDate().toString(),
   };
-  const { axiosInstance } = useAuth();
+  const { axiosInstance, setIsAlertVisible, setAlertConfig } = useAuth();
 
   const events: LiveEventInterface = {
     shift_id: "",
@@ -36,6 +36,9 @@ const SideComponentProvider = ({ children }: { children: ReactNode }) => {
     end_time: "",
     contract_name: "No shifts scheduled",
     team_member: [],
+    status: "",
+    latitude: "",
+    longitude: "",
   };
 
   const [active, setActive] = useState<string>("events");
@@ -71,7 +74,21 @@ const SideComponentProvider = ({ children }: { children: ReactNode }) => {
    * It uses the currentShiftIndex to determine the current shift and then moves to the next shift.
    */
   const handleNextShift = () => {
-    setCurrentShiftIndex((prev) => (prev + 1) % daysShift.length);
+    if (daysShift.length === 0) {
+      setIsAlertVisible(true);
+      setAlertConfig({
+        title: "Updates",
+        message: "You currently have no more shifts for today",
+        onConfirm: () => {
+          setIsAlertVisible(false);
+        },
+        isVisible: true,
+      });
+      return;
+    }
+    const newIndex = (currentShiftIndex + 1) % daysShift.length;
+    setCurrentShiftIndex(newIndex);
+    setEvent(daysShift[newIndex] || events);
   };
 
   /**
@@ -79,22 +96,21 @@ const SideComponentProvider = ({ children }: { children: ReactNode }) => {
    * It uses the currentShiftIndex to determine the current shift and then moves to the previous shift.
    */
   const handlePreviousShift = () => {
-    setCurrentShiftIndex(
-      (prev) => (prev - 1 + daysShift.length) % daysShift.length
-    );
+    const newIndex =
+      (currentShiftIndex - 1 + daysShift.length) % daysShift.length;
+    setCurrentShiftIndex(newIndex);
+    setEvent(daysShift[newIndex] || events);
   };
 
   useEffect(() => {
-    const currentEvent =
-      daysShift.length > 0 ? daysShift[currentShiftIndex] : events;
-
-    setEvent(currentEvent);
-
-    // Reset index when shifts change
+    // Remove this effect as we're now handling the event update directly in the navigation functions
     if (daysShift.length > 0) {
       setCurrentShiftIndex(0);
+      setEvent(daysShift[0]);
+    } else {
+      setEvent(events);
     }
-  }, [daysShift, currentShiftIndex]); // Add currentShiftIndex to dependencies
+  }, [daysShift]); // Remove currentShiftIndex from dependencies
 
   /**
    * Handle the activity of the user in the side component.
@@ -110,28 +126,28 @@ const SideComponentProvider = ({ children }: { children: ReactNode }) => {
      */
     switch (activity) {
       case "events":
-        router.navigate("/staff/(drawer)/events/main");
+        router.navigate("/staff/(drawer)/events/StaffEvent");
         break;
       case "task":
-        router.navigate("/staff/(drawer)/task/main");
+        router.navigate("/staff/(drawer)/task/StaffTask");
         break;
       case "messages":
-        router.navigate("/staff/(drawer)/messages/main");
+        router.navigate("/staff/(drawer)/messages/StaffMessages");
         break;
       case "availability":
-        router.navigate("/staff/(drawer)/avaliability/main");
+        router.navigate("/staff/(drawer)/avaliability/StaffAvailability");
         break;
       case "dashboard":
-        router.navigate("/staff/(drawer)/dashboard/main");
+        router.navigate("/staff/(drawer)/dashboard/StaffDashboard");
         break;
       case "timesheet":
-        router.navigate("/staff/(drawer)/timesheet/main");
+        router.navigate("/staff/(drawer)/timesheet/StaffTimesheet");
         break;
       case "notification":
-        router.navigate("/staff/(drawer)/notifications/main");
+        router.navigate("/staff/(drawer)/notifications/StaffNotification");
         break;
       default:
-        router.replace("/staff/(drawer)/dashboard/main");
+        router.replace("/staff/(drawer)/dashboard/StaffDashboard");
         break;
     }
   };
@@ -145,19 +161,19 @@ const SideComponentProvider = ({ children }: { children: ReactNode }) => {
   const handleWebsiteCall = (url?: string) => {
     if (!url) return;
     try {
-      Alert.alert(
-        "Opening the website",
-        "Are you sure you want to open the website?",
-        [
-          /* Confirm the users choice */
-          {
-            text: "Cancel",
-            onPress: () => console.log("Cancel Pressed"),
-            style: "cancel",
-          },
-          { text: "OK", onPress: () => Linking.openURL(url) },
-        ]
-      );
+      setIsAlertVisible(true);
+      setAlertConfig({
+        title: "Opening the website",
+        message: "Are you sure you want to open the website?",
+        onConfirm: () => {
+          Linking.openURL(url);
+          setIsAlertVisible(false);
+        },
+        onClose: () => {
+          setIsAlertVisible(false);
+        },
+        isVisible: true,
+      });
     } catch (error) {
       console.error("Error opening the website", error);
     }
@@ -165,16 +181,35 @@ const SideComponentProvider = ({ children }: { children: ReactNode }) => {
 
   /**
    * This method is used to handle the users ability to start the shift.
-   * It uses the axiosInstance to send a patch request to the server to start the shift.
-   * @param shiftId is the id of the shift to start.
-   * @returns void
    */
   const handleStartShift = async (shiftId: string) => {
+    // First check if there's any active shift
+    const activeShift = daysShift.find((shift) => shift.status === "started");
+    if (activeShift) {
+      setIsAlertVisible(true);
+      setAlertConfig({
+        title: "Active Shift Found",
+        message:
+          "You must complete your current shift before starting a new one",
+        onConfirm: () => {
+          setIsAlertVisible(false);
+        },
+        isVisible: true,
+      });
+      return;
+    }
+
     if (!locationCoordinates) {
-      Alert.alert(
-        "Location not found",
-        "Please enable location services to start the shift"
-      );
+      setIsAlertVisible(true);
+      setAlertConfig({
+        title: "Location not found",
+        message: "Please enable location services to start the shift",
+        onConfirm: async () => {
+          await LocationServices.requestLocationPermissions();
+          setIsAlertVisible(false);
+        },
+        isVisible: true,
+      });
       return;
     }
     // Get the latitude and longitude of the user and the current shift
@@ -183,11 +218,22 @@ const SideComponentProvider = ({ children }: { children: ReactNode }) => {
     // If it is, then start the shift.
     const lat = locationCoordinates.latitude;
     const long = locationCoordinates.longitude;
-    const currentShift = daysShift.find((shift) => shift.shift_id === 
-    shiftId);
+    console.log("lat", lat);
+    console.log("long", long);
+    console.log("shiftId", shiftId);
+    const currentShift = daysShift.find((shift) => shift.shift_id === shiftId);
+    console.log("currentShift", currentShift);
 
     if (!currentShift?.latitude || !currentShift?.longitude) {
-      Alert.alert('Error', 'The shift is not available to start');
+      setIsAlertVisible(true);
+      setAlertConfig({
+        title: "Error",
+        message: "The shift is not available to start",
+        onConfirm: () => {
+          setIsAlertVisible(false);
+        },
+        isVisible: true,
+      });
       return;
     }
 
@@ -197,24 +243,57 @@ const SideComponentProvider = ({ children }: { children: ReactNode }) => {
       parseFloat(currentShift.latitude),
       parseFloat(currentShift.longitude)
     );
+    console.log("distance", distance);
 
     if (distance > 150) {
-      Alert.alert('Error', 'You are too far from the shift location. You need to be within 150 meters to start the shift');
+      setIsAlertVisible(true);
+      setAlertConfig({
+        title: "Error",
+        message:
+          "You are too far from the shift location. You need to be within 150 meters to start the shift",
+        onConfirm: () => {
+          setIsAlertVisible(false);
+        },
+        isVisible: true,
+      });
       return;
     }
 
-
     try {
-      const response = await axiosInstance.patch("/api/begin/shift/", {
+      const response = await axiosInstance.patch("/api/start/shift/", {
         shift_id: event.shift_id,
       });
-      if (response.data.message) {
-        Alert.alert(response.data.message);
-      } else {
-        Alert.alert(response.data.error);
+      if (response.status === 200) {
+        setIsAlertVisible(true);
+        setAlertConfig({
+          title: "Success",
+          message: response.data.message,
+          onConfirm: () => {
+            setIsAlertVisible(false);
+          },
+          isVisible: true,
+        });
+      } else if (response.status === 400) {
+        setIsAlertVisible(true);
+        setAlertConfig({
+          title: "Error",
+          message: response.data.error,
+          onConfirm: () => {
+            setIsAlertVisible(false);
+          },
+          isVisible: true,
+        });
       }
-    } catch (error) {
-      console.error("Error starting the shift", error);
+    } catch (error: any) {
+      setIsAlertVisible(true);
+      setAlertConfig({
+        title: "Error",
+        message: error.response?.data?.error || "An unexpected error occurred",
+        onConfirm: () => {
+          setIsAlertVisible(false);
+        },
+        isVisible: true,
+      });
     }
   };
 
@@ -225,21 +304,53 @@ const SideComponentProvider = ({ children }: { children: ReactNode }) => {
    * @returns void
    */
   const handleEndShift = async (shiftId: string) => {
-    try {
-      const response = await axiosInstance.patch(
-        "/api/terminate/current/shift/",
-        {
-          shift_id: shiftId,
+    setIsAlertVisible(true);
+    setAlertConfig({
+      title: "Confirm End Shift",
+      message: "Are you sure you want to end the shift?",
+      onConfirm: async () => {
+        setIsAlertVisible(false);
+        try {
+          setIsLoading(true);
+          const response = await axiosInstance.patch(
+            "/api/terminate/current/shift/",
+            {
+              shift_id: shiftId,
+            }
+          );
+
+          if (response.status === 200) {
+            setIsAlertVisible(true);
+            setAlertConfig({
+              title: "Success",
+              message: response.data.message,
+              onConfirm: () => {
+                setIsAlertVisible(false);
+                fetchUpcomingShifts(); // Refresh shifts after successful end
+              },
+              isVisible: true,
+            });
+          }
+        } catch (error: any) {
+          setIsAlertVisible(true);
+          setAlertConfig({
+            title: "Error",
+            message:
+              error.response?.data?.error || "An unexpected error occurred",
+            onConfirm: () => {
+              setIsAlertVisible(false);
+            },
+            isVisible: true,
+          });
+        } finally {
+          setIsLoading(false);
         }
-      );
-      if (response.data.message) {
-        Alert.alert(response.data.message);
-      } else {
-        Alert.alert(response.data.error);
-      }
-    } catch (error) {
-      console.error("Error ending the shift", error);
-    }
+      },
+      onClose: () => {
+        setIsAlertVisible(false);
+      },
+      isVisible: true,
+    });
   };
 
   /**
@@ -249,18 +360,19 @@ const SideComponentProvider = ({ children }: { children: ReactNode }) => {
   const handlePhoneCall = (phone?: string) => {
     if (!phone) return;
     try {
-      Alert.alert(
-        "Calling the phone number",
-        "Are you sure you want to call the phone number?",
-        [
-          {
-            text: "Cancel",
-            onPress: () => console.log("Cancel Pressed"),
-            style: "cancel",
-          },
-          { text: "OK", onPress: () => Linking.openURL(`tel:${phone}`) },
-        ]
-      );
+      setIsAlertVisible(true);
+      setAlertConfig({
+        title: "Calling the phone number",
+        message: `Are you sure you want to call ${phone}?`,
+        onConfirm: async () => {
+          await Linking.openURL(`tel:${phone}`);
+          setIsAlertVisible(false);
+        },
+        onClose: () => {
+          setIsAlertVisible(false);
+        },
+        isVisible: true,
+      });
     } catch (error) {
       console.error("Error calling the phone number", error);
     }
@@ -288,8 +400,34 @@ const SideComponentProvider = ({ children }: { children: ReactNode }) => {
       } else {
         setDaysShift([]);
       }
-    } catch (error) {
-      console.error("Error fetching the shifts", error);
+    } catch (error: any) {
+      const res = error.response.data;
+      switch (res.status) {
+        case 403:
+          setIsAlertVisible(true);
+          setAlertConfig({
+            title: "Too many requests",
+            message: "You need to refresh the page in 1 hour",
+            onConfirm: () => {
+              setIsAlertVisible(false);
+            },
+            isVisible: true,
+          });
+          break;
+        case 400:
+          setIsAlertVisible(true);
+          setAlertConfig({
+            title: "Error",
+            message: res.data.error,
+            onConfirm: () => {
+              setIsAlertVisible(false);
+            },
+            isVisible: true,
+          });
+          break;
+        default:
+          break;
+      }
     }
   };
 

@@ -12,11 +12,9 @@ const MainStaffMainLayout = () => {
       <LocationProvider>
         <NotificationProvider>
           <ProfileProvider>
-            <GestureHandlerRootView style={{ flex: 1 }}>
-              <Stack screenOptions={{ headerShown: false }}>
-                <Stack.Screen name="(drawer)" />
-              </Stack>
-            </GestureHandlerRootView>
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="(drawer)" />
+            </Stack>
           </ProfileProvider>
         </NotificationProvider>
       </LocationProvider>

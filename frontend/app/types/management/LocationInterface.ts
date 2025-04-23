@@ -3,8 +3,8 @@ export interface LocationState {
   permissionStatus: "granted" | "denied" | "undetermined";
 }
 
-export interface LocationContextType {
-  location: LocationState;
+export default interface LocationContextType {
+  locationState: LocationState;
   getCurrentLocation: () => Promise<void>;
   locationCoordinates: LocationCoordinates | null;
 }

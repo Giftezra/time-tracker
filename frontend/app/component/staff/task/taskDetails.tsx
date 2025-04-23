@@ -4,18 +4,18 @@ import { TaskDetailsInterface } from "@/app/types/staff/task";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { MaterialIcons } from "@expo/vector-icons";
 import { ScrollView } from "react-native-gesture-handler";
-import { useTask } from "@/app/context/staff/staffTaskProvider";
+import { useStaffTask } from "@/app/context/staff/staffTaskProvider";
 import ButtonComponent from "../../helper/buttons";
 
 const TaskDetailsComponent = ({
-  props,
+  taskDetails,
   onModalClose,
 }: {
-  props: TaskDetailsInterface;
+  taskDetails?: TaskDetailsInterface;
   onModalClose: () => void;
 }) => {
   const { calculateTimeDifference, calculateTaskStartTime, applyForTask } =
-    useTask();
+    useStaffTask();
   const [countDown, setCountDown] = useState<string>("");
 
   const text = useThemeColor({}, "text");
@@ -54,7 +54,7 @@ const TaskDetailsComponent = ({
       <View style={[styles.header, { borderBottomColor: borderColor }]}>
         <Text style={[styles.headerTitle, { color: text }]}>Task Details</Text>
         <Text style={[styles.taskSerial, { color: otherText }]}>
-          {props.task_serial}
+          {taskDetails?.task_serial}
         </Text>
       </View>
 
@@ -62,21 +62,21 @@ const TaskDetailsComponent = ({
         <Text style={[styles.sectionTitle, { color: text }]}>
           Location Details
         </Text>
-        {renderDetailRow("Site Name", props.site_name || "")}
-        {renderDetailRow("Address", props.site_address || "")}
-        {renderDetailRow("Postcode", props.site_postcode || "")}
-        {renderDetailRow("City", props.site_city || "")}
+        {renderDetailRow("Site Name", taskDetails?.site_name || "")}
+        {renderDetailRow("Address", taskDetails?.site_address || "")}
+        {renderDetailRow("Postcode", taskDetails?.site_postcode || "")}
+        {renderDetailRow("City", taskDetails?.site_city || "")}
       </View>
 
       <View style={[styles.section, { borderColor }]}>
         <Text style={[styles.sectionTitle, { color: text }]}>
           Shift Information
         </Text>
-        {renderDetailRow("Start Time", props.start_time)}
-        {renderDetailRow("End Time", props.end_time)}
-        {renderDetailRow("Date", props.start_date)}
+        {renderDetailRow("Start Time", taskDetails?.start_time || "")}
+        {renderDetailRow("End Time", taskDetails?.end_time || "")}
+        {renderDetailRow("Date", taskDetails?.start_date || "")}
         {renderDetailRow("Duration", calculateTimeDifference())}
-        {renderDetailRow("Pay Rate", `£${props.pay}/hour`)}
+        {renderDetailRow("Pay Rate", `£${taskDetails?.pay}/hour`)}
       </View>
 
       <View style={[styles.section, { borderColor }]}>
@@ -84,7 +84,7 @@ const TaskDetailsComponent = ({
           Task Description
         </Text>
         <Text style={[styles.description, { color: text }]}>
-          {props.description}
+          {taskDetails?.description}
         </Text>
       </View>
 
@@ -109,7 +109,7 @@ const TaskDetailsComponent = ({
 
       <View style={styles.buttonContainer}>
         <ButtonComponent
-          onPress={() => applyForTask(props.id)}
+          onPress={() => applyForTask(taskDetails?.id || "")}
           title="Apply for Task"
         />
       </View>

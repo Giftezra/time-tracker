@@ -16,11 +16,13 @@ import { EventDetailsInterface } from "@/app/types/staff/event";
 import PopupButton from "@/app/component/helper/popupButton";
 import { useEventContext } from "@/app/context/staff/staffEventProvider";
 
-const EventDetailsComponent: React.FC<{ props?: EventDetailsInterface }> = ({
+const EventDetailsComponent = ({
   props,
+}: {
+  props: EventDetailsInterface;     
 }) => {
   // Import the context for the event details and the functions to accept and decline the shift
-  const { acceptShift, declineShift } = useEventContext();
+  const { acceptShift, declineShift, messageColleague } = useEventContext();
   const [isAccepting, setIsAccepting] = useState(false);
   const [isDeclining, setIsDeclining] = useState(false);
   const text = useThemeColor({}, "text");
@@ -130,6 +132,9 @@ const EventDetailsComponent: React.FC<{ props?: EventDetailsInterface }> = ({
                   styles.colleagueButtons,
                   { backgroundColor: inactivebtn },
                 ]}
+                onPress={() =>
+                  messageColleague(colleague.id, colleague.name)
+                }
               >
                 <Text style={[styles.colleagueText, { color: text }]}>
                   {colleague.name}
@@ -208,14 +213,7 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: "column",
     width: "100%",
-    borderTopLeftRadius: 10,
-    borderTopRightRadius: 10,
-    elevation: 3,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 3,
-    shadowOpacity: 0.25,
-    padding: 5,
+    padding: 10,
   },
 
   container: {
@@ -299,19 +297,21 @@ const styles = StyleSheet.create({
   },
 
   colleagueButtons: {
-    padding: 12,
+    padding: 8,
     elevation: 2,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowRadius: 2,
     shadowOpacity: 0.2,
-    borderRadius: 12,
+    borderRadius: 5,
   },
 
   colleagueText: {
     fontSize: 14,
     fontWeight: "600",
     textAlign: "center",
+    textTransform: "capitalize",
+    letterSpacing: 0.5,
   },
 
   divider: {

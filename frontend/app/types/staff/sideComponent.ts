@@ -1,6 +1,6 @@
 import { Colleague } from "./event";
 
-export interface SideComponentContextType {
+export default interface SideComponentContextType {
   active: string;
   handleActivity: (activity: string) => void;
   event: LiveEventInterface;

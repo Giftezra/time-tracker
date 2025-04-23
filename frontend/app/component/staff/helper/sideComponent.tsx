@@ -24,7 +24,7 @@ import { useAuth } from "@/app/authentication";
 import ProfileDisplayComponent from "./profileDisplay";
 import { useState } from "react";
 
-const StaffSideComponent = () => {
+const StaffSideComponent = ({ closeDrawer }: { closeDrawer: () => void }) => {
   const { signOut } = useAuth();
   const user = userData();
 
@@ -88,7 +88,10 @@ const StaffSideComponent = () => {
                 backgroundColor: active === "events" ? activebtn : primaryColor,
               },
             ]}
-            onPress={() => handleActivity("events")}
+            onPress={() => {
+              handleActivity("events");
+              closeDrawer();
+            }}
           >
             <MaterialIcons name="event" size={22} color={icon} />
             <Text style={[styles.menuText, { color: text }]}>events</Text>
@@ -100,7 +103,10 @@ const StaffSideComponent = () => {
               active === "task" && styles.activeButton,
               { backgroundColor: active === "task" ? activebtn : primaryColor },
             ]}
-            onPress={() => handleActivity("task")}
+            onPress={() => {
+              handleActivity("task");
+              closeDrawer();
+            }}
           >
             <MaterialIcons name="task" size={22} color={icon} />
             <Text style={[styles.menuText, { color: text }]}>Manage task</Text>
@@ -115,7 +121,10 @@ const StaffSideComponent = () => {
                   active === "notification" ? activebtn : primaryColor,
               },
             ]}
-            onPress={() => handleActivity("notification")}
+            onPress={() => {
+              handleActivity("notification");
+              closeDrawer();
+            }}
           >
             <MaterialIcons name="notifications" size={22} color={icon} />
             <Text style={[styles.menuText, { color: text }]}>notification</Text>
@@ -130,7 +139,10 @@ const StaffSideComponent = () => {
                   active === "messages" ? activebtn : primaryColor,
               },
             ]}
-            onPress={() => handleActivity("messages")}
+            onPress={() => {
+              handleActivity("messages");
+              closeDrawer();
+            }}
           >
             <MaterialIcons name="message" size={22} color={icon} />
             <Text style={[styles.menuText, { color: text }]}>messages</Text>
@@ -145,7 +157,10 @@ const StaffSideComponent = () => {
                   active === "availability" ? activebtn : primaryColor,
               },
             ]}
-            onPress={() => handleActivity("availability")}
+            onPress={() => {
+              handleActivity("availability");
+              closeDrawer();
+            }}
           >
             <MaterialIcons name="event-available" size={22} color={icon} />
             <Text style={[styles.menuText, { color: text }]}>availability</Text>
@@ -164,7 +179,10 @@ const StaffSideComponent = () => {
                     active === "dashboard" ? activebtn : primaryColor,
                 },
               ]}
-              onPress={() => handleActivity("dashboard")}
+              onPress={() => {
+                handleActivity("dashboard");
+                closeDrawer();
+              }}
             >
               <MaterialIcons name="dashboard" size={24} color={icon} />
               <Text style={[styles.seeMoreButtonText, { color: text }]}>
@@ -181,7 +199,10 @@ const StaffSideComponent = () => {
                     active === "timesheet" ? activebtn : primaryColor,
                 },
               ]}
-              onPress={() => handleActivity("timesheet")}
+              onPress={() => {
+                handleActivity("timesheet");
+                closeDrawer();
+              }}
             >
               <MaterialIcons name="timelapse" size={24} color={icon} />
               <Text style={[styles.seeMoreButtonText, { color: text }]}>

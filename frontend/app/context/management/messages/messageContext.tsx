@@ -45,7 +45,7 @@ const MessageProvider: React.FC<MessageProviderProps> = ({ children }) => {
     } catch (error) {
       console.error("Error fetching chat rooms:", error);
     }
-  }, [axiosInstance]);
+  }, []);
 
   useEffect(() => {
     fetchChatRooms();
