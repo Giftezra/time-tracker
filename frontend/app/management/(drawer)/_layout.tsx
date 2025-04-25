@@ -6,6 +6,8 @@ import {
   StyleSheet,
   Text,
   View,
+  Alert,
+  BackHandler,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { Drawer } from "expo-router/drawer";
@@ -22,6 +24,8 @@ import { router, Stack } from "expo-router";
 import { useAuth } from "@/app/authentication";
 import { userData } from "@/app/utils/loadData";
 import MessageProvider from "@/app/context/management/messages/messageContext";
+import SideComponentProvider from "@/app/context/staff/sideComponentProvider";
+import AlertConfig from "@/app/types/management/AlertConfig";
 
 const VersionDisplay = ({ color }: { color: string }) => {
   return (
@@ -47,12 +51,8 @@ export default function MainManagementLayout() {
   const [screen, setScreen] = useState(Dimensions.get("screen"));
 
   const user = userData();
+  const [backPressCount, setBackPressCount] = useState(0);
 
-  /**
-   * The hook is used to manage the window width and screen width of the user.
-   * It updates the window width and screen width when the user changes the screen size usign the listener.
-   * It removes the listener when the component is unmounted and returns the listener.
-   */
   useEffect(() => {
     const updateLayout = () => {
       setWindowWidth(Dimensions.get("window").width);
@@ -64,13 +64,33 @@ export default function MainManagementLayout() {
     };
   }, [windowWidth, screen]);
 
-  /** This displays a component when the user window is less than 50 percent of the screen */
-  /** Return a text to let the user know they have to expand their screen for the best expierience */
+  useEffect(() => {
+    if (backPressCount === 1) {
+      const timer = setTimeout(() => {
+        setBackPressCount(0);
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [backPressCount]);
+
   if (windowWidth < screen.width * 0.2) {
     return <ExpandScreenComponent />;
   }
 
-  const handleBackButton = () => {
+  /**
+   * Handle the users back button press on the header. 
+   * When there is no more pages pushed into the router stack, display an alert to confirm the exit of the app.
+   * If pressed to confirm, exit the app. else do nothing.
+   * @param param setAlertConfig, setIsAlertVisible are the functions to set the alert config and the alert visibility.
+   * @returns 
+   */
+  const handleBackButton = ({
+    setAlertConfig,
+    setIsAlertVisible,
+  }: {
+    setAlertConfig: (config: AlertConfig) => void;
+    setIsAlertVisible: (visible: boolean) => void;
+  }) => {
     const isLastScene = router.canGoBack();
     return (
       <View style={{ flexDirection: "row", alignItems: "center" }}>
@@ -79,19 +99,39 @@ export default function MainManagementLayout() {
             <AntDesign name="arrowleft" size={24} color={background} />
           </Pressable>
         ) : (
-          <Text style={{ color: background, fontFamily: "BarlowRegular" }}>
-            
-          </Text>
+          <Pressable
+            onPress={() => {
+              if (backPressCount === 0) {
+                setIsAlertVisible(true);
+                setAlertConfig({
+                  title: "Exit App",
+                  message:
+                    "You are about to exit the app. Do you want to continue this action?",
+                  onConfirm: () => {
+                    BackHandler.exitApp();
+                  },
+                  isVisible: true,
+                  onClose() {
+                    setIsAlertVisible(false);
+                  },
+                });
+              }
+            }}
+            style={{ marginRight: 10 }}
+          >
+            <AntDesign name="arrowleft" size={24} color={background} />
+          </Pressable>
         )}
       </View>
     );
   };
 
-  /* Create a component to display the header which will be used in the stack to display a drawer */
   const Header = () => {
+    const { setAlertConfig, setIsAlertVisible } = useAuth();
+
     return (
       <View style={[styles.header, { backgroundColor: tintColor }]}>
-        {handleBackButton()}
+        {handleBackButton({ setAlertConfig, setIsAlertVisible })}
         <View style={styles.innerContainer}>
           <Pressable onPress={() => setShowDrawer(!showDrawer)}>
             <Ionicons name="menu" size={24} color={background} />
@@ -102,7 +142,7 @@ export default function MainManagementLayout() {
         </View>
         <View style={{ flex: 1, alignItems: "flex-end" }}>
           <Pressable onPress={() => setShowVersion(!showVersion)}>
-            <Text style={{ fontSize: 20, color:'red '}}>ℹ️</Text>
+            <Text style={{ fontSize: 20, color: "red " }}>ℹ️</Text>
           </Pressable>
         </View>
       </View>
@@ -114,27 +154,28 @@ export default function MainManagementLayout() {
       <GestureHandlerRootView
         style={[{ flex: 1 }, { backgroundColor: background }]}
       >
-        <MessageProvider>
-          {Platform.OS !== "web" && <Header />}
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="dashboard" options={{ headerShown: false }} />
-            <Stack.Screen name="calendar" options={{ headerShown: false }} />
-            <Stack.Screen name="client" options={{ headerShown: false }} />
-            <Stack.Screen name="employee" options={{ headerShown: false }} />
-            <Stack.Screen name="messages" options={{ headerShown: false }} />
-            <Stack.Screen
-              name="notification"
-              options={{ headerShown: false }}
-            />
-            <Stack.Screen name="payment" options={{ headerShown: false }} />
-            <Stack.Screen name="profile" options={{ headerShown: false }} />
-            <Stack.Screen name="task" options={{ headerShown: false }} />
-          </Stack>
-          {showVersion && <VersionDisplay color={secondary} />}
-        </MessageProvider>
+        <SideComponentProvider>
+          <MessageProvider>
+            {Platform.OS !== "web" && <Header />}
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="dashboard" options={{ headerShown: false }} />
+              <Stack.Screen name="calendar" options={{ headerShown: false }} />
+              <Stack.Screen name="client" options={{ headerShown: false }} />
+              <Stack.Screen name="employee" options={{ headerShown: false }} />
+              <Stack.Screen name="messages" options={{ headerShown: false }} />
+              <Stack.Screen
+                name="notification"
+                options={{ headerShown: false }}
+              />
+              <Stack.Screen name="payment" options={{ headerShown: false }} />
+              <Stack.Screen name="profile" options={{ headerShown: false }} />
+              <Stack.Screen name="task" options={{ headerShown: false }} />
+            </Stack>
+            {showVersion && <VersionDisplay color={secondary} />}
+          </MessageProvider>
+        </SideComponentProvider>
       </GestureHandlerRootView>
 
-      {/* Display the drawer when the user clicks on the menu button in the header, and also contains the close button to close the drawer */}
       {showDrawer && (
         <>
           <Pressable

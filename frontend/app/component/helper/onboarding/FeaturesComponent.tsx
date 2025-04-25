@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, ScrollView, Pressable, TouchableOpacity } from "react-native";
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity } from "react-native";
 import React from "react";
 import {
   MaterialIcons,

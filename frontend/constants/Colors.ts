@@ -13,7 +13,7 @@ export const Colors = {
   light: {
     headerText: "#0e9ee6",
     otherText: "gray",
-    text: "#11181C",
+    text: "#000",
     background: "#fff",
     tint: tintColorLight,
     icon: "#21130d",
@@ -33,7 +33,7 @@ export const Colors = {
   dark: {
     headerText: "#0e9ee6",
     otherText: "gray",
-    text: "white",
+    text: "#000",
     background: "black",
     tint: tintColorDark,
     primaryColor: "#1e88e5",

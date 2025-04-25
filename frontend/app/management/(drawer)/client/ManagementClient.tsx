@@ -23,7 +23,6 @@ import ButtonText from "@/app/component/helper/ButtonText";
 const MainClient = () => {
   const {
     isCreateContractModalVisible,
-    toggleCreateContractModal,
     isCreateClientModalVisible,
     setIsCreateClientModalVisible,
     isEditContractModalVisible,
@@ -39,7 +38,7 @@ const MainClient = () => {
   const background = useThemeColor({}, "primaryColor");
 
   return (
-    <SafeAreaProvider style={[{ flex: 1 }, { backgroundColor: background }]}>
+    <SafeAreaProvider style={[{ flex: 1 }, ]}>
       <GestureHandlerRootView style={{ flex: 1 }}>
         {/* Display the add client component which will enable the user enter a new client details */}
         {/* Button creates a new client */}
@@ -75,15 +74,15 @@ const MainClient = () => {
           onRequestClose={() => setIsCreateContractModalVisible(false)}
           style={styles.modalContainer}
         >
-          <View>
-            <Pressable
-              style={styles.closeButton}
-              onPress={() => setIsCreateContractModalVisible(false)}
-            >
-              <MaterialCommunityIcons name="close" size={24} color="black" />
-            </Pressable>
+          <Pressable
+            style={styles.closeButton}
+            onPress={() => setIsCreateContractModalVisible(false)}
+          >
+            <MaterialCommunityIcons name="close" size={24} color="black" />
+          </Pressable>  
+          <View style={styles.modalContainer}>
+            <AddContractComponent isModal={isCreateContractModalVisible} />
           </View>
-          <AddContractComponent isModal={isCreateContractModalVisible} />
         </Modal>
 
         {/* Display the add client component which will enable the user enter a new client details */}
@@ -93,13 +92,13 @@ const MainClient = () => {
           onRequestClose={() => setIsCreateClientModalVisible(false)}
           style={styles.modalContainer}
         >
-          <View style={styles.modalContainer}>
-            <Pressable
-              style={styles.closeButton}
-              onPress={() => setIsCreateClientModalVisible(false)}
-            >
-              <MaterialCommunityIcons name="close" size={24} color="black" />
-            </Pressable>
+          <Pressable
+            style={styles.closeButton}
+            onPress={() => setIsCreateClientModalVisible(false)}
+          >
+            <MaterialCommunityIcons name="close" size={24} color="black" />
+          </Pressable>
+          <View style={styles.container}>
             <AddClientComponent isModal={isCreateClientModalVisible} />
           </View>
         </Modal>
@@ -109,16 +108,15 @@ const MainClient = () => {
           onRequestClose={() => setIsEditContractModalVisible(false)}
           style={styles.modalContainer}
         >
-          <View>
-            <Pressable
-              style={styles.closeButton}
-              onPress={() => setIsEditContractModalVisible(false)}
-            >
-              <MaterialCommunityIcons name="close" size={24} color="black" />
-            </Pressable>
+          <Pressable
+            style={styles.closeButton}
+            onPress={() => setIsEditContractModalVisible(false)}
+          >
+            <MaterialCommunityIcons name="close" size={24} color="black" />
+          </Pressable>
+          <View style={styles.container}>
+            <EditContractComponent activeContract={activeContract} />
           </View>
-
-          <EditContractComponent activeContract={activeContract} />
         </Modal>
 
         <Modal
@@ -126,16 +124,15 @@ const MainClient = () => {
           onRequestClose={() => setIsEditClientModalVisible(false)}
           style={styles.modalContainer}
         >
-          <View>
-            <Pressable
-              style={styles.closeButton}
-              onPress={() => setIsEditClientModalVisible(false)}
-            >
-              <MaterialCommunityIcons name="close" size={24} color="black" />
-            </Pressable>
+          <Pressable
+            style={styles.closeButton}
+            onPress={() => setIsEditClientModalVisible(false)}
+          >
+            <MaterialCommunityIcons name="close" size={24} color="black" />
+          </Pressable>
+          <View style={styles.container}>
+            {activeClient && <EditClientComponent client={activeClient} />}
           </View>
-
-          {activeClient && <EditClientComponent client={activeClient} />}
         </Modal>
       </GestureHandlerRootView>
     </SafeAreaProvider>
@@ -151,9 +148,10 @@ const styles = StyleSheet.create({
   },
 
   closeButton: {
-    justifyContent: "flex-end",
-    padding: 5,
-    borderRadius: 10,
+    position: "absolute",
+    top: 10,
+    right: 10,
+    zIndex: 2000,
   },
 
   newClientButton: {
@@ -173,4 +171,8 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     fontWeight: "700",
   },
+
+  container:{
+    flex: 1,
+  }
 });

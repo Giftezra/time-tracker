@@ -22,18 +22,12 @@ const EmployeeDisplayComponent: React.FC<EmployeeDetailsInterface> = (
   props
 ) => {
   // Import the context methods
-  const {
-    setEmployeeId,
-    setIsModalVisible,
-    removeEmployee,
-    setAlertConfig,
-    setIsAlertVisible,
-  } = useEmployeeContext();
-  const primary = useThemeColor({}, "primaryColor");
+  const { setEmployeeId, setIsModalVisible, removeEmployee } =
+    useEmployeeContext();
+
   const highlight = useThemeColor({}, "highlight");
-  const innerbackground = useThemeColor({}, "innerBackground");
   const inactivebtn = useThemeColor({}, "inactivebtn");
-  const text = useThemeColor({}, "text");
+  const text = "#000";
   const otherText = useThemeColor({}, "otherText");
 
   /* Handle the employee id when the employee is clicked and set the modal to visible, to open the modal.
@@ -45,26 +39,10 @@ const EmployeeDisplayComponent: React.FC<EmployeeDetailsInterface> = (
     setIsModalVisible(true);
   };
 
-  const handleRemoveEmployee = () => {
-    if (!props.id) return;
-    // If the id is provided, remove the employee and display an alert to the user.
-    setAlertConfig({
-      title: "Message",
-      message: `You are about to remove ${props.name} from the company. This action is irreversible.`,
-      onConfirm: async () => {
-        await removeEmployee(props.id || "");
-      },
-      onClose: () => {
-        setIsAlertVisible(false);
-      },
-      isVisible: true,
-    });
-    setIsAlertVisible(true);
-  };
   return (
     /* Route the admin to the employees analytics page when clicked. 
        Send the user id and accross to the next page to fetch the user that was requested  */
-    <View style={[styles.container, { backgroundColor: innerbackground }]}>
+    <View style={[styles.container, { backgroundColor: "white" }]}>
       <Image source={user_image} style={styles.image} />
       {/* Constains the staffs name and details */}
       <View style={styles.nameContainer}>
@@ -79,7 +57,6 @@ const EmployeeDisplayComponent: React.FC<EmployeeDetailsInterface> = (
           styles.container,
           {
             borderRadius: 5,
-            backgroundColor: inactivebtn,
             borderBlockColor: highlight,
             borderWidth: 0.5,
           },
@@ -90,7 +67,7 @@ const EmployeeDisplayComponent: React.FC<EmployeeDetailsInterface> = (
           <View style={{ gap: 10 }}>
             <Pressable
               style={{ backgroundColor: "red", padding: 5, borderRadius: 5 }}
-              onPress={handleRemoveEmployee}
+              onPress={() => removeEmployee(props.id || "")}
             >
               <Text style={[styles.detailsText, { color: "white" }]}>
                 Remove Employee
@@ -129,6 +106,18 @@ const EmployeeDisplayComponent: React.FC<EmployeeDetailsInterface> = (
             {props.phone}
           </Text>
         </View>
+
+        <View style={{ alignSelf: "flex-end", flexDirection: "row", gap: 5 }}>
+          <Text
+            style={[
+              styles.detailsText,
+              { color: "blue", fontSize: 12, fontWeight: "600" },
+            ]}
+        >
+          see more
+        </Text>
+        <Text>🔽</Text>
+        </View>
       </Pressable>
     </View>
   );
@@ -140,11 +129,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: "center",
-    padding: 2,
+    padding: 5,
     height: 300,
     elevation: 10,
     shadowRadius: 10,
     shadowOpacity: 0.3,
+    borderRadius: 5,
+    backgroundColor: "white",
   },
 
   image: {

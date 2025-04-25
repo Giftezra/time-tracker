@@ -43,18 +43,15 @@ const PaymentContext = ({ children }: { children: React.ReactNode }) => {
     { id: "1", last4: "4242", brand: "visa", isDefault: true },
     { id: "2", last4: "5555", brand: "mastercard", isDefault: false },
   ]);
-
   const [overagePlan, setOveragePlan] = useState<number>(0);
   const [selectedCard, setSelectedCard] = useState<string>(savedCards[0]?.id);
   const [subscriptionTiers, setSubscriptionTiers] = useState<
     SubscriptionPlanTiers[]
   >([]);
-
   const [currentPlan, setCurrentPlan] = useState<
     CurrentPlanDetails | undefined
   >(undefined);
   const [useOwnerAddress, setUseOwnerAddress] = useState(false);
-
   const [selectedPlan, setSelectedPlan] =
     useState<SubscriptionPlanTiers | null>(null);
   const [billingPeriod, setBillingPeriod] = useState<"monthly" | "annually">(
@@ -83,8 +80,6 @@ const PaymentContext = ({ children }: { children: React.ReactNode }) => {
     };
     fetchData();
   }, []);
-
-  // Billing address state
   const [billingAddress, setBillingAddress] = useState<
     BillingAddress | undefined
   >();
@@ -175,14 +170,15 @@ const PaymentContext = ({ children }: { children: React.ReactNode }) => {
    * Convert the price to cents for Stripe.
    * Return the response from the server.
    */
+  // In paymentContext.tsx
+  // In paymentContext.tsx
   const fetchPaymentSheetDetails = async () => {
     try {
-      setIsCheckoutLoading(true);
-      // Convert price to cents for Stripe
       const amountInCents = Math.round(finalPrice * 100);
-
       const response = await axiosInstance.post("/api/create/payment/sheet/", {
         amount: amountInCents,
+        plan_id: selectedPlan?.id,
+        billing_period: billingPeriod,
       });
 
       if (response.status === 200) {
@@ -190,6 +186,7 @@ const PaymentContext = ({ children }: { children: React.ReactNode }) => {
       }
     } catch (error) {
       console.error("Error fetching payment sheet details:", error);
+      throw error; // Re-throw to be caught by calling function
     }
   };
 
@@ -208,6 +205,14 @@ const PaymentContext = ({ children }: { children: React.ReactNode }) => {
         merchantDisplayName: "Time Trackr",
         customerEphemeralKeySecret: ephemeralKey,
         customerId: customer,
+        applePay:{
+          merchantCountryCode: "GB",
+        },
+        googlePay:{
+          merchantCountryCode: "GB",
+          testEnv: true,
+          currencyCode: "GBP",
+        }
       });
 
       if (!error) {
@@ -231,7 +236,7 @@ const PaymentContext = ({ children }: { children: React.ReactNode }) => {
       const response = await axiosInstance.post(
         "/api/update/subscription/plan/",
         {
-          plan_id: selectedPlan.id,
+          tier_id: selectedPlan.id,
           billing_period: billingPeriod,
         }
       );
@@ -239,7 +244,6 @@ const PaymentContext = ({ children }: { children: React.ReactNode }) => {
       if (response.status === 200) {
         // Refresh the current plan details
         await fetchCurrentPlan();
-        console.log("Subscription plan updated successfully");
         return true;
       }
       return false;
@@ -248,10 +252,15 @@ const PaymentContext = ({ children }: { children: React.ReactNode }) => {
         "Error updating subscription plan:",
         error.response?.data?.error || error.message
       );
-      Alert.alert(
-        "Error",
-        error.response?.data?.error || "Failed to update subscription plan"
-      );
+      setIsAlertVisible(true);
+      setAlertConfig({
+        title: "Error",
+        message:
+          error.response?.data?.error || "Failed to update subscription plan",
+        onConfirm: () => setIsAlertVisible(false),
+        isVisible: true,
+        type: "error",
+      });
       return false;
     }
   };
@@ -266,36 +275,9 @@ const PaymentContext = ({ children }: { children: React.ReactNode }) => {
       await initializePaymentSheet();
       const { error } = await presentPaymentSheet();
 
-      if (error) {
-        if (error.code === PaymentSheetError.Canceled) {
-          setIsAlertVisible(true);
-          setAlertConfig({
-            title: "Payment sheet cancelled",
-            message: error.message,
-            onConfirm: () => setIsAlertVisible(false),
-            isVisible: true,
-          });
-        } else if (error.code === PaymentSheetError.Failed) {
-          setIsAlertVisible(true);
-          setAlertConfig({
-            title: "Payment sheet failed",
-            message: error.message,
-            onConfirm: () => setIsAlertVisible(false),
-            isVisible: true,
-          });
-        } else if (error.code === PaymentSheetError.Timeout) {
-          setIsAlertVisible(true);
-          setAlertConfig({
-            title: "Payment sheet timeout",
-            message: error.message,
-            onConfirm: () => setIsAlertVisible(false),
-            isVisible: true,
-          });
-        }
-      } else {
-        // Payment was successful
-        console.log("Payment successful");
+      if (!error) {
         const updated = await updateSubscriptionPlan();
+        // If the plan is updated successfully, show the user a success alert.
         if (updated) {
           setIsAlertVisible(true);
           setAlertConfig({
@@ -308,16 +290,27 @@ const PaymentContext = ({ children }: { children: React.ReactNode }) => {
             },
             isVisible: true,
           });
-        } else {
+        } else if (!updated) {
           setIsAlertVisible(true);
           setAlertConfig({
-            title: "Payment successful",
+            title: "Status",
             message:
               "Payment successful but failed to update subscription. Please contact support.",
             onConfirm: () => setIsAlertVisible(false),
             isVisible: true,
+            type: "error",
           });
         }
+      } else {
+        // Handle failed payment error
+        setIsAlertVisible(true);
+        setAlertConfig({
+          title: "Status",
+          message: "Payment failed. Please try again.",
+          onConfirm: () => setIsAlertVisible(false),
+          isVisible: true,
+          type: "error",
+        });
       }
     } catch (error) {
       console.log("Error opening payment sheet:", error);
@@ -369,6 +362,58 @@ const PaymentContext = ({ children }: { children: React.ReactNode }) => {
     totalAmount: 0,
   });
 
+  /**
+   * Handle direct overage payment without going through checkout
+   */
+  const handleDirectOveragePayment = async () => {
+    try {
+      setIsCheckoutLoading(true);
+      const amountInCents = Math.round(overagePlan * 100);
+
+      const { paymentIntent, ephemeralKey, customer } =
+        await fetchPaymentSheetDetails();
+
+      const { error } = await initPaymentSheet({
+        paymentIntentClientSecret: paymentIntent,
+        merchantDisplayName: "Time Trackr",
+        customerEphemeralKeySecret: ephemeralKey,
+        customerId: customer,
+      });
+
+      if (!error) {
+        const { error: presentError } = await presentPaymentSheet();
+
+        if (!presentError) {
+          setIsAlertVisible(true);
+          setAlertConfig({
+            title: "Payment successful",
+            message: "Your overage payment has been processed successfully!",
+            onConfirm: () => {
+              setIsAlertVisible(false);
+              fetchCurrentPlan(); // Refresh the current plan details
+            },
+            isVisible: true,
+          });
+          return true;
+        }
+      }
+      return false;
+    } catch (error) {
+      console.error("Error processing overage payment:", error);
+      setIsAlertVisible(true);
+      setAlertConfig({
+        title: "Error",
+        message: "Failed to process overage payment. Please try again.",
+        onConfirm: () => setIsAlertVisible(false),
+        isVisible: true,
+        type: "error",
+      });
+      return false;
+    } finally {
+      setIsCheckoutLoading(false);
+    }
+  };
+
   const value: CheckoutContextType = {
     ownerAddress,
     billingAddress,
@@ -398,6 +443,7 @@ const PaymentContext = ({ children }: { children: React.ReactNode }) => {
     setOveragePlan,
     currentPlan,
     fetchSubscriptionHistory,
+    handleDirectOveragePayment,
   };
 
   return (

@@ -13,10 +13,10 @@ import { useThemeColor } from "@/hooks/useThemeColor";
 import { SubscriptionPlanTiers } from "@/app/types/management/payment";
 
 interface Props {
-  subscriptionPlan: SubscriptionPlanTiers ;
+  subscriptionPlan: SubscriptionPlanTiers;
   isSelected: boolean;
   onSelect: () => void;
-    billingPeriod: "monthly" | "annually";
+  billingPeriod: "monthly" | "annually";
 }
 
 const SubscriptionTierComponent = ({
@@ -79,7 +79,11 @@ const SubscriptionTierComponent = ({
   return (
     <TouchableOpacity
       onPress={() => {
-        console.log("Plan selected:", subscriptionPlan.name);
+        console.log("Selected Plan Details:", {
+          id: subscriptionPlan.id,
+          name: subscriptionPlan.name,
+          rate: subscriptionPlan.rate,
+        });
         onSelect();
       }}
       activeOpacity={0.7}
@@ -145,13 +149,14 @@ const SubscriptionTierComponent = ({
         </View>
       )}
 
-      {billingPeriod === "annually" && subscriptionPlan.name !== "Unlimited" && (
-        <View style={styles.billingNoteContainer}>
-          <Text style={styles.billingNote}>
-            {`Billed £${price.toFixed(2)} annually`}
-          </Text>
-        </View>
-      )}
+      {billingPeriod === "annually" &&
+        subscriptionPlan.name !== "Unlimited" && (
+          <View style={styles.billingNoteContainer}>
+            <Text style={styles.billingNote}>
+              {`Billed £${price.toFixed(2)} annually`}
+            </Text>
+          </View>
+        )}
 
       <ScrollView
         style={styles.featuresContainer}
@@ -184,9 +189,7 @@ const SubscriptionTierComponent = ({
         </View>
       </ScrollView>
 
-      <View
-        style={[styles.selectButton, { backgroundColor: activeBtn }]}
-      >
+      <View style={[styles.selectButton, { backgroundColor: activeBtn }]}>
         <Text style={styles.selectButtonText}>
           {isSelected ? "Selected" : "Select Plan"}
         </Text>
@@ -256,7 +259,6 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   header: {
-    
     alignItems: "center",
     marginBottom: 20,
   },

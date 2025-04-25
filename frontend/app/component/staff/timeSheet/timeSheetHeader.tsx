@@ -4,6 +4,7 @@ import TimeSheetDatecomponent from "./timeSheetDate";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useTimeSheetContext } from "@/app/context/staff/timeSheetProvider";
+import { useSideComponentContext } from "@/app/context/staff/sideComponentProvider";
 const TimeSheetHeaderComponent = ({
   startBreakButton,
   clockOutButton,
@@ -17,7 +18,7 @@ const TimeSheetHeaderComponent = ({
   breakTime: string;
   clockInTime: string;
 }) => {
-  const { ongoingShift } = useTimeSheetContext();
+  const { event } = useSideComponentContext();
   //Get he current month and day
   const date = new Date();
   const month = date.toLocaleDateString("default", { month: "short" });
@@ -78,20 +79,20 @@ const TimeSheetHeaderComponent = ({
 
       <View style={[styles.container, styles.lowerContainer]}>
         <View style={styles.innerContainer}>
-          <Text style={[styles.timeheaderText, {color: '#432318'}]}>
+          <Text style={[styles.timeheaderText, { color: "#432318" }]}>
             Clocked In
           </Text>
-          <Text style={[styles.timeText, {color:'blue'}]}>
-            {ongoingShift?.shift_start_time}
+          <Text style={[styles.timeText, { color: "blue" }]}>
+            {event.start_time}
           </Text>
         </View>
         <View style={[styles.separator, { backgroundColor: separatorColor }]} />
         <View style={styles.innerContainer}>
-          <Text style={[styles.timeheaderText, {color: '#432318'}]}>
+          <Text style={[styles.timeheaderText, { color: "#432318" }]}>
             Will Clock Out
           </Text>
-          <Text style={[styles.timeText, {color:'blue'}]}>
-            {ongoingShift?.task_end_time}
+          <Text style={[styles.timeText, { color: "blue" }]}>
+            {event.end_time}
           </Text>
         </View>
       </View>

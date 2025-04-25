@@ -1,4 +1,8 @@
-import { UserResponseType } from "./onboarding";
+import {
+  TaskDetailsProps,
+  WorklogInterface,
+  EmployeeDetailsInterface,
+} from "./employee";
 
 export interface OrderSummaryType {
   employee?: number;
@@ -67,6 +71,13 @@ export default interface DashboardContextType {
   setEmployeeId: (id: string) => void;
   isModalVisible: boolean;
   setIsModalVisible: (visible: boolean) => void;
+  handlePhone: (phone: string) => void;
+  handleEmployeeAnalytics: (employeeId: string) => Promise<void>;
+  employeeAnalyticsData: {
+    employeeData: EmployeeDetailsInterface | undefined;
+    workLog: WorklogInterface | undefined;
+    taskDetails: TaskDetailsProps | undefined;
+  };
 }
 
 export interface LeaderBoardData {

@@ -378,10 +378,9 @@ export default AssignTaskModal;
 
 const styles = StyleSheet.create({
   mainContainer: {
+    flex: 1,
     width: Platform.OS === "web" ? "50%" : "100%",
-    maxHeight: "90%",
     backgroundColor: "white",
-    borderRadius: 10,
     padding: 20,
     shadowColor: "#000",
     shadowOffset: {

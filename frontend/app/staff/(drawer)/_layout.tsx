@@ -1,4 +1,5 @@
 import {
+  BackHandler,
   Platform,
   Pressable,
   SafeAreaView,
@@ -7,7 +8,7 @@ import {
   Text,
   View,
 } from "react-native";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { Drawer } from "expo-router/drawer";
 import { router, Stack } from "expo-router";
@@ -19,6 +20,7 @@ import SideComponentProvider from "@/app/context/staff/sideComponentProvider";
 import StaffTaskProvider from "@/app/context/staff/staffTaskProvider";
 import { AntDesign, Ionicons } from "@expo/vector-icons";
 import MessageProvider from "@/app/context/management/messages/messageContext";
+import AlertConfig from "@/app/types/management/AlertConfig";
 
 const MainStaffMainLayout = () => {
   const backgroundColor = useThemeColor({}, "background");
@@ -29,10 +31,25 @@ const MainStaffMainLayout = () => {
 
   const [showDrawer, setShowDrawer] = useState(false);
   const [showVersion, setShowVersion] = useState(false);
+  const [backPressCount, setBackPressCount] = useState(0);
+  const { user, setAlertConfig, setIsAlertVisible } = useAuth();
 
-  const { user } = useAuth();
+  const handleBackButton = ({
+    setAlertConfig,
+    setIsAlertVisible,
+  }: {
+    setAlertConfig: (config: AlertConfig) => void;
+    setIsAlertVisible: (visible: boolean) => void;
+  }) => {
+    useEffect(() => {
+      if (backPressCount === 1) {
+        const timer = setTimeout(() => {
+          setBackPressCount(0);
+        }, 2000);
+        return () => clearTimeout(timer);
+      }
+    }, [backPressCount]);
 
-  const handleBackButton = () => {
     const isLastScene = router.canGoBack();
     return (
       <View style={{ flexDirection: "row", alignItems: "center" }}>
@@ -41,9 +58,28 @@ const MainStaffMainLayout = () => {
             <AntDesign name="arrowleft" size={24} color={background} />
           </Pressable>
         ) : (
-          <Text
-            style={{ color: background, fontFamily: "BarlowRegular" }}
-          ></Text>
+          <Pressable
+            onPress={() => {
+              if (backPressCount === 0) {
+                setIsAlertVisible(true);
+                setAlertConfig({
+                  title: "Exit App",
+                  message:
+                    "You are about to exit the app. Do you want to continue this action?",
+                  onConfirm: () => {
+                    BackHandler.exitApp();
+                  },
+                  isVisible: true,
+                  onClose() {
+                    setIsAlertVisible(false);
+                  },
+                });
+              }
+            }}
+            style={{ marginRight: 10 }}
+          >
+            <AntDesign name="arrowleft" size={24} color={background} />
+          </Pressable>
         )}
       </View>
     );
@@ -61,7 +97,7 @@ const MainStaffMainLayout = () => {
   const Header = () => {
     return (
       <View style={[styles.header, { backgroundColor: tintColor }]}>
-        {handleBackButton()}
+        {handleBackButton({ setAlertConfig, setIsAlertVisible })}
         <View style={styles.innerContainer}>
           <Pressable onPress={() => setShowDrawer(!showDrawer)}>
             <Ionicons name="menu" size={24} color={background} />

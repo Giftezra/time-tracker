@@ -1,41 +1,26 @@
 import { StyleSheet, Text, View } from "react-native";
 import React, { useState } from "react";
 import { BarChart } from "react-native-gifted-charts";
+import { useStaffDashboard } from "@/app/context/staff/dashboardProvider";
 
 const StaffDashboardChart = ({ width }: { width: number }) => {
+  const { chartData, chartYear } = useStaffDashboard();
   const [selectedBar, setSelectedBar] = useState<{
     value: number;
     index: number;
   } | null>(null);
 
-  // Sample data for monthly shift growth
-  const barData = [
-    { value: 15, label: "Jan", frontColor: "#177AD5" },
-    { value: 18, label: "Feb", frontColor: "#177AD5" },
-    { value: 25, label: "Mar", frontColor: "#177AD5" },
-    { value: 22, label: "Apr", frontColor: "#177AD5" },
-    { value: 30, label: "May", frontColor: "#ED6665" },
-    { value: 28, label: "Jun", frontColor: "#177AD5" },
-    { value: 35, label: "Jul", frontColor: "#177AD5" },
-    { value: 40, label: "Aug", frontColor: "#177AD5" },
-    { value: 45, label: "Sep", frontColor: "#177AD5" },
-    { value: 50, label: "Oct", frontColor: "#177AD5" },
-    { value: 55, label: "Nov", frontColor: "#177AD5" },
-    { value: 60, label: "Dec", frontColor: "#177AD5" },
-  ];
-
   const handlePress = (item: any, index: number) => {
     setSelectedBar({ value: item.value, index: index });
-    // Auto-hide the value after 2 seconds
     setTimeout(() => {
       setSelectedBar(null);
     }, 2000);
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Monthly Shift Growth</Text>
-      <View style={styles.chartContainer}>
+    <View style={[styles.container]}>
+      <Text style={styles.title}>Monthly Shift Growth ({chartYear})</Text>
+      <View style={[styles.chartContainer, { width: width }]}>
         {selectedBar && (
           <View
             style={[
@@ -51,11 +36,12 @@ const StaffDashboardChart = ({ width }: { width: number }) => {
           </View>
         )}
         <BarChart
-          data={barData}
-          barWidth={Math.max(7, width * 0.04)}
-          spacing={Math.max(5, width * 0.02)}
-          labelWidth={Math.max(20, width * 0.02)}
-          initialSpacing={width * 0.02}
+          data={chartData}
+          width={width}
+          barWidth={width / 16} // Adjust this divisor as needed
+          spacing={width / 25} // Adjust this divisor as needed
+          initialSpacing={width / 30}
+          endSpacing={25}
           height={200}
           hideRules
           xAxisThickness={1}
@@ -63,14 +49,14 @@ const StaffDashboardChart = ({ width }: { width: number }) => {
           yAxisTextStyle={styles.yAxisLabelTextStyle}
           xAxisLabelTextStyle={styles.xAxisLabelTextStyle}
           noOfSections={5}
-          maxValue={100}
+          maxValue={chartData.reduce(
+            (max, item) => Math.max(max, item.value),
+            1
+          )}
           showFractionalValues={false}
           barBorderTopLeftRadius={5}
           barBorderTopRightRadius={5}
-          disablePress={false}
-          onPress={(item: any, index: number) => {
-            handlePress(item, index);
-          }}
+          onPress={(item: any, index: number) => handlePress(item, index)}
         />
       </View>
     </View>
@@ -82,13 +68,12 @@ export default StaffDashboardChart;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 15,
+    padding: 5,
     backgroundColor: "#fff",
     borderRadius: 5,
-  
   },
   chartContainer: {
-    width: "100%",
+    flex: 1,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -102,7 +87,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     columnGap: 5,
     color: "black",
-    transform: [{ rotate: "-30deg" }],
     fontWeight: "500",
     fontFamily: "BarlowLight",
   },
@@ -112,14 +96,10 @@ const styles = StyleSheet.create({
     color: "red",
     fontWeight: "500",
     fontFamily: "BarlowMedium",
-
   },
-
-
-
   valueOverlay: {
     position: "absolute",
-    top: 40,
+    top: 20,
     zIndex: 1,
   },
   valueBox: {

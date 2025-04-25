@@ -1,4 +1,4 @@
-import { Dimensions, Platform, StyleSheet, Text, View } from "react-native";
+import { Dimensions, Modal, Platform, StyleSheet, Text, View } from "react-native";
 import React, { useEffect, useState } from "react";
 import {
   FlatList,
@@ -17,13 +17,21 @@ import AddContractComponent from "@/app/component/management/client/addcontract"
 
 const WebClientComponent = () => {
   const { windowWidth } = useAuth();
-  const { clientDetailsData, jobDetailsData } = useClientContext();
+  const { clientDetailsData, jobDetailsData, } = useClientContext();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchJobQuery, setSearchJobQuery] = useState("");
 
-  const [isModalVisible, setIsModalVisible] = useState(false);
+  /* Filter the client details given the search query */
+  const filterClientDetailsData = clientDetailsData.filter((item) => {
+    return item.name?.toLowerCase().includes(searchQuery.toLowerCase());
+  });
 
-  const onModalVisible = () => {
-    setIsModalVisible(!isModalVisible);
-  };
+  /* Filter the job details given the search query */
+  const filterJobDetailsData = jobDetailsData.filter((item) => {
+    return item.contract_name
+      ?.toLowerCase()
+      .includes(searchJobQuery.toLowerCase());
+  });
 
   return (
     <GestureHandlerRootView
@@ -36,11 +44,16 @@ const WebClientComponent = () => {
       <View style={[styles.container, { width: windowWidth * 0.8 }]}>
         <View style={{ width: "40%" }}>
           <View style={{ padding: 5 }}>
-            <SearchInputContainer />
+            <SearchInputContainer
+              placeholder="Search client"
+              text="Enter Client name"
+              value={searchQuery}
+              setValue={setSearchQuery}
+            />
           </View>
 
           <FlatList
-            data={clientDetailsData}
+            data={searchQuery ? filterClientDetailsData : clientDetailsData}
             keyExtractor={(item, index) => `client-${item.client_id}-${index}`}
             renderItem={({ item }) => <ClientDetailsComponent props={item} />}
           />
@@ -51,16 +64,12 @@ const WebClientComponent = () => {
           <SearchInputContainer />
           {/* View for the list ofassigned tasks */}
           <FlatList
-            data={jobDetailsData}
+            data={searchJobQuery ? filterJobDetailsData : jobDetailsData}
             keyExtractor={(item, index) => `job-${item.client_id}-${index}`}
             renderItem={({ item }) => <JobDetailsComponent {...item} />}
           />
         </View>
       </View>
-
-      <CustomModal isModalOpen={isModalVisible} closeModal={onModalVisible}>
-        <AddContractComponent />
-      </CustomModal>
     </GestureHandlerRootView>
   );
 };
@@ -154,5 +163,11 @@ const styles = StyleSheet.create({
     marginHorizontal: 10,
     marginVertical: 2,
     borderWidth: 0.5,
+  },
+
+  modalContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
   },
 });

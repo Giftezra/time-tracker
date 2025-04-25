@@ -13,6 +13,7 @@ from rest_framework_simplejwt.tokens import AccessToken
 from django.contrib.auth import get_user_model
 from urllib.parse import parse_qs
 from channels.db import database_sync_to_async
+from datetime import datetime
 
 class DirectMessageConsumer(AsyncWebsocketConsumer):
     """
@@ -91,24 +92,45 @@ class DirectMessageConsumer(AsyncWebsocketConsumer):
         Args:
             text_data (str): JSON string containing the message data
         """
-        text_data_json = json.loads(text_data)
-        message = text_data_json['message']
-        sender_id = self.scope["user"].id
+        try:
+            text_data_json = json.loads(text_data)
+            message = text_data_json['message']
+            sender_id = self.scope["user"].id
 
-        # Save the direct message
-        saved_message = await self.save_message(sender_id, self.user2_id, message)
+            # Save the direct message
+            saved_message = await self.save_message(sender_id, self.user2_id, message)
 
-        # Send message to the other participant
-        await self.channel_layer.group_send(
-            self.room_group_name,
-            {
-                'type': 'direct_message',
-                'message': message,
-                'sender_id': sender_id,
-                'timestamp': saved_message.timestamp.isoformat(),
-                'message_id': saved_message.id
-            }
-        )
+            # Also store in Redis for fast retrieval
+            await self.store_message_in_redis(
+                sender_id=sender_id,
+                recipient_id=self.user2_id,
+                message=message,
+                message_id=saved_message.id,
+                timestamp=saved_message.timestamp.isoformat()
+            )
+
+            # Send message to the other participant
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {
+                    'type': 'direct_message',
+                    'message': message,
+                    'sender_id': sender_id,
+                    'timestamp': saved_message.timestamp.isoformat(),
+                    'message_id': saved_message.id
+                }
+            )
+        except json.JSONDecodeError:
+            await self.send(text_data=json.dumps({
+                'error': 'Invalid JSON format'
+            }))
+        except Exception as e:
+            print(f"Error processing message: {str(e)}")
+            await self.send(text_data=json.dumps({
+                'error': 'Internal server error'
+            }))
+
+
 
     async def direct_message(self, event):
         """
@@ -123,6 +145,26 @@ class DirectMessageConsumer(AsyncWebsocketConsumer):
             'timestamp': event['timestamp'],
             'message_id': event['message_id']
         }))
+
+    
+    
+    @database_sync_to_async
+    def store_message_in_redis(self, sender_id, recipient_id, message, message_id, timestamp):
+        import redis
+        r = redis.Redis(host='localhost', port=6379, db=0)
+    
+        # Store message in sorted set by timestamp
+        room_key = f"messages:{self.room_group_name}"
+        message_data = json.dumps({
+            'id': message_id,
+            'sender': sender_id,
+            'content': message,
+            'timestamp': timestamp
+        })
+        r.zadd(room_key, {message_data: float(datetime.now().timestamp())})
+    
+        # Keep only last 100 messages per room
+        r.zremrangebyrank(room_key, 0, -101)
 
     @sync_to_async
     def save_message(self, sender_id, recipient_id, message):
@@ -242,7 +284,37 @@ def get_chat_rooms(request):
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
     
 
-@api_view(['GET'])
+@api_view(['DELETE'])
 @permission_classes([IsAuthenticated])
-def get_messages(request):
-    pass
+def delete_conversation(request):
+    """ Delete the chatroom between the two users """
+    try:
+        chat_room_id = request.data.get('chat_room_id')
+        chat_room = ChatRoom.objects.get(id=chat_room_id)
+        # Check if the request user is a participant in the chatroom
+        if request.user not in chat_room.participants.all():
+            return Response({'error': 'You are not a participant in this chatroom'}, status=status.HTTP_403_FORBIDDEN)
+        chat_room.delete()
+        return Response({'message': 'Chatroom deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_message(request):
+    """ Delete a message from the chatroom """
+    try:
+        # Get the chatroom with the given chatroom id and filter messages in the chatroom
+        # Using the message id, delete the message from the chatroom
+        chatroom_id = request.data.get('chat_room_id')
+        message_id = request.data.get('message_id')
+        chatroom = ChatRoom.objects.get(id=chatroom_id)
+        message = Message.objects.get(id=message_id, room=chatroom)
+        # Check if the user is a participant in the chatroom
+        if request.user not in chatroom.participants.all():
+            return Response({'error': 'You are not a participant in this chatroom'}, status=status.HTTP_403_FORBIDDEN)
+        message.delete()
+        return Response({'message': 'Message deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)

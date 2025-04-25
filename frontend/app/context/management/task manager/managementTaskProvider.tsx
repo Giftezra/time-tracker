@@ -40,11 +40,11 @@ const ManagementTaskContext = createContext<ActiveTaskContextType | undefined>(
  * @param param0
  * @returns
  */
-const ManagementTaskProvider = ({
-  children,
-}: {
+type ProviderProps = {
   children: React.ReactNode;
-}) => {
+};
+
+const ManagementTaskProvider = ({ children }: ProviderProps) => {
   const { axiosInstance, setIsAlertVisible, setAlertConfig } = useAuth();
   // Create a date object for the current date
   const currentDate = new Date();
@@ -236,47 +236,61 @@ const ManagementTaskProvider = ({
    * The details to be sent to the server would be the shift id and the employee id.
    */
   const terminateTask = async (task: ActiveTaskType | undefined) => {
-    try {
-      if (!task) {
-        setAlertConfig({
-          title: "Error",
-          message: "Task is undefined",
-          onConfirm() {
-            setIsAlertVisible(false);
-          },
-          isVisible: true,
-        });
-        setIsAlertVisible(true);
-        return;
-      }
-      const response = await axiosInstance.patch("/api/terminate/shift/", {
-        shift_id: task.shift_id,
-        employee_id: task.employee_id,
-      });
-      if (response.status === 200) {
-        setAlertConfig({
-          title: "Task Terminated",
-          message: response.data.message,
-          onConfirm() {
-            setIsAlertVisible(false);
-          },
-          isVisible: true,
-        });
-        setIsAlertVisible(true);
-        const updatedActiveTasks = await getActiveTasks();
-        setActiveTasks(updatedActiveTasks);
-      }
-    } catch (error: any) {
-      setAlertConfig({
-        title: "Error",
-        message: error.response?.data.error,
-        onConfirm() {
-          setIsAlertVisible(false);
-        },
-        isVisible: true,
-      });
-      setIsAlertVisible(true);
-    }
+    // Confirm that the user wants to terminate the task then call the termination algorithm 
+    // when the user confirms the termination, the task is terminated and the user is notified of the success or failure of the termination.
+    setIsAlertVisible(true);
+    setAlertConfig({
+      title: "Confirmation",
+      message: "Are you sure you want to terminate this task?",
+      onConfirm: async () => {
+        setIsAlertVisible(false);
+        try {
+          if (!task) {
+            setAlertConfig({
+              title: "Error",
+              message: "Task is undefined",
+              onConfirm() {
+                setIsAlertVisible(false);
+              },
+              isVisible: true,
+            });
+            setIsAlertVisible(true);
+            return;
+          }
+          const response = await axiosInstance.patch("/api/terminate/shift/", {
+            shift_id: task.shift_id,
+            employee_id: task.employee_id,
+          });
+          if (response.status === 200) {
+            setAlertConfig({
+              title: "Task Terminated",
+              message: response.data.message,
+              onConfirm() {
+                setIsAlertVisible(false);
+              },
+              isVisible: true,
+            });
+            setIsAlertVisible(true);
+            const updatedActiveTasks = await getActiveTasks();
+            setActiveTasks(updatedActiveTasks);
+          }
+        } catch (error: any) {
+          setAlertConfig({
+            title: "Error",
+            message: error.response?.data.error,
+            onConfirm() {
+              setIsAlertVisible(false);
+            },
+            isVisible: true,
+          });
+          setIsAlertVisible(true);
+        }
+      },
+      isVisible: true,
+      onClose() {
+        setIsAlertVisible(false);
+      },
+    });
   };
 
   /**
@@ -809,8 +823,35 @@ const ManagementTaskProvider = ({
       isVisible: true,
     });
   };
-  
 
+  /**
+   * Method is used to handle how the task end time is seleced by the user.
+   */
+  const onConfirmEndTime = useCallback(
+    ({ hours, minutes }: { hours: number; minutes: number }) => {
+      setEndTimeVisible(false);
+      setEndTime({ hours, minutes });
+      collectNewTaskData("end_time", { hours, minutes });
+      console.log({ hours, minutes });
+    },
+    [setEndTimeVisible]
+  );
+
+  const on_start_time_dismiss = useCallback(() => {
+    seStartTimeVisible(false);
+  }, [seStartTimeVisible]);
+
+  const on_end_time_dismiss = useCallback(() => {
+    setEndTimeVisible(false);
+  }, [setEndTimeVisible]);
+
+  const handleStartTimeDisplay = () => {
+    seStartTimeVisible(!startTimeVisible);
+  };
+
+  const handleEndTimeDisplay = () => {
+    setEndTimeVisible(!endTimeVisible);
+  };
   // Update the handlers to match DatePickerModal's expected types
   const onConfirmStartDate = useCallback((params: { date?: Date }) => {
     if (params.date) {
@@ -843,34 +884,6 @@ const ManagementTaskProvider = ({
   const handleEndDateDisplay = () => {
     setEndDateVisible(!endDateVisible);
   };
-  /**
-   * Method is used to handle how the task end time is seleced by the user.
-   */
-  const onConfirmEndTime = useCallback(
-    ({ hours, minutes }: { hours: number; minutes: number }) => {
-      setEndTimeVisible(false);
-      setEndTime({ hours, minutes });
-      collectNewTaskData("end_time", { hours, minutes });
-      console.log({ hours, minutes });
-    },
-    [setEndTimeVisible]
-  );
-
-  const on_start_time_dismiss = useCallback(() => {
-    seStartTimeVisible(false);
-  }, [seStartTimeVisible]);
-
-  const on_end_time_dismiss = useCallback(() => {
-    setEndTimeVisible(false);
-  }, [setEndTimeVisible]);
-
-  const handleStartTimeDisplay = () => {
-    seStartTimeVisible(!startTimeVisible);
-  };
-
-  const handleEndTimeDisplay = () => {
-    setEndTimeVisible(!endTimeVisible);
-  };
 
   const value: ActiveTaskContextType = {
     employeeList,
@@ -883,7 +896,6 @@ const ManagementTaskProvider = ({
     isTaskClicked,
     activeTaskClicked,
     hideModal,
-    render_popup_button: renderPopupButton,
     isLoading,
     getContractList,
     getAvailableEmployees,

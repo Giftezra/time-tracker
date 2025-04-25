@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from datetime import datetime, timedelta, timezone
 from django.shortcuts import get_object_or_404
-from management.models import Shift, Task
+from management.models import Shift, Task, TaskComment
 from management.helpers import get_coordinates_from_address
 from staff.models import Staff
 from management.view.main.decorators import staff_required
@@ -75,7 +75,7 @@ def start_shift(request):
 @api_view(['PATCH'])
 @permission_classes([IsAuthenticated])
 @staff_required
-@ratelimit(key='user', rate='5/h', method=['PATCH'], block=True)
+@ratelimit(key='user', rate='20/h', method=['PATCH'], block=True)
 def end_shift(request):
     """ Method is used to trigger the shift end algorithm given the shift id.
     The shift id is retrieved from the request data.
@@ -183,7 +183,7 @@ def get_day_task(request):
         'start_time': task.start_time,
         'end_time': task.end_time,
         'start_date': task.start_date,})
-    print('task_list', task_list)
+      
     return Response({'tasks': task_list, 'message': 'Congratulations! There are tasks available for the selected day.'}, status=status.HTTP_200_OK)
   except Exception as e:
     return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -312,10 +312,6 @@ def get_current_day_shifts(request):
               'staff_id': colleague.id,
               'name': colleague.user.get_full_name(),
               })
-            print('colleagues', colleagues)
-            print('address', shift.task.contract.address)
-            print('postcode', shift.task.contract.postcode)
-            # Get the latitude and longitude of the shift
             latitude, longitude = get_coordinates_from_address(shift.task.contract.address, shift.task.contract.postcode)
 
           shift_data.append({
@@ -329,7 +325,6 @@ def get_current_day_shifts(request):
             'latitude':latitude,
             'longitude':longitude
           })
-          print('shift_data', shift_data)
         return Response({'shifts': shift_data}, status=status.HTTP_200_OK)
     except Staff.DoesNotExist:
         return Response({'error': 'Staff record not found'}, 
@@ -337,3 +332,28 @@ def get_current_day_shifts(request):
     except Exception as e:
         return Response({'error': 'Server error'}, 
                       status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+@staff_required
+@ratelimit(key='user', rate='20/h', method=['POST'], block=True)
+def create_task_comment(request):
+    """Create a comment for a task."""
+    try:
+        # Retrieve the shift id from the request data and the comment from the request data
+        # Create a staff object for the request user and get the task comment model
+        shift_id = request.data.get('shift_id')
+        comment = request.data.get('comment')
+        shift = get_object_or_404(Shift, id=shift_id)
+        staff = get_object_or_404(Staff, user=request.user)
+
+        task_comment = TaskComment.objects.create(
+            shift=shift,
+            comment=comment,
+            created_by=staff
+        )
+        task_comment.save()
+        return Response({'message': 'Comment created successfully'}, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)

@@ -54,18 +54,16 @@ export default interface EmployeeContextType {
   workLog: WorklogInterface | undefined;
   employeeData: EmployeeDetailsInterface | undefined;
   clearData: () => void;
-  startShift: (shiftId: string) => Promise<void>;
-  endShift: (shiftId: string) => Promise<void>;
+  setTaskDetails: (taskDetails: TaskDetailsProps) => Promise<void>;
+  setWorkLog: (workLog: WorklogInterface) => Promise<void>;
+  setEmployeeData: (employeeData: EmployeeDetailsInterface) => Promise<void>;
   shiftError: string | undefined;
   retrieveEmployeeWithId: (id: string) => Promise<void>;
   retrieveEmployeeTaskDetails: (id: string) => Promise<void>;
   retrieveEmployeeWorkLog: (id: string) => Promise<void>;
-  isAlertVisible: boolean;
-  alertConfig: AlertConfig | undefined;
-  setAlertConfig: (config: AlertConfig) => void;
-  setIsAlertVisible: (visible: boolean) => void;
   removeEmployee: (id: string) => Promise<void>;
 }
+``;
 
 export interface WorklogInterface {
   id?: string;

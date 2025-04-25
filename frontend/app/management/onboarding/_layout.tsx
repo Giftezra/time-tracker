@@ -34,7 +34,7 @@ const MainOnboardingLayout = () => {
           }}
         />
         <Stack.Screen
-          name="onboarding"
+          name="onboard"
           options={{ headerShown: true, headerTitle: "Onboarding" }}
         />
         <Stack.Screen

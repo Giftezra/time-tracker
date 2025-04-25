@@ -38,7 +38,18 @@ const JobDetailsComponent: React.FC<JobDetailsType> = (props) => {
   const toggleContractDisplay = () => setToggleContract(!toggleContract);
 
   return (
-    <View style={[styles.maincontainer, { backgroundColor: primary }]}>
+    <View style={[styles.maincontainer]}>
+      <Text
+        style={{
+          textAlign: "center",
+          fontSize: 12,
+          fontFamily: "BarlowRegular",
+          fontWeight: "500",
+          color: "blue",
+        }}
+      >
+        click to drop down
+      </Text>
       {/* The main component displays the client details so that when clicked, the tasks associated with the client are displayed. */}
       <Pressable onPress={toggleContractDisplay}>
         <View style={styles.clientHeader}>
@@ -46,7 +57,7 @@ const JobDetailsComponent: React.FC<JobDetailsType> = (props) => {
           <AntDesign
             name={toggleContract ? "caretup" : "caretdown"}
             size={16}
-            color={text}
+            color={'#000'}
           />
         </View>
 
@@ -144,11 +155,11 @@ export default JobDetailsComponent;
 
 const styles = StyleSheet.create({
   maincontainer: {
-    marginVertical: 1,
+    marginVertical: 5,
     borderRadius: 4,
     overflow: "hidden",
     marginHorizontal: 4,
-    borderBottomWidth: 1,
+    borderWidth: 1,
   },
 
   clientHeader: {

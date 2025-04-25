@@ -12,6 +12,7 @@ import {
   Platform,
   Pressable,
   StyleSheet,
+  Text,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -41,27 +42,13 @@ const ClientDetailsComponent: React.FC<{
   } = useClientContext();
 
   const [siteToggle, setSiteToggle] = useState(false);
-  const [isDeleteAlertVisible, setIsDeleteAlertVisible] = useState(false);
-  const [alertConfig, setAlertConfig] = useState<{
-    title: string;
-    message: string;
-    onConfirm?: () => void;
-    onCancel?: () => void;
-  }>({
-    title: "",
-    message: "",
-    onConfirm: () => {},
-    onCancel: () => {},
-  });
 
   /**
    * Load the colors based on the devices color scheme
    */
   const primary = useThemeColor({}, "primaryColor");
-  const otherText = useThemeColor({}, "otherText");
   const innerbackground = useThemeColor({}, "innerBackground");
   const highlight = useThemeColor({}, "highlight");
-  const icon = useThemeColor({}, "icon");
   const text = useThemeColor({}, "text");
 
   /* Handle the toggle for the sit clicks to display the site details */
@@ -69,24 +56,7 @@ const ClientDetailsComponent: React.FC<{
     setSiteToggle(!siteToggle);
   };
 
-  /* Request the users confirmation before deleting the client. if they confirm, the client is deleted. else the modal is closed */
-  const handleDeleteClient = async () => {
-    setAlertConfig({
-      title: "Delete Client",
-      message: `Are you sure you want to delete ${props.name}?`,
-      onConfirm: async () => {
-        try {
-          await deleteClient(props.client_id);
-        } catch (error) {
-          console.error("Error deleting client:", error);
-        }
-      },
-      onCancel: () => {
-        setIsDeleteAlertVisible(false);
-      },
-    });
-    setIsDeleteAlertVisible(true);
-  };
+
   return (
     <View
       style={[
@@ -99,8 +69,8 @@ const ClientDetailsComponent: React.FC<{
     >
       <View style={styles.headerSection}>
         <View style={styles.titleRow}>
-          <TouchableOpacity onPress={handleDeleteClient}>
-            <MaterialIcons name="delete" size={24} color={primary} />
+          <TouchableOpacity onPress={() => deleteClient(props.client_id)}>
+            <MaterialIcons name="delete" size={24} color={'red'} />
           </TouchableOpacity>
           <ThemedHeaderText text={props.name} />
           <Pressable
@@ -131,6 +101,7 @@ const ClientDetailsComponent: React.FC<{
       </View>
 
       <Pressable onPress={handleSiteToggle} style={styles.contentSection}>
+        <Text style={styles.clickToViewContracts}>click to view contracts</Text>
         <View style={styles.infoSection}>
           <View style={styles.infoRow}>
             <MaterialIcons name="location-on" size={16} color={"#000"} />
@@ -200,13 +171,6 @@ const ClientDetailsComponent: React.FC<{
           </ScrollView>
         </View>
       )}
-      <AlertModal
-        title={alertConfig.title}
-        message={alertConfig.message}
-        isVisible={isDeleteAlertVisible}
-        onClose={alertConfig.onCancel}
-        onConfirm={alertConfig.onConfirm}
-      />
     </View>
   );
 };
@@ -323,5 +287,15 @@ const styles = StyleSheet.create({
   editButton: {
     padding: 8,
     marginLeft: 8,
+  },
+
+  clickToViewContracts: {
+    fontSize: 12,
+    fontWeight: "500",
+    fontFamily: "BarlowRegular",
+    color: "blue",
+    textTransform: "lowercase",
+    marginBottom: 12,
+    alignSelf: "center",
   },
 });

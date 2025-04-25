@@ -13,13 +13,11 @@ const image = require("../../../assets/images/login_background_image.jpg");
 
 const login = () => {
   return (
-    <SafeAreaView style={{ flex: 1 }}>
-      <GestureHandlerRootView style={{ flex: 1, justifyContent: "center" }}>
-        <ImageBackground style={{ flex: 1 }} source={image}>
-          <LoginComponent />
-        </ImageBackground>
-      </GestureHandlerRootView>
-    </SafeAreaView>
+    <GestureHandlerRootView style={{ flex: 1, justifyContent: "center" }}>
+      <ImageBackground style={{ flex: 1 }} source={image}>
+        <LoginComponent />
+      </ImageBackground>
+    </GestureHandlerRootView>
   );
 };
 

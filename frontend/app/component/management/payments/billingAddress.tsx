@@ -13,7 +13,7 @@ const BillingAddressComponent = () => {
         <Text style={styles.label}>Full Name</Text>
         <TextInput
           style={styles.input}
-          value={billingAddress.fullName}
+          value={billingAddress?.fullName}
           onChangeText={(value) => handleBillingAddress("fullName", value)}
           placeholder="Enter your full name"
         />
@@ -23,7 +23,7 @@ const BillingAddressComponent = () => {
         <Text style={styles.label}>Address</Text>
         <TextInput
           style={styles.input}
-          value={billingAddress.address}
+          value={billingAddress?.address}
           onChangeText={(value) => handleBillingAddress("address", value)}
           placeholder="Apartment, suite, unit, etc."
         />
@@ -34,7 +34,7 @@ const BillingAddressComponent = () => {
           <Text style={styles.label}>City</Text>
           <TextInput
             style={styles.input}
-            value={billingAddress.city}
+            value={billingAddress?.city}
             onChangeText={(value) => handleBillingAddress("city", value)}
             placeholder="City"
           />
@@ -44,7 +44,7 @@ const BillingAddressComponent = () => {
           <Text style={styles.label}>Postcode</Text>
           <TextInput
             style={styles.input}
-            value={billingAddress.postcode}
+            value={billingAddress?.postcode}
             onChangeText={(value) => handleBillingAddress("postcode", value)}
             placeholder="Postcode"
           />
@@ -56,7 +56,7 @@ const BillingAddressComponent = () => {
           <Text style={styles.label}>Country</Text>
           <TextInput
             style={styles.input}
-            value={billingAddress.country}
+            value={billingAddress?.country}
             onChangeText={(value) => handleBillingAddress("country", value)}
             placeholder="Country"
           />
@@ -67,7 +67,7 @@ const BillingAddressComponent = () => {
         <Text style={styles.label}>Phone Number</Text>
         <TextInput
           style={styles.input}
-          value={billingAddress.phone}
+          value={billingAddress?.phone}
           onChangeText={(value) => handleBillingAddress("phone", value)}
           placeholder="Enter your phone number"
           keyboardType="phone-pad"

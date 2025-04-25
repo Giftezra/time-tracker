@@ -14,8 +14,9 @@ import {
   Text,
   TextInput,
   View,
+  FlatList,
 } from "react-native";
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   ScrollView,
   GestureDetector,
@@ -38,19 +39,29 @@ const ChatRoomComponent = ({
   ) => void;
   onHandleModalVisibility: (id: string | null) => void;
 }) => {
-  const { chatRooms, deleteConversation, connectWebSocket, setActiveChatRoom } =
+  const { chatRooms, deleteConversation, connectWebSocket, setActiveChatRoom, fetchChatRooms } =
     useMessageContext();
   const secondaryColor = useThemeColor({}, "secondaryColor");
   const text = useThemeColor({}, "text");
   const textinput = useThemeColor({}, "textinput");
+  const [refreshing, setRefreshing] = useState(false);
 
+  /* Trigger the refresh and get the chat history from the server given the user id */
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchChatRooms();
+    setRefreshing(false);
+  }, [fetchChatRooms]);
+
+  /* Swipe to delete the conversation */
   const swipeGesture = Gesture.Pan()
     .activeOffsetX(-20)
-    .onEnd(() => {
-      deleteConversation();
+    .onEnd((event) => {
+      if (event.translationX < -50) {
+      }
     });
 
-  /* Return a message when there is no conversation   */
+  /* Return a message when there is no conversation */
   if (chatRooms.length === 0) {
     return (
       <View style={styles.noConversationContainer}>
@@ -62,48 +73,44 @@ const ChatRoomComponent = ({
     );
   }
 
-  return (
-    /**
-        Main container */
+  /* Render the chat room */
+  const renderChatRoom = ({ item: chat, index }: { item: any; index: number }) => (
+    <GestureDetector gesture={swipeGesture}>
+      <Pressable
+        style={[styles.messageRow,]}
+        onPress={() => {
+          onConversationSelect(chat.id, chat.name, chat.time || "");
+          onHandleModalVisibility(chat.id);
+          connectWebSocket(chat.userId);
+          setActiveChatRoom({
+            ...chat,
+          });
+        }}
+      >
+        <Image source={user_image} style={styles.image} />
+        <View style={styles.messageDetailsContainer}>
+          <Text style={styles.reciepientText}>{chat.name}</Text>
+          {chat.lastMessage && (
+            <Text style={styles.text}>{chat.lastMessage.slice(0, 20)}</Text>
+          )}
+        </View>
+        <Text style={styles.timeText}>{chat.time?.split("T")[0]}</Text>
+      </Pressable>
+    </GestureDetector>
+  );
 
-    <View style={[styles.maincontainer, { backgroundColor: secondaryColor }]}>
-      {/* Renders all of the users conversations.
-          All components are wrapped in a scroll  view to enable scrolling.
-          The swipeable component is used to delete a conversation when swiped left to present the delete icon
-       */}
-      <ScrollView
+  return (
+    <View style={[styles.maincontainer]}>
+      <FlatList
+        data={chatRooms}
+        renderItem={renderChatRoom}
+        keyExtractor={(item, index) => item.id || index.toString()}
         style={styles.messageContainer}
         showsVerticalScrollIndicator={false}
-      >
-        {chatRooms.map((chat, index) => {
-          return (
-            <GestureDetector key={index} gesture={swipeGesture}>
-              <Pressable
-                style={[styles.messageRow, { backgroundColor: textinput }]}
-                onPress={() => {
-                  onConversationSelect(chat.id, chat.name, chat.time || "");
-                  onHandleModalVisibility(chat.id);
-                  connectWebSocket(chat.userId);
-                  setActiveChatRoom({
-                    ...chat,
-                  });
-                }}
-              >
-                <Image source={user_image} style={styles.image} />
-                <View style={styles.messageDetailsContainer}>
-                  <Text style={styles.reciepientText}>{chat.name}</Text>
-                  {chat.lastMessage && (
-                    <Text style={styles.text}>
-                      {chat.lastMessage.slice(0, 20)}
-                    </Text>
-                  )}
-                </View>
-                <Text style={styles.timeText}>{chat.time?.split("T")[0]}</Text>
-              </Pressable>
-            </GestureDetector>
-          );
-        })}
-      </ScrollView>
+        refreshing={refreshing}
+        onRefresh={onRefresh}
+        ItemSeparatorComponent={() => <View style={{ height: 5, backgroundColor: textinput }} />}
+      />
     </View>
   );
 };
@@ -136,7 +143,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderBottomWidth: 1,
     paddingHorizontal: 5,
-    borderRadius: 5,
+    gap: 10,
   },
 
   image: {

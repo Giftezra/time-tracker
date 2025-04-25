@@ -7,11 +7,9 @@
  */
 
 import {
-  ActivityIndicator,
   Image,
   Platform,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -47,17 +45,22 @@ const renderMessage = ({
   sentByMe: boolean;
 }) => {
   return (
-    <Pressable style={styles.messageWrapper}>
+    <View
+      style={[
+        styles.messageContainer,
+        sentByMe ? styles.sentContainer : styles.receivedContainer,
+      ]}
+    >
       <View
         style={[
-          styles.messageItem,
-          sentByMe ? styles.sentMessage : styles.receivedMessage,
+          styles.messageBubble,
+          sentByMe ? styles.sentBubble : styles.receivedBubble,
         ]}
       >
         <Text
           style={[
             styles.messageText,
-            { color: sentByMe ? "#FFFFFF" : "#000000" },
+            sentByMe ? styles.sentText : styles.receivedText,
           ]}
         >
           {item.content}
@@ -66,22 +69,25 @@ const renderMessage = ({
           <Text
             style={[
               styles.timestamp,
-              { color: sentByMe ? "rgba(255,255,255,0.7)" : "#666666" },
+              sentByMe ? styles.sentTimestamp : styles.receivedTimestamp,
             ]}
           >
-            {item.timestamp.split("T")[1].slice(0, 5)}
+            {new Date(item.timestamp).toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
           </Text>
-          {item.is_read && (
+          {sentByMe && item.is_read && (
             <MaterialIcons
               name="done-all"
               size={16}
-              color={sentByMe ? "rgba(255,255,255,0.9)" : "#34B7F1"}
+              color="#34B7F1"
               style={{ marginLeft: 5 }}
             />
           )}
         </View>
       </View>
-    </Pressable>
+    </View>
   );
 };
 
@@ -101,8 +107,8 @@ const MessageComponent = ({
   const textcolor = useThemeColor({}, "text");
   const highlightColor = useThemeColor({}, "highlight");
   const textinput = useThemeColor({}, "textinput");
-
   const [refreshing, setRefreshing] = useState(false);
+
   /* Trigger the refresh and get the chat history from the server given the user id */
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -120,7 +126,7 @@ const MessageComponent = ({
 
   return (
     <GestureHandlerRootView
-      style={[styles.mainContainer, { backgroundColor: secondaryColor }]}
+      style={[styles.mainContainer,]}
     >
       {/* Header row with back button, image and recipient info */}
       <View
@@ -283,20 +289,69 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
 
+  messageContainer: {
+    flexDirection: "row",
+    marginVertical: 4,
+    paddingHorizontal: 8,
+  },
+
+  sentContainer: {
+    justifyContent: "flex-end",
+  },
+
+  receivedContainer: {
+    justifyContent: "flex-start",
+  },
+
+  messageBubble: {
+    maxWidth: "75%",
+    padding: 12,
+    borderRadius: 16,
+  },
+
+  sentBubble: {
+    backgroundColor: "#0084FF", // Light blue for sent messages
+    borderBottomRightRadius: 4,
+  },
+
+  receivedBubble: {
+    backgroundColor: "#FFFFFF", // White for received messages
+    borderBottomLeftRadius: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 1,
+    elevation: 1,
+  },
+
   messageText: {
     fontSize: 15,
     lineHeight: 20,
-    marginBottom: 4,
+  },
+
+  sentText: {
+    color: "#FFFFFF",
+  },
+
+  receivedText: {
+    color: "#000000",
   },
 
   messageFooter: {
     flexDirection: "row",
-    alignItems: "center",
     justifyContent: "flex-end",
-    marginTop: 2,
+    marginTop: 4,
   },
 
   timestamp: {
     fontSize: 11,
+  },
+
+  sentTimestamp: {
+    color: "rgba(255,255,255,0.7)",
+  },
+
+  receivedTimestamp: {
+    color: "#666666",
   },
 });

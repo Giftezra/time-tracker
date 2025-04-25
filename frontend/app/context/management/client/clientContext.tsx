@@ -24,7 +24,7 @@ const ClientContext = createContext<ClientContextType | undefined>(undefined);
 const ClientProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }): React.ReactElement => {
-  const { axiosInstance } = useAuth();
+  const { axiosInstance, setAlertConfig, setIsAlertVisible } = useAuth();
 
   const [countDown, setCountdown] = useState<string | null>(null);
   const [timeElapsed, setTimeElapsed] = useState<string>("");
@@ -58,11 +58,6 @@ const ClientProvider: React.FC<{ children: React.ReactNode }> = ({
   const [activeClient, setActiveClient] = useState<
     ClientDetailsType | undefined
   >(undefined);
-
-  const [isAlertVisible, setIsAlertVisible] = useState<boolean>(false);
-  const [alertConfig, setAlertConfig] = useState<AlertConfig | undefined>(
-    undefined
-  );
 
   const toggleCreateContractModal = (client_id: string | undefined) => {
     setIsCreateContractModalVisible(true);
@@ -178,8 +173,17 @@ const ClientProvider: React.FC<{ children: React.ReactNode }> = ({
         const updatedClientDetails = await fetchClientContractDetails();
         setClientDetailsData(updatedClientDetails);
         setIsCreateContractModalVisible(false);
-        setNewContract(undefined);
-        Alert.alert("Success", response.data.message);
+        setIsAlertVisible(true);
+        setAlertConfig({
+          title: "Success",
+          message: response.data.message,
+          onConfirm: () => {
+            setIsAlertVisible(false);
+            setNewContract(undefined);
+          },
+          isVisible: true,
+          type: "success",
+        });
       }
     } catch (error) {
       console.error("Error creating contract", error);
@@ -193,22 +197,63 @@ const ClientProvider: React.FC<{ children: React.ReactNode }> = ({
    * Call the fetchClientContractDetails method to update the client details data.
    */
   const deleteContract = async (contract_id: ContractDetailsType) => {
-    try {
-      setIsLoading(true);
-      const response = await axiosInstance.delete("/api/delete/contract/", {
-        data: { contract_id: contract_id.contract_id },
-      });
-      if (response.status === 200) {
-        const updatedClientDetails = await fetchClientContractDetails();
-        setClientDetailsData(updatedClientDetails);
-        Alert.alert("Success", response.data.message);
-      }
-    } catch (error) {
-      console.error("Error deleting contract:", error);
-      Alert.alert("Error", "Failed to delete contract. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
+    setIsAlertVisible(true);
+    setAlertConfig({
+      title: "Message",
+      message:
+        "You are about to delete a contract. Do you still wish to continue?",
+      onConfirm: async () => {
+        setIsAlertVisible(false);
+        try {
+          setIsLoading(true);
+          const response = await axiosInstance.delete("/api/delete/contract/", {
+            data: { contract_id: contract_id.contract_id },
+          });
+          if (response.status === 200) {
+            // Display an alert message to the user if contract is either deleted or there is an error
+            const updatedClientDetails = await fetchClientContractDetails();
+            setClientDetailsData(updatedClientDetails);
+            setAlertConfig({
+              title: "Success",
+              message: response.data.message,
+              onConfirm: () => {
+                setIsAlertVisible(false);
+              },
+              isVisible: true,
+              type: "success",
+            });
+          } else {
+            setAlertConfig({
+              title: "Error",
+              message: response.data.message,
+              onConfirm: () => {
+                setIsAlertVisible(false);
+              },
+              isVisible: true,
+              type: "error",
+            });
+          }
+        } catch (error) {
+          console.error("Error deleting contract:", error);
+          setAlertConfig({
+            title: "Error",
+            message: "Failed to delete contract. Please try again.",
+            onConfirm: () => {
+              setIsAlertVisible(false);
+            },
+            isVisible: true,
+            type: "error",
+          });
+        } finally {
+          setIsLoading(false);
+        }
+      },
+      onClose: () => {
+        setIsAlertVisible(false);
+      },
+      isVisible: true,
+      type: "success",
+    });
   };
 
   /** Method is used to retrieve the client list from the server
@@ -325,30 +370,43 @@ const ClientProvider: React.FC<{ children: React.ReactNode }> = ({
    * Call the fetchClientContractDetails method to update the client details data if the response from the server is valid.
    */
   const updateClient = async (client: ClientDetailsType) => {
-    try {
-      setIsEditClientLoading(true);
-      const response = await axiosInstance.patch("/api/update/client/", {
-        client: client,
-      });
-      if (response.status === 200) {
-        const updatedClientDetails = await fetchClientContractDetails();
-        setClientDetailsData(updatedClientDetails);
-        setIsEditClientModalVisible(false);
-      }
-      setAlertConfig({
-        title: "Success",
-        message: response.data.message,
-        onConfirm: () => {
-          setIsAlertVisible(false);
-        },
-        isVisible: true,
-      });
-      setIsAlertVisible(true);
-    } catch (error) {
-      console.error("Error updating client:", error);
-    } finally {
-      setIsEditClientLoading(false);
-    }
+    setIsAlertVisible(true);
+    setAlertConfig({
+      title: "Update Client",
+      message: `You are about to update the client details. Do you still wish to continue?`,
+      onConfirm: async () => {
+        setIsAlertVisible(false);
+        try {
+          setIsEditClientLoading(true);
+          const response = await axiosInstance.patch("/api/update/client/", {
+            client: client,
+          });
+          if (response.status === 200) {
+            const updatedClientDetails = await fetchClientContractDetails();
+            setClientDetailsData(updatedClientDetails);
+            setIsEditClientModalVisible(false);
+          }
+          setAlertConfig({
+            title: "Success",
+            message: response.data.message,
+            onConfirm: () => {
+              setIsAlertVisible(false);
+            },
+            isVisible: true,
+          });
+          setIsAlertVisible(true);
+        } catch (error) {
+          console.error("Error updating client:", error);
+        } finally {
+          setIsEditClientLoading(false);
+        }
+      },
+      onClose: () => {
+        setIsAlertVisible(false);
+      },
+      isVisible: true,
+      type: "success",
+    });
   };
 
   /**
@@ -358,32 +416,45 @@ const ClientProvider: React.FC<{ children: React.ReactNode }> = ({
    * Call the fetchClientContractDetails method to update the client details data.
    */
   const deleteClient = async (client_id: string) => {
-    try {
-      setIsLoading(true);
-      const response = await axiosInstance.delete("/api/delete/client/", {
-        data: { client_id: client_id },
-      });
-      if (response.status === 200) {
-        const updatedClientDetails = await fetchClientContractDetails();
-        setClientDetailsData(updatedClientDetails);
-        const updatedJobDetails = await fetchContractAndJobDetails();
-        setClientJobDetailsData(updatedJobDetails);
-        setAlertConfig({
-          title: "Success",
-          message: response.data.message,
-          onConfirm: () => {
-            setIsAlertVisible(false);
-          },
-          isVisible: true,
-        });
-        setIsAlertVisible(true);
-      }
-    } catch (error) {
-      console.error("Error deleting client:", error);
-      Alert.alert("Error", "Failed to delete client. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
+    setIsAlertVisible(true);
+    setAlertConfig({
+      title: "Delete Client",
+      message: `Are you sure you want to delete this client?`,
+      onConfirm: async () => {
+        setIsAlertVisible(false);
+        try {
+          setIsLoading(true);
+          const response = await axiosInstance.delete("/api/delete/client/", {
+            data: { client_id: client_id },
+          });
+          if (response.status === 200) {
+            setIsAlertVisible(true);
+            const updatedClientDetails = await fetchClientContractDetails();
+            setClientDetailsData(updatedClientDetails);
+            const updatedJobDetails = await fetchContractAndJobDetails();
+            setClientJobDetailsData(updatedJobDetails);
+            setAlertConfig({
+              title: "Success",
+              message: response.data.message,
+              onConfirm: () => {
+                setIsAlertVisible(false);
+              },
+              isVisible: true,
+            });
+          }
+        } catch (error) {
+          console.error("Error deleting client:", error);
+          Alert.alert("Error", "Failed to delete client. Please try again.");
+        } finally {
+          setIsLoading(false);
+        }
+      },
+      onClose: () => {
+        setIsAlertVisible(false);
+      },
+      isVisible: true,
+      type: "success",
+    });
   };
 
   /** Method is used to handle the calling of a staff member assigned to task directly.
@@ -392,29 +463,19 @@ const ClientProvider: React.FC<{ children: React.ReactNode }> = ({
    * @param {string} phone staff nuber to be dialed outside the app
    */
   const handlePhone = (phone: string) => {
-    console.log("handle phone press", phone);
-    if (Platform.OS === "web") {
-      const confirmCall = window.confirm(
-        `Do you want to call the number? ${phone}`
-      );
-      if (confirmCall) {
-        window.location.href = `tel:${phone}`;
-      }
-    } else {
-      setAlertConfig({
-        title: "Call",
-        message: `Do you want to call the number? ${phone}`,
-        onConfirm: () => {
-          Linking.openURL(`tel:${phone}`);
-          setIsAlertVisible(false);
-        },
-        onClose: () => {
-          setIsAlertVisible(false);
-        },
-        isVisible: true,
-      });
-      setIsAlertVisible(true);
-    }
+    setIsAlertVisible(true);
+    setAlertConfig({
+      title: "Call",
+      message: `Do you want to call the number? ${phone}`,
+      onConfirm: () => {
+        Linking.openURL(`tel:${phone}`);
+        setIsAlertVisible(false);
+      },
+      onClose: () => {
+        setIsAlertVisible(false);
+      },
+      isVisible: true,
+    });
   };
 
   /** Navigate to message component and create new conversation if none exists */
@@ -485,25 +546,10 @@ const ClientProvider: React.FC<{ children: React.ReactNode }> = ({
     createClient,
     isNewClientLoading,
     setNewContract,
-    alertConfig,
-    setAlertConfig,
-    isAlertVisible,
-    setIsAlertVisible,
   };
 
   return (
-    <ClientContext.Provider value={value}>
-      {children}
-      {isAlertVisible && (
-        <AlertModal
-          title={alertConfig?.title || ""}
-          message={alertConfig?.message || ""}
-          isVisible={isAlertVisible}
-          onClose={alertConfig?.onClose}
-          onConfirm={alertConfig?.onConfirm}
-        />
-      )}
-    </ClientContext.Provider>
+    <ClientContext.Provider value={value}>{children}</ClientContext.Provider>
   );
 };
 

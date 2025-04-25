@@ -15,6 +15,10 @@ from django.views.decorators.csrf import csrf_exempt
 import json
 from datetime import datetime, timedelta, timezone
 from management.models import Overage, Billing, SubscriptionHistory
+from django_ratelimit.decorators import ratelimit
+from django.core.cache import cache
+from django.conf import settings
+from management.helpers import get_cache_key
 
 # Initialize Stripe with your secret key
 stripe.api_key = settings.STRIPE_SECRET_KEY
@@ -22,21 +26,20 @@ stripe.api_key = settings.STRIPE_SECRET_KEY
         
 @api_view(["POST"])
 @owner_required
+@ratelimit(key='user', rate='100/h', block=True, method=['POST'])
 def create_payment_sheet(request):
     """Create a payment sheet for Stripe payment processing"""
     try:
         # Get amount from request
         amount = request.data.get('amount', 0)
+        # Retrive the metadata from the request and the subsequent data
+        metadata = request.data.get('metadata', {})
+        plan_id = metadata.get('plan_id', None)
+        billing_period = metadata.get('billing_period', None)
 
-        # Create a new customer
+        # Get the company object associated with the user
+        company = Company.objects.get(owner=request.user)
         customer = stripe.Customer.create()
-        
-        # Create an ephemeral key for the customer
-        ephemeral_key = stripe.EphemeralKey.create(
-            customer=customer.id,
-            stripe_version='2022-11-15',
-        )
-        
         # Create a payment intent with the calculated amount
         payment_intent = stripe.PaymentIntent.create(
             amount=amount,  # Amount in cents from the frontend
@@ -45,8 +48,17 @@ def create_payment_sheet(request):
             automatic_payment_methods={
                 'enabled': True,
             },
+            metadata={
+                'company_id': company.id,
+                'plan_id': plan_id,
+                'billing_period': billing_period,
+                'user_id': request.user.id,
+            }
         )
-        
+        ephemeral_key = stripe.EphemeralKey.create(
+            customer=customer.id,
+            stripe_version='2022-11-15',
+        )
         return Response({
             'paymentIntent': payment_intent.client_secret,
             'ephemeralKey': ephemeral_key.secret,
@@ -62,10 +74,17 @@ def create_payment_sheet(request):
 
 @api_view(["GET"])
 @owner_required
+@ratelimit(key='user', rate='20/h', block=True, method=['GET'])
 @permission_classes([IsAuthenticated])
 def get_subscription_tiers(request):
     """ Get the subscription tiers from the database """
     try:
+        # Get the cache key and check if the data is already cached
+        cache_key = get_cache_key(request.user, 'subscription_tiers')
+        cached_data = cache.get(cache_key)
+        if cached_data:
+            return Response({'subscriptionTiers': cached_data}, status=status.HTTP_200_OK)
+
         subscription_tiers = SubscriptionTier.objects.all()
         subscription_tiers_data = []
         for tier in subscription_tiers:
@@ -81,6 +100,8 @@ def get_subscription_tiers(request):
                 'is_custom': tier.is_custom,
                 'minimum_employees': tier.minimum_employees,
             })
+        # Cache the data for 1 hour
+        cache.set(cache_key, subscription_tiers_data, 3600)
         return Response({'subscriptionTiers': subscription_tiers_data}, status=status.HTTP_200_OK)
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -89,13 +110,14 @@ def get_subscription_tiers(request):
 @api_view(["GET"])
 @owner_required
 @permission_classes([IsAuthenticated])
+@ratelimit(key='user', rate='20/h', block=True, method=['GET'])
 def get_current_plan(request):
     """ Get the current plan from the database of the associated company """
     # Get the company object associated with the user
     try:
         company = Company.objects.get(owner=request.user)
-        # Get the subscription plan associated with the company
-        subscription_plan = SubscriptionPlan.objects.get(company=company)
+        # Since the user is allowed to upgrade or change their plan, we need to get the latest subscription plan
+        subscription_plan = SubscriptionPlan.objects.filter(company=company).order_by('-start_date').first()
         # Get all employees that are currently active in the company
         # Count the number of active employees
         active_employees = Staff.objects.filter(company=company, is_active=True).count()
@@ -125,50 +147,46 @@ def get_current_plan(request):
 @permission_classes([IsAuthenticated])
 def update_subscription_plan(request):
     """Update the subscription plan for a company"""
-    print('request.data', request.data)
     try:
         # Get required data from request
-        plan_id = request.data.get('plan_id')
+        tier_id = request.data.get('tier_id')
         billing_period = request.data.get('billing_period')
+
         try:
             company = Company.objects.get(owner=request.user)
-            tier = SubscriptionTier.objects.get(id=plan_id)
-        except Company.DoesNotExist as e:
-            return Response({'error': f'Error getting company: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        except SubscriptionTier.DoesNotExist as e:
-            return Response({'error': f'Error getting subscription tier: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            tier = SubscriptionTier.objects.get(id=tier_id)
+        except Company.DoesNotExist:
+            return Response({'error': 'Company not found'}, status=status.HTTP_404_NOT_FOUND)
+        except SubscriptionTier.DoesNotExist:
+            return Response({'error': 'Subscription tier not found'}, status=status.HTTP_404_NOT_FOUND)
         
-        # Get the current timezone to set the start and renewal dates
-        start_date = timezone.now().date()
+        # Get the current timezone-aware datetime for start and renewal dates
+        start_date = datetime.now(timezone.utc).date()
         renewal_date = start_date + timedelta(days=365 if billing_period == 'annually' else 30)
         
-        # Update the subscription plan if it exists, otherwise create a new one
-        # Then create a new subscription history record to keep a record of the subscription plans
-        subscription_plan, created = SubscriptionPlan.objects.update_or_create(
+        # First update or create the subscription plan
+        subscription_plan = SubscriptionPlan.objects.create(
             company=company,
-            defaults={
-                'tier': tier,
-                'billing_cycle': billing_period,
-                'start_date': start_date,
-                'renewal_date': renewal_date,
-                'is_active': True,
-            }
+            tier=tier,
+            billing_cycle=billing_period,
+            start_date=start_date,
+            renewal_date=renewal_date,
+            is_active=True,
         )
-        subscription_history = SubscriptionHistory.objects.create(
+
+        # Create new subscription history record
+        SubscriptionHistory.objects.create(
             subscription=subscription_plan,
-            start_date=subscription_plan.start_date,
-            renewal_date=subscription_plan.renewal_date,
+            start_date=start_date,
+            renewal_date=renewal_date,
+            is_active=True  # Set the new record as active
         )
-        print('tier', tier)
-        print('company', company)
-        print('subscription_plan', subscription_plan)
 
         return Response({'message': 'Subscription updated successfully'}, status=status.HTTP_200_OK)
 
-
     except Exception as e:
         return Response(
-            {'error': f'Error getting subscription tier: {str(e)}'}, 
+            {'error': f'Error updating subscription plan: {str(e)}'}, 
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
     
@@ -185,8 +203,7 @@ def get_subscription_history(request):
         # Get the owners current subscription plan
         # Which is then used to get the subscription history which would contain the previous subscription plans
         # Return the subscription history data
-        subscription_plan = SubscriptionPlan.objects.get(company=company)
-        subscription_history = SubscriptionHistory.objects.filter(subscription=subscription_plan)
+        subscription_history = SubscriptionHistory.objects.filter(subscription__company=company)
         subscription_history_data = []
         for history in subscription_history:
             # Get the status of the subscription given the renewal date and if the subscription is active
@@ -204,8 +221,6 @@ def get_subscription_history(request):
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
 
-
-
 @csrf_exempt
 @api_view(["POST"])
 def stripe_webhook(request):
@@ -221,16 +236,52 @@ def stripe_webhook(request):
         # Handle successful payment
         if event['type'] == 'payment_intent.succeeded':
             payment_intent = event['data']['object']
-            # You can access payment metadata here if needed
-            # metadata = payment_intent.metadata
+            metadata = payment_intent.metadata
             
-            return Response({'status': 'success'}, status=status.HTTP_200_OK)
-            
+            try:
+                company = Company.objects.get(id=metadata.get('company_id'))
+                tier = SubscriptionTier.objects.get(id=metadata.get('plan_id'))
+                billing_period = metadata.get('billing_period')
+                
+                # Calculate dates
+                start_date = timezone.now().date()
+                renewal_date = start_date + timedelta(
+                    days=365 if billing_period == 'annually' else 30
+                )
+                
+                # Update or create subscription
+                subscription_plan = SubscriptionPlan.objects.create(
+                    company=company,
+                    tier=tier,
+                    billing_cycle=billing_period,
+                    start_date=start_date,
+                    renewal_date=renewal_date,
+                    is_active=True,
+                )
+                
+                # Mark previous history records as inactive
+                SubscriptionHistory.objects.filter(subscription=subscription_plan).update(is_active=False)
+                
+                # Create history record
+                SubscriptionHistory.objects.create(
+                    subscription=subscription_plan,
+                    start_date=start_date,
+                    renewal_date=renewal_date,
+                    is_active=True
+                )
+                
+                return Response({'status': 'subscription updated'}, status=200)
+                
+            except Exception as e:
+                # Log the error but don't return 500 to Stripe
+                print(f"Error processing webhook: {str(e)}")
+                return Response({'error': str(e)}, status=200)
+                
+        return Response({'status': 'event processed'}, status=200)
+        
     except ValueError as e:
-        return Response({'error': 'Invalid payload'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'error': 'Invalid payload'}, status=400)
     except stripe.error.SignatureVerificationError as e:
-        return Response({'error': 'Invalid signature'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'error': 'Invalid signature'}, status=400)
     except Exception as e:
-        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
+        return Response({'error': str(e)}, status=500)

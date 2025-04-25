@@ -15,12 +15,12 @@ import InnerThemedText from "../../helper/InnerThemedText";
 import ButtonText from "@/app/component/helper/ButtonText";
 const MySubscriptionPlansComponent = () => {
   const {
-    currentPage,
     setCurrentPage,
     setOveragePlan,
     overagePlan,
     currentPlan,
     fetchSubscriptionHistory,
+    handleDirectOveragePayment,
   } = useCheckout();
 
   const calculateOveragePlanCost = () => {
@@ -240,10 +240,7 @@ const MySubscriptionPlansComponent = () => {
         <View style={styles.buttonContainer}>
           <TouchableOpacity
             style={[styles.button,]}
-            onPress={() => {
-              setPayOverage(true);
-              setOveragePlan(calculateOveragePlanCost());
-            }}
+            onPress={handleDirectOveragePayment}
           >
             <ButtonText
               text={`Pay £${calculateOveragePlanCost()} for overage`}

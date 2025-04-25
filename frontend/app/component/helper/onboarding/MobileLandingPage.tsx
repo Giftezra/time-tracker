@@ -4,7 +4,6 @@ import {
   StyleSheet,
   Text,
   View,
-  Dimensions,
   Switch,
   ScrollView,
   TouchableOpacity,
@@ -95,6 +94,20 @@ const MobileLandingPage = () => {
     },
   ];
 
+  const handlePricingClick = () => {
+    console.log("Pricing button clicked");
+    setIsPricing((prev) => {
+      console.log("Setting isPricing to:", !prev);
+      return !prev;
+    });
+  };
+
+  const handleFeaturesClick = () => {
+    setIsFeatures((prev) => {
+      return !prev;
+    });
+  };
+
   if (isPricing) {
     return (
       <View style={[styles.maincontainer, { backgroundColor: "#f5f5f5" }]}>
@@ -165,38 +178,40 @@ const MobileLandingPage = () => {
           <Image
             source={require("@/assets/icons/time-icon.jpg")}
             style={styles.logo}
-            resizeMode="contain"
           />
 
           <TouchableOpacity
             style={styles.navButton}
-            onPress={() => {
-              console.log("Pricing pressed");
-              setIsPricing(true);
-            }}
+            onPress={() => setIsPricing(true)}
+            activeOpacity={0.7}
           >
-            <Text style={styles.navText}>Pricing</Text>
+            <Text style={styles.navText}>pricing</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.navButton}
-            onPress={() => {
-              console.log("Features pressed");
-              setIsFeatures(true);
-            }}
+            onPress={() => setIsFeatures(true)}
+            activeOpacity={0.7}
           >
             <Text style={styles.navText}>Features</Text>
           </TouchableOpacity>
         </View>
 
         <TouchableOpacity
-          style={[styles.navButton]}
+          style={[
+            styles.navButton,
+            styles.signInButton,
+          ]}
           onPress={() => {
             router.replace("/management/onboarding/login");
-            console.log("Sign In");
           }}
         >
-          <Text style={[styles.navText, { color: "blue", fontSize: 15 }]}>
+          <Text
+            style={[
+              styles.navText,
+              { color: "#000", fontSize: 14, textTransform: "capitalize",  },
+            ]}
+          >
             Sign In
           </Text>
         </TouchableOpacity>
@@ -288,19 +303,18 @@ const styles = StyleSheet.create({
   },
   navContainer: {
     flexDirection: "row",
-    gap: 16,
+    gap: 12,
     alignItems: "center",
   },
   navButton: {
-    padding: 10,
-    borderRadius: 5,
-    backgroundColor: "transparent",
+    gap: 5,
+    marginHorizontal: 10,
   },
   navText: {
     fontSize: 14,
     fontWeight: "600",
     fontFamily: "BarlowMedium",
-    textTransform: "capitalize",
+    textTransform: "lowercase",
     letterSpacing: 0.5,
     color: "#333",
   },
@@ -392,5 +406,19 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: -50,
     transform: [{ rotate: "30deg" }],
+  },
+  signInButton: {
+    borderWidth: 0.3,
+    padding: 5,
+    borderRadius: 10,
+    width: 100,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowOffset: { width: 0, height: 2 },
+    shadowColor: "rgba(0, 0, 0, 0.2)",
+    backgroundColor: "rgb(207, 207, 233)",
+    shadowOpacity: 0.7,
+    shadowRadius: 4,
+    elevation: 4,
   },
 });

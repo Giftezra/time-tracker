@@ -152,78 +152,96 @@ const LiveEventComponent = () => {
                 ? currentTime
                 : formatTime(event.start_time || "")}
             </Text>
-            <Text style={[styles.timePeriod, { color: secondaryColor }]}>
-              {parseInt(event.start_time?.split(":")[0] || "0") >= 12
-                ? "pm"
-                : "am"}
-            </Text>
+            {/* Display the time period if the start and end time are available */}
+            {event.start_time && (
+              <Text style={[styles.timePeriod, { color: secondaryColor }]}>
+                {parseInt(event.start_time?.split(":")[0] || "0") >= 12
+                  ? "pm"
+                  : "am"}
+              </Text>
+            )}
           </View>
           <View style={styles.timeBlock}>
             <Text style={[styles.eventTimeText, { color: text }]}>
               {formatTime(event.end_time || "")}
             </Text>
-            <Text style={[styles.timePeriod, { color: secondaryColor }]}>
-              {parseInt(event.end_time?.split(":")[0] || "0") >= 12
-                ? "pm"
-                : "am"}
-            </Text>
+            {/* Display the time period if the start and end time are available */}
+            {event.end_time && (
+              <Text style={[styles.timePeriod, { color: secondaryColor }]}>
+                {parseInt(event.end_time?.split(":")[0] || "0") >= 12
+                  ? "pm"
+                  : "am"}
+              </Text>
+            )}
           </View>
         </View>
 
-        <TouchableOpacity
-          style={[
-            styles.teamMemberContainer,
-            { backgroundColor: primaryColor },
-          ]}
-        >
-          <Text style={[styles.teamMemberText, { color: text }]}>
-            team members
-          </Text>
-          <Text style={[styles.teamMemberCount, { color: text }]}>
-            {event.team_member.length}
-          </Text>
-        </TouchableOpacity>
+        {/* Display the team members if the event has team members */}
+        {event.team_member.length > 0 && (
+          <TouchableOpacity
+            style={[
+              styles.teamMemberContainer,
+              { backgroundColor: primaryColor },
+            ]}
+          >
+            <Text style={[styles.teamMemberText, { color: text }]}>
+              team members
+            </Text>
+            <Text style={[styles.teamMemberCount, { color: text }]}>
+              {event.team_member.length}
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       <View style={styles.buttonContainer}>
-        <TouchableOpacity
-          onPress={handleStartPress}
-          disabled={isStarting || !event.shift_id || event.status === "started"}
-          style={[
-            styles.actionButton,
-            {
-              backgroundColor:
-                event.status === "started" ? secondaryColor : inactivebtn,
-            },
-          ]}
-        >
-          <Text style={[styles.buttonText, { color: text }]}>
-            {isStarting
-              ? "Starting..."
-              : event.status === "started"
-              ? "Started"
-              : "start"}
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={handleEndPress}
-          disabled={isEnding || !event.shift_id || event.status !== "started"}
-          style={[
-            styles.actionButton,
-            {
-              backgroundColor:
-                event.status !== "started" ? secondaryColor : inactivebtn,
-            },
-          ]}
-        >
-          <Text style={[styles.buttonText, { color: text }]}>
-            {isEnding
-              ? "Ending..."
-              : event.status !== "started"
-              ? "Ended"
-              : "end"}
-          </Text>
-        </TouchableOpacity>
+        {/* Display the start shift button if the shift is not started */}
+        {event.status !== "started" && (
+          <TouchableOpacity
+            onPress={handleStartPress}
+            disabled={
+              isStarting || !event.shift_id || event.status === "started"
+            }
+            style={[
+              styles.actionButton,
+              {
+                backgroundColor:
+                  event.status === "started" ? secondaryColor : inactivebtn,
+              },
+            ]}
+          >
+            <Text style={[styles.buttonText, { color: text }]}>
+              {isStarting
+                ? "Starting..."
+                : event.status === "started"
+                ? "Started"
+                : "start"}
+            </Text>
+          </TouchableOpacity>
+        )}
+
+        {/* Display the end shift button if the shift is started */}
+        {event.status === "started" && (
+          <TouchableOpacity
+            onPress={handleEndPress}
+            disabled={isEnding || !event.shift_id || event.status !== "started"}
+            style={[
+              styles.actionButton,
+              {
+                backgroundColor:
+                  event.status !== "started" ? secondaryColor : inactivebtn,
+              },
+            ]}
+          >
+            <Text style={[styles.buttonText, { color: text }]}>
+              {isEnding
+                ? "Ending..."
+                : event.status !== "started"
+                ? "Ended"
+                : "end"}
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
     </View>
   );

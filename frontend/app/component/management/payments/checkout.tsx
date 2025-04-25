@@ -32,8 +32,6 @@ const CheckoutComponent = ({
   const secondary = useThemeColor({}, "secondaryColor");
 
   const {
-    paymentDetails,
-    setPaymentDetails,
     useOwnerAddress,
     openPaymentSheet,
     isCheckoutLoading,

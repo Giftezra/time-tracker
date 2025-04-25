@@ -1,7 +1,5 @@
-import {
-  TimesheetContextType,
+import TimesheetContextType, {
   TimeSheetType,
-  OngoingShiftType,
 } from "@/app/types/staff/timeSheet";
 import { createContext, useContext, useEffect, useState } from "react";
 import { useAuth } from "@/app/authentication";
@@ -16,7 +14,6 @@ const TimeSheetProvider = ({ children }: { children: React.ReactNode }) => {
   const [selectedStatus, setSelectedStatus] = useState<string>("approved");
   const [timesheets, setTimesheets] = useState<TimeSheetType[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [ongoingShift, setOngoingShift] = useState<OngoingShiftType | null>(null);
 
   /* Filter the data based on the selected status */
   const filteredData = timesheets.filter(
@@ -35,8 +32,6 @@ const TimeSheetProvider = ({ children }: { children: React.ReactNode }) => {
         setIsLoading(true);
         const timesheets = await getTimesheetData();
         setTimesheets(timesheets);
-        const ongoingShift = await getOngoingShiftData();
-        setOngoingShift(ongoingShift);
       }catch(error){
         console.error("Error fetching timesheet data:", error);
       }finally{
@@ -116,20 +111,6 @@ const TimeSheetProvider = ({ children }: { children: React.ReactNode }) => {
 
   }
 
-  /**
-   * Get the ongoing shift data from the server.
-   * Set the ongoing shift data to the state if status is 200 or undefined.
-   */
-  const getOngoingShiftData = async () => {
-    try{
-      const response = await axiosInstance.get("/api/get/ongoing/shift/");
-      return response.data.shift;
-    }catch(error){
-      console.error("Error fetching ongoing shift data:", error);
-      return null;
-    }
-  }
-
 
   const value: TimesheetContextType = {
     timesheets,
@@ -137,7 +118,6 @@ const TimeSheetProvider = ({ children }: { children: React.ReactNode }) => {
     groupByWeek,
     handleStatusChange,
     selectedStatus,
-    ongoingShift,
   };
 
   return (

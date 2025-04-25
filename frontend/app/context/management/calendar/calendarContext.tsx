@@ -88,28 +88,32 @@ const CalendarContextProvider: React.FC<{ children: ReactNode }> = ({
 
   /** The method is used to get all the list of employees from the server side using axios.
    */
-  const getAllEmployees = async (): Promise<EmployeeType[]> => {
+  const getAllEmployees = async () => {
     try {
+      setLoading(true);
       const response = await axiosInstance.get("/api/get/all/employees/");
       const employees = response.data.employees;
       console.log("employees", employees);
       return employees;
     } catch (error) {
-      console.error("Error fetching employees:", error);
-      throw error;
+      console.log("Error fetching employees:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
   /** Method fetches all shifts that is associated with the request user only if they are an admin or the owner */
-  const getAllShifts = async (): Promise<CalendarShiftType[]> => {
+  const getAllShifts = async () => {
     try {
+      setLoading(true);
       const response = await axiosInstance.get("/api/get/shifts");
       const shifts = response.data.shifts;
       console.log("shifts", shifts);
       return shifts || [];
     } catch (error) {
       console.error("Error fetching shifts:", error);
-      throw [];
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -144,30 +148,49 @@ const CalendarContextProvider: React.FC<{ children: ReactNode }> = ({
    * @returns the message from the server
    */
   const cancelShift = async () => {
-    try {
-      const response = await axiosInstance.patch("/api/cancel/shift/", {
-        shift_id: activeShift?.shiftId,
-        employee_id: activeShift?.employeeId,
-      });
-      if (response.status === 200) {
-        setIsAlertVisible(true);
-        setAlertConfig({
-          title: "Shift cancellation status",
-          message: response.data.message,
-          onConfirm: async () => {
-            setIsAlertVisible(false);
-          },
-          isVisible: true,
-        });
-        const shifts = await getAllShifts();
-        setShifts(shifts);
-        setShifts(shifts);
-        setShowEditShiftModal(false);
-      }
-    } catch (error) {
-      console.error("Error cancelling shift:", error);
-      throw error;
-    }
+    setIsAlertVisible(true);
+    setAlertConfig({
+      title: "Confirmation",
+      message: "Are you sure you want to cancel this shift?",
+      onConfirm: async () => {
+        setIsAlertVisible(false);
+        try {
+          const response = await axiosInstance.patch("/api/cancel/shift/", {
+            shift_id: activeShift?.shiftId,
+            employee_id: activeShift?.employeeId,
+          });
+          if (response.status === 200) {
+            setIsAlertVisible(true);
+            setAlertConfig({
+              title: "Status",
+              message: response.data.message,
+              onConfirm: async () => {
+                setIsAlertVisible(false);
+              },
+              isVisible: true,
+            });
+            const shifts = await getAllShifts();
+            setShifts(shifts);
+            setShifts(shifts);
+            setShowEditShiftModal(false);
+          } else {
+            setIsAlertVisible(true);
+            setAlertConfig({
+              title: "Status",
+              message: response.data.message,
+              isVisible: true,
+            });
+          }
+        } catch (error) {
+          console.error("Error cancelling shift:", error);
+          throw error;
+        }
+      },
+      isVisible: true,
+      onClose() {
+        setIsAlertVisible(false);
+      },
+    });
   };
 
   /**
@@ -186,7 +209,7 @@ const CalendarContextProvider: React.FC<{ children: ReactNode }> = ({
       if (response.status === 200) {
         setIsAlertVisible(true);
         setAlertConfig({
-          title: "Shift approval status",
+          title: "Status",
           message: response.data.message,
           onConfirm: async () => {
             setIsAlertVisible(false);
@@ -196,7 +219,6 @@ const CalendarContextProvider: React.FC<{ children: ReactNode }> = ({
       }
     } catch (error) {
       console.error("Error approving shift:", error);
-      throw error;
     }
   };
 
@@ -244,29 +266,50 @@ const CalendarContextProvider: React.FC<{ children: ReactNode }> = ({
     formattedStartTime: string,
     formattedEndTime: string
   ) => {
-    try {
-      const response = await axiosInstance.patch("/api/update/shift/", {
-        shift_id: activeShift?.shiftId,
-        employee_id: activeShift?.employeeId,
-        date: formattedDate,
-        start_time: formattedStartTime,
-        end_time: formattedEndTime,
-      });
-      if (response.status === 200) {
-        setIsAlertVisible(true);
-        setAlertConfig({
-          title: "Shift update status",
-          message: response.data.message,
-          onConfirm: async () => {
-            setIsAlertVisible(false);
-          },
-          isVisible: true,
-        });
-      }
-    } catch (error) {
-      console.error("Error updating shift:", error);
-      throw error;
-    }
+    setIsAlertVisible(true);
+    setAlertConfig({
+      title: "Confirmation",
+      message: `Are you sure you want to update this shift? With the new details: ${formattedDate} ${formattedStartTime} - ${formattedEndTime} ? If you are sure, click confirm.`,
+      onConfirm: async () => {
+        setIsAlertVisible(false);
+        try {
+          const response = await axiosInstance.patch("/api/update/shift/", {
+            shift_id: activeShift?.shiftId,
+            employee_id: activeShift?.employeeId,
+            date: formattedDate,
+            start_time: formattedStartTime,
+            end_time: formattedEndTime,
+          });
+          if (response.status === 200) {
+            setIsAlertVisible(true);
+            setAlertConfig({
+              title: "Shift update status",
+              message: response.data.message,
+              onConfirm: async () => {
+                setIsAlertVisible(false);
+              },
+              isVisible: true,
+            });
+          } else {
+            setIsAlertVisible(true);
+            setAlertConfig({
+              title: "Status",
+              message: response.data.message,
+              onConfirm: async () => {
+                setIsAlertVisible(false);
+              },
+              isVisible: true,
+            });
+          }
+        } catch (error) {
+          console.error("Error updating shift:", error);
+        }
+      },
+      isVisible: true,
+      onClose() {
+        setIsAlertVisible(false);
+      },
+    });
   };
   /**
    * Request the server to generate and email a PDF report of shifts

@@ -6,11 +6,10 @@ import {
   Text,
   View,
 } from "react-native";
-import { AntDesign, MaterialCommunityIcons } from "@expo/vector-icons";
+import { MaterialIcons } from "@expo/vector-icons";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useDashboardContext } from "@/app/context/management/dashboard/ManagementDashboardContext";
-import SubtitleThemedText from "../../helper/SubtitleThemedText";
-import InnerThemedText from "../../helper/InnerThemedText";
+import { useAuth } from "@/app/authentication";
 const image = require("@/assets/images/user image.jpg");
 
 const OtherEmployeeOnLeaderboard = ({
@@ -21,6 +20,7 @@ const OtherEmployeeOnLeaderboard = ({
   role,
   taskCompleted,
   setIsModalVisible,
+  onProfilePress,
 }: {
   id: string;
   name: string;
@@ -29,49 +29,78 @@ const OtherEmployeeOnLeaderboard = ({
   role: string;
   taskCompleted: number;
   setIsModalVisible: (value: boolean) => void;
+  onProfilePress: (id: string) => void;
 }) => {
-  const { setEmployeeId } = useDashboardContext();
-
-  const background = useThemeColor({}, "innerBackground");
+  const { handlePhone } = useDashboardContext();
+  const { setAlertConfig, setIsAlertVisible } = useAuth();
   const text = useThemeColor({}, "text");
   const otherText = useThemeColor({}, "otherText");
-  const icon = useThemeColor({}, "icon");
 
-  const handleProfilePress = (id: string) => {
-    setEmployeeId(id);
-    setIsModalVisible(true);
+  const handleProfilePress = () => {
+    setIsAlertVisible(true);  
+    setAlertConfig({
+      title: "Confirmation",
+      message: "Open profile?",
+      onConfirm: () => {
+        setIsAlertVisible(false);
+        if (id) {
+          onProfilePress(id);
+          setIsModalVisible(true);
+        }
+      },
+      type: "error",
+      isVisible: true,
+      onClose() {
+        setIsAlertVisible(false);
+      },
+    });
   };
 
   return (
-    <View style={[styles.maincontainer, { backgroundColor: background }]}>
-      <Image
-        source={image}
-        style={{ width: 35, height: 35, borderRadius: 40 }}
-      />
-      <View style={styles.constainer}>
-        <View style={styles.innerContainer}>
-          <SubtitleThemedText text={name} />
-          <InnerThemedText text={role} />
+    <View style={[styles.maincontainer]}>
+      <Text style={styles.role}>{role}</Text>
+      <View style={styles.innerContainer}>
+        <Image source={image} style={styles.avatar} />
+        <View style={styles.container}>
+          <View style={styles.detailsContainer}>
+            <Text style={[styles.nameText, { color: text }]}>{name}</Text>
+            <Text style={[styles.emailText, { color: otherText }]}>
+              {email}
+            </Text>
+          </View>
         </View>
-
-        <View style={styles.innerContainer}>
-          <Text style={[styles.highlightedTexts, { color: text }]}>
-            {phone}
-          </Text>
+        <View style={[styles.container, { flex: 1 }]}>
+          <View style={styles.taskcontainer}>
+            <Text
+              style={[
+                styles.nameText,
+                {
+                  color: text,
+                  borderWidth: 0.3,
+                  padding: 5,
+                  borderRadius: 10,
+                },
+              ]}
+            >
+              {taskCompleted}
+            </Text>
+            <Pressable>
+              <MaterialIcons name="message" size={20} color={"red"} />
+            </Pressable>
+            <Pressable onPress={handleProfilePress}>
+              <MaterialIcons name="person" size={20} color={"red"} />
+            </Pressable>
+          </View>
         </View>
-
-        <View style={styles.innerContainer}>
-          <Text style={[styles.highlightedTexts, { color: text }]}>
-            {taskCompleted}
-          </Text>
-          <Text style={[styles.othertexts, { color: otherText }]}>
-            task completed
-          </Text>
-        </View>
-
-        <Pressable onPress={() => handleProfilePress(id)}>
-          <MaterialCommunityIcons name="account" size={15} color={icon} />
+      </View>
+      <View style={styles.phoneOverlay}>
+        <Pressable
+          onPress={() => handlePhone(phone)}
+          style={styles.phoneButton}
+        >
+          <MaterialIcons name="phone" size={15} color={"green"} />
         </Pressable>
+        <Text style={styles.phoneText}>{phone}</Text>
       </View>
     </View>
   );
@@ -83,48 +112,100 @@ const styles = StyleSheet.create({
   maincontainer: {
     flex: 1,
     flexDirection: "row",
-    flexWrap: "wrap",
     alignItems: "center",
     borderRadius: 5,
     marginVertical: 2,
-    shadowOffset: { width: 0, height: 1.5 },
-    padding: 2,
+    padding: 15,
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.08)",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
+    elevation: 2,
+    backgroundColor: "white",
+    gap: 5,
   },
-
-  constainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    padding: 5,
-    flex: 1,
-    justifyContent: "space-between",
-  },
-
   innerContainer: {
-    flexDirection: "column",
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
     justifyContent: "space-between",
-    padding: 2,
-    rowGap: 2,
+    marginTop: 5,
+  },
+
+  container: {
     alignItems: "center",
   },
-
-  highlightedTexts: {
-    fontSize: Platform.OS === "web" ? 12 : 14,
-    fontWeight: "400",
-    fontFamily: "RobotoLight",
-    textTransform: "capitalize",
+  detailsContainer: {
+    flexDirection: "column",
+    justifyContent: "space-between",
+    gap: 5,
   },
-
-  othertexts: {
-    fontSize: Platform.OS === "web" ? 10 : 12,
-    fontFamily: "BarlowLight",
-    textTransform: "capitalize",
-    fontWeight: "300",
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderColor: "gray",
+    borderWidth: 1,
+    padding: 5,
+    shadowColor: "gray",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
+    elevation: 2,
   },
-
-  focusContainer: {
+  nameText: {
+    fontSize: 14,
+    fontWeight: "600",
+    letterSpacing: 0.5,
+    textTransform: "capitalize",
+    fontFamily: "BarlowMedium",
+  },
+  emailText: {
+    fontSize: 12,
+    color: "gray",
+  },
+  role: {
     position: "absolute",
-    zIndex: 100,
+    top: -2,
+    left: 5,
+    fontSize: 10,
+    color: "green",
+    fontFamily: "BarlowMedium",
+    fontWeight: "600",
+  },
+  taskText: {
+    fontSize: 12,
+    color: "gray",
+    fontFamily: "BarlowMedium",
+    fontWeight: "600",
+  },
+
+  taskcontainer: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 20,
+  },
+
+  phoneOverlay: {
+    position: "absolute",
     top: 0,
-    right: 50,
+    right: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  phoneButton: {
+    padding: 3,
+  },
+  phoneText: {
+    fontSize: 12,
+    color: "gray",
+    fontFamily: "BarlowMedium",
+    fontWeight: "600",
+    letterSpacing: 0.5,
   },
 });

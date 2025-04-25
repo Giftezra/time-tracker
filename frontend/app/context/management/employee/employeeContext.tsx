@@ -21,7 +21,7 @@ const EmployeeContext = createContext<EmployeeContextType | undefined>(
 const EmployeeProvider: React.FC<{
   children: ReactNode;
 }> = ({ children }) => {
-  const { axiosInstance } = useAuth();
+  const { axiosInstance, setIsAlertVisible, setAlertConfig } = useAuth();
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [shiftError, setShiftError] = useState<string | undefined>(undefined);
@@ -41,8 +41,6 @@ const EmployeeProvider: React.FC<{
   const [workLog, setWorkLog] = useState<WorklogInterface | undefined>(
     undefined
   );
-  const [isAlertVisible, setIsAlertVisible] = useState<boolean>(false);
-  const [alertConfig, setAlertConfig] = useState<AlertConfig>();
 
   /**
    * Handle the users ability to add a new employee to the company. using the employee context.
@@ -100,9 +98,11 @@ const EmployeeProvider: React.FC<{
       if (employeeId) {
         try {
           setIsLoading(true);
-          const workLogData = await retrieveEmployeeWorkLog(employeeId);
-          const employeeDetails = await retrieveEmployeeWithId(employeeId);
-          const taskDetails = await retrieveEmployeeTaskDetails(employeeId);
+          const [workLogData, employeeDetails, taskDetails] = await Promise.all([
+            retrieveEmployeeWorkLog(employeeId),
+            retrieveEmployeeWithId(employeeId),
+            retrieveEmployeeTaskDetails(employeeId),
+          ]);
           setTaskDetails(taskDetails);
           setWorkLog(workLogData);
           setEmployeeData(employeeDetails);
@@ -209,78 +209,63 @@ const EmployeeProvider: React.FC<{
     }
   };
 
-  /**
-   * Given the shift id, start the shift of a for a particular employee.
-   * @params shiftId: string The id of the shift to be started.
-   */
-  const startShift = async (shiftId: string) => {
-    try {
-      const response = await axiosInstance.patch("/api/start/shift/", {
-        shift_id: shiftId,
-      });
-      console.log(response.data.message);
-      return response.data.message;
-    } catch (error: any) {
-      console.error("Error starting shift:", error);
-      setShiftError(error.response.data.message);
-    }
-  };
-
-  /**
-   * Given the shift id, end the shift of a for a particular employee.
-   * @params shiftId: string The id of the shift to be ended.
-   */
-  const endShift = async (shiftId: string) => {
-    try {
-      const response = await axiosInstance.patch("/api/terminate/shift/", {
-        shift_id: shiftId,
-      });
-      console.log(response.data.message);
-      return response.data.message;
-    } catch (error: any) {
-      console.error("Error ending shift:", error);
-      setShiftError(error.response.data.message);
-    }
-  };
-
   /** This method is used to submit the employee details to the server.
    * The method uses no params but simply send the employee details stored in the states to the server.
    * The method returns a boolean value to indicate if the request was successful or not.
    */
   const onboardNemEmployee = async () => {
-    try {
-      const response = await axiosInstance.post(
-        `/api/onboard/employee/`,
+    setIsAlertVisible(true);
+    setAlertConfig({
+      title: "Confirmation",
+      message: `You are about to onboard a new employee. with the following details: ${JSON.stringify(
         newEmployee
-      );
-      // Set the alert config to display the alert with the message from the server if the request was successful or created
-      if (response.status === 200 || response.status === 201) {
-        setAlertConfig({
-          title: "Message",
-          message: response.data.message,
-          onConfirm: async () => {
-            const employee_list = await getAllEmployees();
-            setEmployeeList(employee_list);
-            setIsAlertVisible(false);
-          },
-          isVisible: true,
-        });
-        setIsAlertVisible(true);
-        setNewEmployee(undefined);
-      }
-    } catch (error: any) {
-      console.error("Error adding employee:", error.response?.data || error); // Enhanced error logging
-      // Show error to user
-      setAlertConfig({
-        title: "Error",
-        message: error.response?.data?.error || "Failed to add employee",
-        onConfirm: () => {
-          setIsAlertVisible(false);
-        },
-        isVisible: true,
-      });
-      setIsAlertVisible(true);
-    }
+      )}. Do you wish to continue?`,
+      onConfirm: async () => {
+        setIsAlertVisible(false);
+        try {
+          setIsLoading(true);
+          const response = await axiosInstance.post(
+            `/api/onboard/employee/`,
+            newEmployee
+          );
+          // Set the alert config to display the alert with the message from the server if the request was successful or created
+          if (response.status === 200 || response.status === 201) {
+            setAlertConfig({
+              title: "Message",
+              message: response.data.message,
+              onConfirm: async () => {
+                const employee_list = await getAllEmployees();
+                setEmployeeList(employee_list);
+                setIsAlertVisible(false);
+              },
+              isVisible: true,
+            });
+            setIsAlertVisible(true);
+            setNewEmployee(undefined);
+          }
+        } catch (error: any) {
+          console.error(
+            "Error adding employee:",
+            error.response?.data || error
+          );
+          setAlertConfig({
+            title: "Error",
+            message: error.response?.data?.error || "Failed to add employee",
+            onConfirm: () => {
+              setIsAlertVisible(false);
+            },
+            isVisible: true,
+          });
+          setIsAlertVisible(true);
+        } finally {
+          setIsLoading(false);
+        }
+      },
+      onClose: () => {
+        setIsAlertVisible(false);
+      },
+      isVisible: true,
+    });
   };
 
   /**
@@ -289,46 +274,57 @@ const EmployeeProvider: React.FC<{
    * @params id: string The id of the employee to be removed.
    */
   const removeEmployee = async (id: string) => {
-    try {
-      const response = await axiosInstance.delete("/api/remove/employee/", {
-        params: { employee_id: id },
-      });
-      if (response.status === 200) {
-        setIsAlertVisible(true);
-        setAlertConfig({
-          title: "Message",
-          message: response.data.message,
-          onConfirm: async () => {
-            const employee_list = await getAllEmployees();
-            setEmployeeList(employee_list);
-            setIsAlertVisible(false);
-          },
-          isVisible: true,
-        });
-      } else if (response.status === 400) {
-        setIsAlertVisible(true);
-        setAlertConfig({
-          title: "Error",
-          message: response.data.error,
-          onConfirm: async () => {
-            const employee_list = await getAllEmployees();
-            setEmployeeList(employee_list);
-            setIsAlertVisible(false);
-          },
-          isVisible: true,
-        });
-      }
-    } catch (error: any) {
-      setIsAlertVisible(true);
-      setAlertConfig({
-        title: "Error",
-        message: error.response.data.message,
-        onConfirm: () => {
-          setIsAlertVisible(false);
-        },
-        isVisible: true,
-      });
-    }
+    setIsAlertVisible(true);
+    setAlertConfig({
+      title: "Confirmation",
+      message: `You are about to remove an employee, this action is irreversible. Do you wish to continue?`,
+      onConfirm: async () => {
+        setIsAlertVisible(false);
+        try {
+          const response = await axiosInstance.delete("/api/remove/employee/", {
+            params: { employee_id: id },
+          });
+          if (response.status === 200) {
+            setIsAlertVisible(true);
+            setAlertConfig({
+              title: "Message",
+              message: response.data.message,
+              onConfirm: async () => {
+                const employee_list = await getAllEmployees();
+                setEmployeeList(employee_list);
+                setIsAlertVisible(false);
+              },
+              isVisible: true,
+            });
+          } else if (response.status === 400) {
+            setIsAlertVisible(true);
+            setAlertConfig({
+              title: "Error",
+              message: response.data.error,
+              onConfirm: async () => {
+                const employee_list = await getAllEmployees();
+                setEmployeeList(employee_list);
+                setIsAlertVisible(false);
+              },
+              isVisible: true,
+            });
+          }
+        } catch (error: any) {
+          setIsAlertVisible(true);
+          setAlertConfig({
+            title: "Error",
+            message: error.response.data.message,
+            onConfirm: () => {
+              setIsAlertVisible(false);
+            },
+            isVisible: true,
+          });
+        } finally {
+          setIsLoading(false);
+        }
+      },
+      isVisible: true,
+    });
   };
 
   /** Method simply filters the employee list given the search params in the state */
@@ -346,32 +342,25 @@ const EmployeeProvider: React.FC<{
     workLog,
     employeeData,
     clearData,
-    startShift,
-    endShift,
     shiftError,
     retrieveEmployeeWithId,
     retrieveEmployeeTaskDetails,
     retrieveEmployeeWorkLog,
-    isAlertVisible,
-    alertConfig,
-    setAlertConfig,
-    setIsAlertVisible,
     removeEmployee,
+    setEmployeeData: async (employeeData: EmployeeDetailsInterface) => {
+      setEmployeeData(employeeData);
+    },
+    setWorkLog: async (workLog: WorklogInterface) => {
+      setWorkLog(workLog);
+    },
+    setTaskDetails: async (taskDetails: TaskDetailsProps) => {
+      setTaskDetails(taskDetails);
+    },
   };
 
   return (
     <EmployeeContext.Provider value={value}>
       {children}
-      {/* Display the modal if the alert is visible */}
-      {isAlertVisible && (
-        <AlertComponent
-          title={alertConfig?.title || ""}
-          message={alertConfig?.message || ""}
-          onConfirm={alertConfig?.onConfirm}
-          isVisible={alertConfig?.isVisible || false}
-          onClose={alertConfig?.onClose}
-        />
-      )}
     </EmployeeContext.Provider>
   );
 };

@@ -68,10 +68,6 @@ export interface ClientContextType {
   createClient: (newClientDetails: NewClientDetailsInterface) => Promise<any>;
   isNewClientLoading: boolean;
   setNewContract: (contract?: ContractDetailsType) => void;
-  alertConfig: AlertConfig | undefined;
-  setAlertConfig: (alertConfig: AlertConfig | undefined) => void;
-  isAlertVisible: boolean;
-  setIsAlertVisible: (visible: boolean) => void;
 }
 
 export interface JobDetailsType {

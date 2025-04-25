@@ -343,12 +343,15 @@ class Shift(models.Model):
     def create_timesheets(self):
         """Create timesheet entries for all staff members"""
         for staff_member in self.staff.all():
-            TimeSheet.objects.get_or_create(
+            # Use get_or_create to avoid duplicates
+            timesheet, created = TimeSheet.objects.get_or_create(
                 shift=self,
                 staff=staff_member,
-                status='pending'
+                defaults={
+                    'status': 'pending'
+                }
             )
-
+            
     def end_shift(self):
         """Manually end a shift if allowed"""
         if not self.can_end_shift():
@@ -356,30 +359,32 @@ class Shift(models.Model):
             
         self.status = 'completed'
         self.end_time = timezone.now().time()
-        self.save()
         
-        # Create timesheets
+        # Create timesheets before saving
+        self.save()
         self.create_timesheets()
         
         # Check if all shifts for task are completed
         task_shifts = self.task.task_shift.all()
         if all(shift.status == 'completed' for shift in task_shifts):
-            self.task.status = 'pending'
+            self.task.status = 'completed'
             self.task.save()
 
     def auto_complete(self):
         """Automatically complete shift when task end time is reached"""
         self.status = 'completed'
         self.end_time = self.task.end_time  # Use task's end time
+        
+        # Create timesheets before saving
         self.save()
         self.create_timesheets()
         
         # Add automatic comments for each staff member
         for staff_member in self.staff.all():
-            TaskComment.objects.get_or_create(
+            TaskComment.objects.create(
                 shift=self,
                 created_by=staff_member.user,
-                defaults={'comment': 'Shift was completed successfully'}
+                comment='Shift was completed automatically'
             )
 
     def check_and_update_status(self):
@@ -403,14 +408,13 @@ class Shift(models.Model):
 
       
 class TaskComment(models.Model):
-    """ The model defines the task comment database and the fields that are required for the task comment model."""
     comment = models.TextField()
     shift = models.ForeignKey(Shift, on_delete=models.CASCADE)
-    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True, related_name='comment_creator')
+    created_by = models.ForeignKey('staff.Staff', on_delete=models.SET_NULL, blank=True, null=True, related_name='comment_creator')
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f'{self.task} - {self.comment}'
+        return f'{self.shift} - {self.comment}'
 
     def save(self, *args, **kwargs):
         if self.shift.status == 'completed':
@@ -497,6 +501,7 @@ class SubscriptionHistory(models.Model):
     start_date = models.DateField()
     renewal_date = models.DateField()
     created_at = models.DateTimeField(auto_now_add=True)
+    is_active = models.BooleanField(default=True)
     
     def __str__(self):
         return f"{self.subscription.company.name} - {self.subscription.tier.name}"
@@ -506,10 +511,6 @@ class SubscriptionHistory(models.Model):
             self.start_date = self.subscription.start_date
             self.renewal_date = self.subscription.renewal_date
         super().save(*args, **kwargs) 
-    
-    
-    
-
 
 class EmployeeCountHistory(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='employee_count_history_company'  )

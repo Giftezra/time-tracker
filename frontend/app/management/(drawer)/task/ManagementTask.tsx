@@ -119,11 +119,7 @@ const MainEmployeeTaskManager = () => {
                 <ThemedHeaderText text="Task manager" />
               </View>
               {/* Create buttons to monitor the states and conditinally display the respective view  */}
-              <View
-                style={[
-                  styles.mobileHeader,
-                ]}
-              >
+              <View style={[styles.mobileHeader]}>
                 {/* Conditionally render the sub header */}
                 {subHeader.map((header, index) => (
                   <TouchableOpacity
@@ -162,24 +158,21 @@ const MainEmployeeTaskManager = () => {
         )}
 
         {/* Display the assign task modal */}
-        <Modal
-          visible={assignTaskModalVisible}
-          animationType="slide"
-        >
+        <Modal visible={assignTaskModalVisible} animationType="slide">
           <View style={[styles.modalContent]}>
             <TouchableOpacity
               style={styles.modalCloseButton}
               onPress={() => setAssignTaskModalVisible(false)}
             >
-              <AntDesign name="close" size={24} color={'#000'} />
+              <AntDesign name="close" size={24} color={"#000"} />
             </TouchableOpacity>
-            {selectedTask && (
-              <AssignTaskModal
-                task={selectedTask}
-                onClose={closeAssignTaskModal}
-              />
-            )}
           </View>
+          {selectedTask && (
+            <AssignTaskModal
+              task={selectedTask}
+              onClose={closeAssignTaskModal}
+            />
+          )}
         </Modal>
 
         {/* Display the edit task modal */}
@@ -194,7 +187,7 @@ const MainEmployeeTaskManager = () => {
                 style={styles.modalCloseButton}
                 onPress={() => setIsEditTaskModalVisible(false)}
               >
-                <AntDesign name="close" size={24} color={'#000'} />
+                <AntDesign name="close" size={24} color={"#000"} />
               </TouchableOpacity>
             </View>
 
@@ -256,6 +249,8 @@ const styles = StyleSheet.create({
   mobileContainer: {
     flex: 1,
     width: "100%",
+    padding: 5,
+    gap:10
   },
 
   mobileHeader: {
@@ -302,12 +297,14 @@ const styles = StyleSheet.create({
   },
 
   modalContent: {
-    padding: 10,
+    backgroundColor: "red",
   },
 
   modalCloseButton: {
-    alignSelf: "flex-end",
-    padding: 10,
+    position: "absolute",
+    top: 10,
+    right: 10,
+    zIndex: 2000,
   },
 
   modalOverlay: {

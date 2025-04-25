@@ -7,10 +7,10 @@ export interface Message {
 }
 
 // Define the context state and methods
-export default interface MessageContextType {
+export default interface MessageContextInterface {
   messages: Message[];
   chatRooms: ChatRoomType[];
-  deleteConversation: () => JSX.Element;
+  deleteConversation: (chatRoomId: string) => Promise<void>;
   markAsRead: (messageId: string) => void;
   deleteMessage: (messageId: string, chatRoomId: string) => Promise<void>;
   sendMessage: (chatRoomId: string, content: string) => Promise<Message>;

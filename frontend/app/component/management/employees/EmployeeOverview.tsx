@@ -5,13 +5,12 @@ import { EmployeeDetailsInterface } from "@/app/types/management/employee";
 
   const EmployeeOverview = ({overview}:{overview: EmployeeDetailsInterface}) => {
 
-  const text = useThemeColor({}, "text");
-  const highlight = useThemeColor({}, "highlight");
-  const innerBackground = useThemeColor({}, "innerBackground");
+  const text = '#000';
+  const highlight = '#000';
 
   return (
     <View
-      style={[styles.worklogContainer, { backgroundColor: innerBackground }]}
+      style={[styles.worklogContainer,]}
     >
       <Text style={[styles.roleText, { color: highlight }]}>
           {overview?.role}
@@ -52,9 +51,11 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     flexDirection: "column",
     justifyContent: "space-between",
-    padding: 5,
+    padding: 10,
     borderWidth: 1,
     marginHorizontal: 5,
+    gap:20,
+    borderRadius:10,
   },
   nameAndImageContainer: {
     flexDirection: "row",

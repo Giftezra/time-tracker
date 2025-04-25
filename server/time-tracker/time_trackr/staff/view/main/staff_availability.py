@@ -176,14 +176,19 @@ def update_availability(request):
     try:
         staff = get_object_or_404(Staff, user=request.user)
         availability = get_object_or_404(Availability, id=availability_id, staff=staff)
+        if not availability:
+            return Response({'error': 'You do not have any availability set for this day.'}, status=status.HTTP_404_NOT_FOUND)
+
+        start_time = datetime.strptime(request.data.get('start_time'), '%H:%M').time()
+        end_time = datetime.strptime(request.data.get('end_time'), '%H:%M').time()
+        if start_time >= end_time:
+            return Response({'error': 'Start time must be before end time'}, status=status.HTTP_400_BAD_REQUEST)
         
-        availability.start_date = request.data.get('start_date', availability.start_date)
-        availability.end_date = request.data.get('end_date', availability.end_date)
-        availability.start_time = request.data.get('start_time', availability.start_time)
-        availability.end_time = request.data.get('end_time', availability.end_time)
+        availability.start_time = start_time
+        availability.end_time = end_time
         availability.save()
         
-        return Response({'message': 'Availability updated successfully'}, status=status.HTTP_200_OK)
+        return Response({'message': 'You have updated your availability successfully.'}, status=status.HTTP_200_OK)
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -255,12 +260,10 @@ def delete_availability(request):
             id=availability_id,
             staff=staff
         )
+        if not availability:
+            return Response({'error': 'You do not have any availability set for this day.'}, status=status.HTTP_404_NOT_FOUND)
         
         availability.delete()
-        
-        # Clear cache
-        cache_key = get_cache_key(staff.id, 'availability_dates')
-        cache.delete(cache_key)
         
         return Response({
             'message': 'Availability deleted successfully',

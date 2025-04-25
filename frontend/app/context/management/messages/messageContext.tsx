@@ -6,7 +6,9 @@ import React, {
   ReactNode,
   useEffect,
 } from "react";
-import MessageContextType, { Message } from "@/app/types/management/messages";
+import MessageContextInterface, {
+  Message,
+} from "@/app/types/management/messages";
 import { useAuth } from "@/app/authentication";
 import { ChatRoomType } from "@/app/types/management/messages";
 import { Pressable } from "react-native";
@@ -15,7 +17,9 @@ import { WebSocketMessage } from "@/app/types/management/messages";
 import BASE_URL from "@/app/utils/urls";
 
 // Create the context
-const MessageContext = createContext<MessageContextType | undefined>(undefined);
+const MessageContext = createContext<MessageContextInterface | undefined>(
+  undefined
+);
 
 // Create the provider component
 interface MessageProviderProps {
@@ -23,7 +27,7 @@ interface MessageProviderProps {
 }
 
 const MessageProvider: React.FC<MessageProviderProps> = ({ children }) => {
-  const { axiosInstance, token } = useAuth();
+  const { axiosInstance, token, setIsAlertVisible, setAlertConfig } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [isSentByMe, setIsSentByMe] = useState<boolean>(false);
   const [webSocket, setWebSocket] = useState<WebSocket | null>(null);
@@ -31,6 +35,23 @@ const MessageProvider: React.FC<MessageProviderProps> = ({ children }) => {
   const [activeChatRoom, setActiveChatRoom] = useState<
     ChatRoomType | undefined
   >(undefined);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  useEffect(() => {
+    const fetchChatRooms = async () => {
+      try {
+        setIsLoading(true);
+        const response = await axiosInstance.get("/api/chat-rooms/");
+        setChatRooms(response.data.chat_rooms);
+        console.log("chatRooms", response.data.chat_rooms);
+      } catch (error) {
+        console.error("Error fetching chat rooms:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchChatRooms();
+  }, []);
 
   /**
    * Call the server side code using the axios instance to fetch the chat rooms from the database.
@@ -46,53 +67,6 @@ const MessageProvider: React.FC<MessageProviderProps> = ({ children }) => {
       console.error("Error fetching chat rooms:", error);
     }
   }, []);
-
-  useEffect(() => {
-    fetchChatRooms();
-  }, [fetchChatRooms]);
-
-  /**
-   * The method is used to send a message to the server.
-   * After sending the message to the server, the message is added to the messages state
-   * which will be used to display the message in the message component
-   * @param chatRoomId is the id of the associated chatroom
-   * @param content is the message content
-   * @returns
-   */
-  const connectWebSocket = (userId: string) => {
-    const baseUrl = BASE_URL().replace(/\/$/, "");
-    const cleanUserId = userId.toString().trim();
-    const wsUrl = `${baseUrl}/ws/dm/${cleanUserId}/?token=${token}`;
-    const ws = new WebSocket(wsUrl);
-    // Fetch the chat history when the WebSocket connection is opened
-    ws.onopen = async () => {
-      await fetchChatHistory(cleanUserId);
-    };
-
-    ws.onerror = (error) => {
-      console.error("WebSocket error:", error);
-    };
-
-    ws.onmessage = (event) => {
-      const data: WebSocketMessage = JSON.parse(event.data);
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: data.message_id || `msg_${Date.now()}_${Math.random()}`,
-          content: data.message,
-          timestamp: data.timestamp,
-          is_read: true,
-        },
-      ]);
-      setIsSentByMe(false);
-    };
-
-    ws.onclose = () => {
-      console.log("WebSocket connection closed");
-    };
-
-    setWebSocket(ws);
-  };
 
   /**
    * The method is used to fetch the chat history from the server.
@@ -121,6 +95,55 @@ const MessageProvider: React.FC<MessageProviderProps> = ({ children }) => {
       setWebSocket(null);
     }
   };
+
+  /**
+   * The method is used to send a message to the server.
+   * After sending the message to the server, the message is added to the messages state
+   * which will be used to display the message in the message component
+   * @param chatRoomId is the id of the associated chatroom
+   * @param content is the message content
+   * @returns
+   */
+  const connectWebSocket = useCallback(
+    (userId: string) => {
+      const baseUrl = BASE_URL().replace(/\/$/, "");
+      const cleanUserId = userId.toString().trim();
+      const wsUrl = `${baseUrl}/ws/dm/${cleanUserId}/?token=${token}`;
+
+      const ws = new WebSocket(wsUrl);
+
+      // Add reconnection logic
+      const reconnectInterval = setInterval(() => {
+        if (ws.readyState === WebSocket.CLOSED) {
+          console.log("Attempting to reconnect...");
+          setWebSocket(new WebSocket(wsUrl));
+        }
+      }, 5000);
+
+      ws.onopen = async () => {
+        clearInterval(reconnectInterval);
+        await fetchChatHistory(cleanUserId);
+      };
+
+      ws.onerror = (error) => {
+        console.error("WebSocket error:", error);
+      };
+
+      ws.onclose = () => {
+        console.log("WebSocket connection closed");
+        clearInterval(reconnectInterval);
+      };
+
+      // ... rest of your handler code
+
+      setWebSocket(ws);
+      return () => {
+        clearInterval(reconnectInterval);
+        ws.close();
+      };
+    },
+    [token, fetchChatHistory]
+  );
 
   /**
    * The method is used to send a message to the server.
@@ -167,35 +190,116 @@ const MessageProvider: React.FC<MessageProviderProps> = ({ children }) => {
    * @returns
    */
   const deleteMessage = async (messageId: string, chatRoomId: string) => {
-    try {
-      await axiosInstance.delete(`/api/management/messages/`, {
-        data: {
-          messageId,
-          chatRoomId,
-        },
-      });
-      setMessages((prev) => prev.filter((msg) => msg.id !== messageId));
-    } catch (error) {
-      console.error("Error deleting message:", error);
-      throw error;
-    }
+    setIsAlertVisible(true);
+    /* Display the alert to ensure the user is aware of their actions */
+    setAlertConfig({
+      title: "Confirmation",
+      message:
+        "Are you sure you want to delete this message? This is action is irreversible.",
+      isVisible: true,
+      onConfirm: async () => {
+        setIsAlertVisible(false);
+        try {
+          const response = await axiosInstance.delete(
+            `/api/delete/message/`,
+            {
+              data: {
+                message_id: messageId,
+                chat_room_id: chatRoomId,
+              },
+            }
+          );
+          if (response.status === 204) {
+            setMessages((prev) => prev.filter((msg) => msg.id !== messageId));
+            setIsAlertVisible(true);
+            setAlertConfig({
+              title: "Status",
+              message: response.data.message,
+              onClose: () => {
+                setIsAlertVisible(false);
+              },
+              isVisible: true,
+            });
+          } else {
+            setIsAlertVisible(true);
+            setAlertConfig({
+              title: "Status",
+              message: response.data.message,
+              onClose: () => {
+                setIsAlertVisible(false);
+              },
+              isVisible: true,
+            });
+          }
+        } catch (error) {
+          console.log("Error deleting message:", error);
+        }
+      },
+      onClose() {
+        setIsAlertVisible(false);
+      },
+    });
   };
 
   /**
    * Fires the fetch request to delete the given messge from the conversation database given the message id
+   * @param chatRoomId is the id of the conversation to be deleted
    * @returns {JSX.Element} Deletes the conversation when swiped
    */
-  const deleteConversation = () => {
-    return (
-      <Pressable
-        onPress={() => console.log("message deleted")}
-        style={{ justifyContent: "center", padding: 5 }}
-      >
-        <AntDesign name="delete" size={15} color="red" />
-      </Pressable>
-    );
+  const deleteConversation = async (chatRoomId: string) => {
+    setIsAlertVisible(true);
+    /* Display the alert to ensure the user is aware of their actions */
+    setAlertConfig({
+      title: "Confirmation",
+      message: "Are you sure you want to delete this conversation? This action",
+      onConfirm: async () => {
+        setIsAlertVisible(false);
+        try {
+          const response = await axiosInstance.delete(
+            `/api/delete/conversation/`,
+            {
+              data: {
+                chat_room_id: chatRoomId,
+              },
+            }
+          );
+          if (response.status === 204) {
+            setChatRooms((prev) => prev.filter((room) => room.id !== chatRoomId));
+            await fetchChatRooms();
+            setIsAlertVisible(true);
+            setAlertConfig({
+              title: "Status",
+              message: response.data.message,
+              onConfirm() {
+                setIsAlertVisible(false);
+              },
+              isVisible: true,
+              type: "success",
+            });
+          } else {
+            setIsAlertVisible(true);
+            setAlertConfig({
+              title: "Status",
+              message: response.data.message,
+              onConfirm() {
+                setIsAlertVisible(false);
+              },
+              isVisible: true,
+              type: "error",
+            });
+          }
+        } catch (error) {
+          console.error("Error deleting conversation:", error);
+          throw error;
+        }
+      },
+      isVisible: true,
+      // Close the alert when the user clicks on the close button
+      onClose: () => {
+        setIsAlertVisible(false);
+      },
+    });
   };
-
 
   /**
    * The method is used to update the message
@@ -209,7 +313,7 @@ const MessageProvider: React.FC<MessageProviderProps> = ({ children }) => {
   ) => {
     try {
       const response = await axiosInstance.put(
-        `/api/management/messages/${messageId}/`,
+        `/api/update/message/`,
         messageData
       );
       setMessages((prev) =>
@@ -232,7 +336,7 @@ const MessageProvider: React.FC<MessageProviderProps> = ({ children }) => {
     );
   };
 
-  const value: MessageContextType = {
+  const value: MessageContextInterface = {
     messages,
     chatRooms,
     deleteConversation,

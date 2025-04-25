@@ -15,32 +15,37 @@ import { useClientContext } from "@/app/context/management/client/clientContext"
 import JobDetailsComponent from "@/app/component/management/client/jobDetails";
 import SearchInputContainer from "@/app/component/helper/SearchInput";
 import SubtitleThemedText from "@/app/component/helper/SubtitleThemedText";
+import {
+  ClientDetailsType,
+  JobDetailsType,
+} from "@/app/types/management/client";
 const ClientMobileComponent = () => {
-  const {
-    jobDetailsData,
-    clientDetailsData,
-    isCreateContractModalVisible,
-    toggleCreateContractModal,
-    setIsCreateClientModalVisible,
-  } = useClientContext();
+  const subHeader = ["clients", "assigned tasks"];
+  const { jobDetailsData, clientDetailsData } = useClientContext();
   const [toggleView, setToggleView] = useState("clients");
-
-  const secondaryColor = useThemeColor({}, "secondaryColor");
-  const text = useThemeColor({}, "text");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchJobQuery, setSearchJobQuery] = useState("");
 
   const handleToggleView = (header: string) => {
     setToggleView(header);
   };
 
-  // Subheader for the mobile view
-  const subHeader = ["clients", "assigned tasks"];
+  /* Filter the client details given the search query */
+  const filterClientDetailsData = clientDetailsData.filter((item) => {
+    return item.name?.toLowerCase().includes(searchQuery.toLowerCase());
+  });
+
+  /* Filter the job details given the search query */
+  const filterJobDetailsData = jobDetailsData.filter((item) => {
+    return item.contract_name
+      ?.toLowerCase()
+      .includes(searchJobQuery.toLowerCase());
+  });
 
   return (
-    <KeyboardAvoidingView
-      style={[styles.mobileContainer, { backgroundColor: secondaryColor }]}
-    >
+    <KeyboardAvoidingView style={[styles.mobileContainer]}>
       {/* Map the header in a row.
-                Check the active button and change the color */}
+      Check the active button and change the color */}
       <View style={styles.mobileSelectButtonContainer}>
         {subHeader.map((header, index) => (
           <TouchableOpacity
@@ -60,19 +65,19 @@ const ClientMobileComponent = () => {
 
       {/* Conditionally render the client view */}
       {toggleView === "clients" && (
-        <View
-          style={[
-            { flex: 1, width: "100%" },
-            { backgroundColor: secondaryColor },
-          ]}
-        >
+        <View style={[{ flex: 1, width: "100%" }]}>
           {/* Add the search bar component to filter the client details */}
           <View>
-            <SearchInputContainer />
+            <SearchInputContainer
+              placeholder="Client name"
+              text="Search client"
+              value={searchQuery}
+              setValue={setSearchQuery}
+            />
           </View>
 
           <FlatList
-            data={clientDetailsData}
+            data={searchQuery ? filterClientDetailsData : clientDetailsData}
             keyExtractor={(item, index) => `client-${item.client_id}-${index}`}
             renderItem={({ item }) => <ClientDetailsComponent props={item} />}
           />
@@ -84,11 +89,16 @@ const ClientMobileComponent = () => {
         <View style={{ flex: 1, width: "100%" }}>
           {/* Add the search bar component to filter the client details */}
           <View>
-            <SearchInputContainer />
+            <SearchInputContainer
+              placeholder="Contract name or Task Serial Number"
+              text="Search assigned tasks"
+              value={searchJobQuery}
+              setValue={setSearchJobQuery}
+            />
           </View>
 
           <FlatList
-            data={jobDetailsData}
+            data={searchJobQuery ? filterJobDetailsData : jobDetailsData}
             keyExtractor={(item, index) => `job-${item.client_id}-${index}`}
             renderItem={({ item }) => <JobDetailsComponent {...item} />}
           />

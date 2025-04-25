@@ -17,21 +17,9 @@ import { useClientContext } from "@/app/context/management/client/clientContext"
 import ButtonText from "../../helper/ButtonText";
 import AlertModal from "../../helper/AlertModal";
 const EditClientComponent = ({ client }: { client: ClientDetailsType }) => {
-  const { updateClient, isEditClientLoading } = useClientContext();
+  const { isEditClientLoading, updateClient } = useClientContext();
   const [clientData, setClientData] = useState<ClientDetailsType>(client);
   const [error, setError] = useState<string>("");
-  const [isAlertVisible, setIsAlertVisible] = useState(false);
-  const [alertConfig, setAlertConfig] = useState<{
-    title: string;
-    message: string;
-    onConfirm?: () => void;
-    onCancel?: () => void;
-  }>({
-    title: "",
-    message: "",
-    onConfirm: () => {},
-    onCancel: () => {},
-  });
 
   // Get theme colors
   const primary = useThemeColor({}, "primaryColor");
@@ -45,26 +33,7 @@ const EditClientComponent = ({ client }: { client: ClientDetailsType }) => {
     }));
   };
 
-  /**
-   * Handle the client update login to show a modal to confirm the update.
-   * if the update is successful, the modal will close and the client will be updated.
-   * if the update is not successful, the modal will show the error message.
-   */
-  const handleClientUpdate = () => {
-    setAlertConfig({
-      title: error || "Update Client",
-      message: "Are you sure you want to update the client?",
-      onConfirm: () => {
-        try {
-          updateClient(clientData);
-        } catch (error: any) {
-          setError(error.message);
-        }
-      },
-      onCancel: () => setIsAlertVisible(false),
-    });
-    setIsAlertVisible(true);
-  };
+
 
   return (
     <KeyboardAvoidingView
@@ -170,7 +139,7 @@ const EditClientComponent = ({ client }: { client: ClientDetailsType }) => {
 
           <TouchableOpacity
             style={[styles.button, { backgroundColor: primary }]}
-            onPress={handleClientUpdate}
+            onPress={() => updateClient(clientData)}
           >
             {isEditClientLoading ? (
               <ActivityIndicator size="small" color="white" />
@@ -180,14 +149,6 @@ const EditClientComponent = ({ client }: { client: ClientDetailsType }) => {
           </TouchableOpacity>
         </ScrollView>
       </View>
-
-      <AlertModal
-        title={alertConfig.title}
-        message={alertConfig.message}
-        isVisible={isAlertVisible}
-        onClose={alertConfig.onCancel}
-        onConfirm={alertConfig.onConfirm}
-      />
     </KeyboardAvoidingView>
   );
 };

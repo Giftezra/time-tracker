@@ -27,8 +27,8 @@ const RegisterCompanyComponent = ({ onClose }: { onClose?: () => void }) => {
   const {companyDetails, setCompanyDetails, createCompany} = useProfileContext();
   const [error, setError] = useState<string[]>([]);
 
-  const backgroundColor = useThemeColor({}, "background");
-  const buttonColor = useThemeColor({}, "inactivebtn");
+  const backgroundColor = useThemeColor({}, "primaryColor");
+  const buttonColor = useThemeColor({}, "secondaryColor");
 
   useEffect(() => {
     bounceText();
@@ -55,7 +55,7 @@ const RegisterCompanyComponent = ({ onClose }: { onClose?: () => void }) => {
 
   return (
     <SafeAreaProvider
-      style={[{ flex: 1 }, { backgroundColor: backgroundColor }]}
+        style={[styles.mainContainer, { backgroundColor: backgroundColor }]}
     >
       <KeyboardAvoidingView style={{ flex: 1 }}>
         <GestureHandlerRootView style={{ flex: 1 }}>
@@ -230,8 +230,15 @@ const RegisterCompanyComponent = ({ onClose }: { onClose?: () => void }) => {
 export default RegisterCompanyComponent;
 
 const styles = StyleSheet.create({
+  mainContainer: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: "red",
+    alignSelf: "center",
+  },
   scrollContainer: {
     padding: 15,
+    borderRadius: 10,
   },
   headerContainer: {
     marginBottom: 15,

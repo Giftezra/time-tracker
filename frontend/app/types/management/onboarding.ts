@@ -12,6 +12,7 @@ export interface EmployeeOnboardingType {
 }
 
 export interface CompanyInterface {
+  company_id?: number | undefined;
   company_name?: string | undefined;
   company_registration_number?: string | undefined;
   company_services?: string | undefined;

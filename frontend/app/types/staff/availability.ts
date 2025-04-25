@@ -43,7 +43,8 @@ export default interface AvailibityProviderInterface {
   isLoading: boolean;
   isDateDisabled: (dateString: string, markedDates: any) => boolean;
   getDayAvailability: (dateString: string) => Promise<void>;
-  deleteAvailability: (id: number, day: string) => void;
+  deleteAvailability: (id: number) => Promise<void>;
+  updateAvailability: (id: number, startTime: string, endTime: string) => Promise<void>;
   dayAvailability: DayAvailabilityInterface | undefined;
   showDayAvailability: boolean;
   setShowDayAvailability: (value: boolean) => void;

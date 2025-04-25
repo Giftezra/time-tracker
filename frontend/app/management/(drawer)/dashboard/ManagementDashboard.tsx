@@ -18,12 +18,16 @@ import WebDashboard from "./WebDashboard";
 import MobileDashboard from "./MobileDashboard";
 import RegisterCompanyComponent from "../../onboarding/registerCompany";
 import { useAuth } from "@/app/authentication";
+import { useEmployeeContext } from "@/app/context/management/employee/employeeContext";
+
 const MainManagementDashboard = () => {
   const { isRegisterCompany, setIsRegisterCompany } = useAuth();
   const {
     isLoading,
     isModalVisible,
     setIsModalVisible,
+    handleEmployeeAnalytics,
+    employeeAnalyticsData,
   } = useDashboardContext();
 
   return (
@@ -58,7 +62,11 @@ const MainManagementDashboard = () => {
               </View>
 
               {!isLoading && (
-                <EmployeeAnalyticsComponent />
+                <EmployeeAnalyticsComponent
+                  employeeData={employeeAnalyticsData.employeeData}
+                  workLog={employeeAnalyticsData.workLog}
+                  taskDetails={employeeAnalyticsData.taskDetails}
+                />
               )}
             </View>
           </Modal>
@@ -120,6 +128,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     zIndex: 1000,
+    borderWidth: 1,
+    borderRadius: 10,
+    shadowOffset: { width: 0, height: 2 },
+    shadowColor: "black",
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
 
   registerCompanyContent: {

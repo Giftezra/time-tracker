@@ -27,7 +27,6 @@ const EmployeeAnalyticsComponent = ({
   workLog?: WorklogInterface;
   taskDetails?: TaskDetailsProps;
 }) => {
-  const secondaryColor = useThemeColor({}, "secondaryColor");
 
   return (
     <ScrollView style={[styles.mainContainer]}>

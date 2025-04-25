@@ -54,25 +54,3 @@ def get_timesheet_data(request):
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
     
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def get_ongoing_shift(request):
-    """ Get the current ongoing shift for the user
-     Return the time the shift started and the time the task is designed to end"""
-    try:
-        staff = get_object_or_404(Staff, user=request.user)
-        shift = Shift.objects.filter(staff=staff, status='started').first()
-        # If a shift is found, return the shift data
-        shift_data = {
-            'shift_start_time': shift.start_time,
-            'task_end_time': shift.task.end_time,
-        }
-        
-        return Response({'shift': shift_data}, status=status.HTTP_200_OK)
-    except Exception as e:
-        print(f"Unexpected error in get_ongoing_shift: {str(e)}")
-        return Response(
-            {'error': 'An unexpected error occurred'}, 
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )

@@ -16,6 +16,7 @@ import { userData } from "@/app/utils/loadData";
 import { useAuth } from "@/app/authentication";
 import { useLocation } from "../management/LocationProvider";
 import { LocationServices } from "@/app/services/LocationServices";
+import MakeCommentModal from "@/app/component/staff/events/MakeComment";
 
 const SideComponentContext = createContext<
   SideComponentContextType | undefined
@@ -48,6 +49,9 @@ const SideComponentProvider = ({ children }: { children: ReactNode }) => {
   const [daysShift, setDaysShift] = useState<LiveEventInterface[]>([]);
   const [event, setEvent] = useState<LiveEventInterface>(events);
   const [currentShiftIndex, setCurrentShiftIndex] = useState<number>(0);
+  const [isCommentModalVisible, setIsCommentModalVisible] =
+    useState<boolean>(false);
+  const [shiftIdForComment, setShiftIdForComment] = useState<string>("");
 
   const calculateDistance = (
     lat1: number,
@@ -256,7 +260,7 @@ const SideComponentProvider = ({ children }: { children: ReactNode }) => {
         },
         isVisible: true,
       });
-      return;
+      // return;
     }
 
     try {
@@ -320,13 +324,15 @@ const SideComponentProvider = ({ children }: { children: ReactNode }) => {
           );
 
           if (response.status === 200) {
+            setShiftIdForComment(shiftId);
+            setIsCommentModalVisible(true);
             setIsAlertVisible(true);
             setAlertConfig({
               title: "Success",
               message: response.data.message,
               onConfirm: () => {
                 setIsAlertVisible(false);
-                fetchUpcomingShifts(); // Refresh shifts after successful end
+                fetchUpcomingShifts();
               },
               isVisible: true,
             });
@@ -344,6 +350,65 @@ const SideComponentProvider = ({ children }: { children: ReactNode }) => {
           });
         } finally {
           setIsLoading(false);
+        }
+      },
+      onClose: () => {
+        setIsAlertVisible(false);
+      },
+      isVisible: true,
+    });
+  };
+
+  const makeTaskComment = async (shiftId: string, comment: string) => {
+    console.log("shift id", shiftId);
+    console.log("comment", comment);
+
+    setIsAlertVisible(true);
+    setAlertConfig({
+      title: "Creating the task comment",
+      message: "Are you sure you want to create the task comment? ",
+      onConfirm: async () => {
+        setIsAlertVisible(false);
+        try {
+          const response = await axiosInstance.post(
+            "/api/create/task/comment/",
+            {
+              shift_id: shiftId,
+              comment: comment,
+            }
+          );
+          if (response.status === 200) {
+            setIsAlertVisible(true);
+            setAlertConfig({
+              title: "Success",
+              message: response.data.message,
+              onConfirm: () => {
+                setIsAlertVisible(false);
+              },
+              isVisible: true,
+            });
+          } else {
+            setIsAlertVisible(true);
+            setAlertConfig({
+              title: "Error",
+              message: response.data.error,
+              onConfirm: () => {
+                setIsAlertVisible(false);
+              },
+              isVisible: true,
+            });
+          }
+        } catch (error: any) {
+          setIsAlertVisible(true);
+          setAlertConfig({
+            title: "Error",
+            message:
+              error.response?.data?.error || "An unexpected error occurred",
+            onConfirm: () => {
+              setIsAlertVisible(false);
+            },
+            isVisible: true,
+          });
         }
       },
       onClose: () => {
@@ -396,7 +461,6 @@ const SideComponentProvider = ({ children }: { children: ReactNode }) => {
       // If it doesm, set the state of the daysShift to the shifts
       if (response.data.shifts) {
         setDaysShift(response.data.shifts);
-        console.log("Shifts", response.data.shifts);
       } else {
         setDaysShift([]);
       }
@@ -450,11 +514,17 @@ const SideComponentProvider = ({ children }: { children: ReactNode }) => {
     currentShiftIndex,
     handleStartShift,
     handleEndShift,
+    makeTaskComment,
+    isCommentModalVisible,
+    setIsCommentModalVisible,
   };
 
   return (
     <SideComponentContext.Provider value={value}>
       {children}
+      {isCommentModalVisible && (
+        <MakeCommentModal shiftId={shiftIdForComment} />
+      )}
     </SideComponentContext.Provider>
   );
 };

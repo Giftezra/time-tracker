@@ -89,7 +89,6 @@ export default interface ActiveTaskContextType {
   isTaskClicked: boolean;
   activeTaskClicked: ActiveTaskType | undefined;
   hideModal: () => void;
-  render_popup_button: (id: string, onPress: () => void) => JSX.Element;
   isLoading: boolean;
   getContractList: () => Promise<ContractListType[]>;
   onStartTimeDismiss: () => void;

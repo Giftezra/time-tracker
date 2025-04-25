@@ -6,13 +6,7 @@ import {
   useState,
   useEffect,
 } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  Dimensions,
-  View,
-  Text,
-} from "react-native";
+import { ActivityIndicator, Alert, Dimensions, View, Text } from "react-native";
 import { router } from "expo-router";
 import axios, { AxiosError } from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -160,7 +154,7 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     /* Response interceptor
      * This is to handle the 401 error and refresh the token.
      * This is to avoid the user being logged out due to token expiration.
-       */
+     */
     const responseIntercept = axiosInstance.interceptors.response.use(
       (response) => {
         return response;
@@ -224,12 +218,11 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
    */
   useEffect(() => {
     const initializeAuth = async () => {
+      const storedToken = await AsyncStorage.getItem("token");
+      const storedRefreshToken = await AsyncStorage.getItem("refresh");
+      const storedUser = await loadUserData();
+      const preferredRole = await AsyncStorage.getItem(PREFERRED_ROLE_KEY);
       try {
-        const storedToken = await AsyncStorage.getItem("token");
-        const storedRefreshToken = await AsyncStorage.getItem("refresh");
-        const storedUser = await loadUserData();
-        const preferredRole = await AsyncStorage.getItem(PREFERRED_ROLE_KEY);
-
         if (storedToken && storedUser && storedRefreshToken) {
           setToken(storedToken);
           setRefreshToken(storedRefreshToken);
@@ -281,9 +274,7 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             });
           }
         }
-      } catch (error) {
-        await signOut();
-      }
+      } catch (error) {}
     };
 
     initializeAuth();
@@ -304,7 +295,7 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const response = await axios.post(`${BASE_URL()}/api/token/`, loginData);
       const data = response.data;
-      
+
       const user: UserResponseType = data.user;
       if (user.is_superuser) {
         setIsAlertVisible(true);

@@ -124,12 +124,12 @@ const CreateTaskComponent = () => {
           {contractList?.length && contractList?.length > 0 ? (
             <TouchableOpacity
               onPressIn={() => handleToggleSites("contracts")}
-              style={[styles.button, { backgroundColor: primary }]}
+              style={[styles.button]}
             >
               {isLoading ? (
                 <ActivityIndicator size={15} color={text} />
               ) : (
-                <Text style={[styles.headerText, { color: text }]}>
+                <Text style={[styles.buttonText, { color: text }]}>
                   {siteSelected ? "Selected Contract" : "Select Contract"}
                 </Text>
               )}
@@ -191,7 +191,6 @@ const CreateTaskComponent = () => {
                       shadowColor: "red",
                       padding: 4,
                     },
-                    { backgroundColor: inactivebtn },
                   ]}
                 >
                   <View style={styles.contractTeXtContainer}>
@@ -285,7 +284,6 @@ const CreateTaskComponent = () => {
                       shadowColor: "red",
                       padding: 4,
                     },
-                    { backgroundColor: inactivebtn },
                   ]}
                 >
                   <Image source={user_image} style={styles.image} />
@@ -324,7 +322,7 @@ const CreateTaskComponent = () => {
       </View>
 
       {/* The view contains the date and time selection components */}
-      <View style={{ width: "100%" }}>
+      <View style={{ width: "100%", marginTop: 5, padding: 5, gap:10 }}>
         <Text style={[styles.headerText, { color: text }]}>
           select dates and times
         </Text>
@@ -341,38 +339,61 @@ const CreateTaskComponent = () => {
           </Text>
           <Text style={[styles.detailText]}>
             Start Time: {startTime.hours}:
-            {startTime.minutes.toString().padStart(2, "0")}
+            {startTime ? startTime.minutes.toString().padStart(2, "0") : "Not selected"}
           </Text>
           <Text style={[styles.detailText]}>
             End Time: {endTime.hours}:
-            {endTime.minutes.toString().padStart(2, "0")}
+            {endTime ? endTime.minutes.toString().padStart(2, "0") : "Not selected"}
           </Text>
         </View>
 
+        {/* Display the date and time selection buttons and the respective modals when clicked. */}
         <View style={{ flex: 1 }}>
           <View style={[styles.dateTimeButtonContainer]}>
             <TouchableOpacity
               onPress={handleStartDateDisplay}
               style={[
                 styles.dateTimeButton,
-                { backgroundColor: innerBackground },
+                { borderWidth: 1, borderColor: "rgba(0,0,0,0.1)" },
               ]}
             >
               <Text style={[styles.dateTimeButtonText, { color: text }]}>
                 Start Date
               </Text>
+
+              <DatePickerModal
+                visible={startDateVisible}
+                onDismiss={onStartDateDismiss}
+                onConfirm={onConfirmStartDate}
+                mode="single"
+                locale="en"
+                animationType="slide"
+                label="Select start date"
+                saveLabel="Save"
+              />
             </TouchableOpacity>
 
             <TouchableOpacity
               onPress={handleEndDateDisplay}
               style={[
                 styles.dateTimeButton,
-                { backgroundColor: innerBackground },
+                { borderWidth: 1, borderColor: "rgba(0,0,0,0.1)" },
               ]}
             >
               <Text style={[styles.dateTimeButtonText, { color: text }]}>
                 End Date
               </Text>
+
+              <DatePickerModal
+                visible={endDateVisible}
+                onDismiss={onEndDateDismiss}
+                onConfirm={onConfirmEndDate}
+                mode="single"
+                locale="en"
+                animationType="slide"
+                label="Select end date"
+                saveLabel="Save"
+              />
             </TouchableOpacity>
           </View>
 
@@ -381,67 +402,45 @@ const CreateTaskComponent = () => {
               onPress={handleStartTimeDisplay}
               style={[
                 styles.dateTimeButton,
-                { backgroundColor: innerBackground },
+                { borderWidth: 1, borderColor: "rgba(0,0,0,0.1)" },
               ]}
             >
               <Text style={[styles.dateTimeButtonText, { color: text }]}>
                 Start Time
               </Text>
+
+              <TimePickerModal
+                visible={startTimeVisible}
+                onDismiss={onStartTimeDismiss}
+                onConfirm={onConfirmStartTime}
+                animationType="slide"
+                label="Select time"
+                cancelLabel="Cancel"
+              />
             </TouchableOpacity>
 
             <TouchableOpacity
               onPress={handleEndTimeDisplay}
               style={[
                 styles.dateTimeButton,
-                { backgroundColor: innerBackground },
+                { borderWidth: 1, borderColor: "rgba(0,0,0,0.1)" },
               ]}
             >
               <Text style={[styles.dateTimeButtonText, { color: text }]}>
                 End Time
               </Text>
+
+              <TimePickerModal
+                visible={endTimeVisible}
+                onDismiss={onEndTimeDismiss}
+                onConfirm={onConfirmEndTime}
+                animationType="slide"
+                label="Select time"
+                cancelLabel="Cancel"
+              />
             </TouchableOpacity>
           </View>
         </View>
-
-        <DatePickerModal
-          visible={startDateVisible}
-          onDismiss={onStartDateDismiss}
-          onConfirm={onConfirmStartDate}
-          mode="single"
-          locale="en"
-          animationType="slide"
-          label="Select start date"
-          saveLabel="Save"
-        />
-
-        <DatePickerModal
-          visible={endDateVisible}
-          onDismiss={onEndDateDismiss}
-          onConfirm={onConfirmEndDate}
-          mode="single"
-          locale="en"
-          animationType="slide"
-          label="Select end date"
-          saveLabel="Save"
-        />
-
-        <TimePickerModal
-          visible={startTimeVisible}
-          onDismiss={onStartTimeDismiss}
-          onConfirm={onConfirmStartTime}
-          animationType="slide"
-          label="Select time"
-          cancelLabel="Cancel"
-        />
-
-        <TimePickerModal
-          visible={endTimeVisible}
-          onDismiss={onEndTimeDismiss}
-          onConfirm={onConfirmEndTime}
-          animationType="slide"
-          label="Select time"
-          cancelLabel="Cancel"
-        />
 
         <View style={{ width: "100%", marginVertical: 10 }}>
           <TextInputComponent
@@ -530,15 +529,23 @@ const styles = StyleSheet.create({
     borderColor: "rgba(0,0,0,0.1)",
     marginBottom: 16,
     borderRadius: 8,
+    backgroundColor: "#fff",
     shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
   },
 
   headerText: {
-    fontSize: Platform.OS === "web" ? 14 : 18,
-    fontWeight: "600",
+    fontSize: 16,
+    fontWeight: "700",
     fontFamily: "BarlowRegular",
     textTransform: "capitalize",
-    marginBottom: 8,
+
   },
 
   button: {
@@ -546,6 +553,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderBottomWidth: 1,
     borderBottomColor: "rgba(0,0,0,0.1)",
+    backgroundColor: "#fff",
   },
 
   buttonText: {
@@ -553,6 +561,7 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     fontFamily: "BarlowMedium",
     textTransform: "capitalize",
+    color: "#333",
   },
 
   scrollviewContainer: {
@@ -560,6 +569,7 @@ const styles = StyleSheet.create({
     maxHeight: 200,
     marginVertical: 8,
     padding: 5,
+    backgroundColor: "#fff",
   },
 
   pressable: {
@@ -569,9 +579,9 @@ const styles = StyleSheet.create({
     padding: Platform.OS === "web" ? 12 : 16,
     marginVertical: 6,
     borderRadius: 12,
-    backgroundColor: "rgba(0,0,0,0.02)",
+    backgroundColor: "#fff",
     borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.05)",
+    borderColor: "rgba(0,0,0,0.1)",
   },
 
   text: {
@@ -580,6 +590,8 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     color: "#333",
     marginBottom: 4,
+    letterSpacing: 0.3,
+    textTransform: "capitalize",
   },
 
   input: {
@@ -645,6 +657,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 5,
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.1)",
     elevation: 2,
     shadowColor: "#000",
     shadowOffset: {
@@ -656,19 +671,22 @@ const styles = StyleSheet.create({
   },
 
   dateTimeButtonText: {
-    fontFamily: "BarlowRegular",
+    fontFamily: "BarlowMedium",
     fontSize: Platform.OS === "web" ? 12 : 14,
     fontWeight: "600",
     textTransform: "capitalize",
+    letterSpacing: 0.3,
+    
   },
 
   infoText: {
-    fontSize: Platform.OS === "web" ? 10 : 15,
+    fontSize: 14,
     fontFamily: "BarlowRegular",
     fontWeight: "400",
     textTransform: "none",
     padding: 2,
     marginVertical: 5,
+    letterSpacing: 0.5
   },
 
   selectedDetailsContainer: {
@@ -678,14 +696,16 @@ const styles = StyleSheet.create({
     marginVertical: 8,
     borderWidth: 1,
     borderColor: "rgba(0,0,0,0.1)",
-    backgroundColor: "rgba(0,0,0,0.02)",
+    backgroundColor: "#fff",
   },
 
   detailText: {
     fontFamily: "BarlowRegular",
-    fontSize: Platform.OS === "web" ? 13 : 15,
+    fontSize: 14,
     marginVertical: 4,
     lineHeight: 22,
+    letterSpacing: 0.3,
+    fontWeight: "500",
   },
 
   selectedTimeContainer: {
@@ -694,7 +714,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     borderColor: "rgba(0,0,0,0.1)",
-    backgroundColor: "rgba(0,0,0,0.02)",
+    backgroundColor: "#fff",
   },
 
   selectedEmployeesContainer: {
@@ -702,7 +722,9 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     padding: 12,
     gap: 8,
-    backgroundColor: "rgba(0,0,0,0.02)",
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.1)",
     borderRadius: 12,
     marginHorizontal: 12,
     marginVertical: 8,

@@ -30,16 +30,7 @@ import { ChatRoomType } from "@/app/types/management/messages";
 
 const ManagementMessages = () => {
   const { windowWidth } = useAuth();
-  const {activeChatRoom, fetchChatHistory } =
-    useMessageContext();
-  const [refreshing, setRefreshing] = useState(false);
-  /* Trigger the refresh and get the chat history from the server given the user id */
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    await fetchChatHistory(activeChatRoom?.userId || "");
-    setRefreshing(false);
-  }, [activeChatRoom?.userId, fetchChatHistory]);
-
+  const { activeChatRoom } = useMessageContext();
   const [isModalVisible, setIsModalVisible] = useState(false);
 
   /**
@@ -98,17 +89,10 @@ const ManagementMessages = () => {
            * When the user clicks on any conversation, the message component is displayed using  a modal
            */
           <View style={{ flex: 1, width: "100%" }}>
-            <ScrollView
-              style={{ flex: 1, width: "100%" }}
-              refreshControl={
-                <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-              }
-            >
-              <ChatRoomComponent
-                onConversationSelect={handleModalVisibility}
-                onHandleModalVisibility={handleModalVisibility}
-              />
-            </ScrollView>
+            <ChatRoomComponent
+              onConversationSelect={handleModalVisibility}
+              onHandleModalVisibility={handleModalVisibility}
+            />
             <Modal
               visible={isModalVisible}
               animationType="slide"

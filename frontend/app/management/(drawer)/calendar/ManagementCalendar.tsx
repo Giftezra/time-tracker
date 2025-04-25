@@ -25,6 +25,29 @@ const ManagementCalendar = () => {
   const { schedule, showEditShiftModal, setShowEditShiftModal, activeShift } =
     useCalendar();
 
+    const getColor = (status: string) => {
+      switch (status) {
+        case "completed":
+          return "green";
+        case "pending":
+          return "yellow";
+        case "started":
+          return "lightblue";
+        case "cancelled":
+          return "red";
+        case "assigned":
+          return "lightgreen";
+        default:
+          return "black";
+      }
+    };
+
+    const renderDot = (status: string) => {
+      return (
+        <View style={[styles.dot, { backgroundColor: getColor(status) }]} />
+      );
+    };
+
   const { windowWidth } = useAuth();
 
   return (
@@ -48,28 +71,24 @@ const ManagementCalendar = () => {
             >
               <View style={styles.calendarContainer}>
                 <CalendarHeader />
+                <View style={styles.colorContainer}>
+                  <Text style={styles.colorText}>{`completed`} {renderDot("completed")}</Text>
+                  <Text style={styles.colorText}>{`pending`} {renderDot("pending")}</Text>
+                  <Text style={styles.colorText}>{`started`} {renderDot("started")}</Text>
+                  <Text style={styles.colorText}>{`cancelled`} {renderDot("cancelled")}</Text>
+                  <Text style={styles.colorText}>{`assigned`} {renderDot("assigned")}</Text>
+                </View>
               </View>
-              {schedule === "shifts" &&
-                /* Render the view in a scrollview horizontally for mobile */
-                (Platform.OS === "web" ? (
-                  <ScrollView
-                    style={{ flexGrow: 1, marginEnd: 5 }}
-                    horizontal={true}
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={{ flexGrow: 1 }}
+              {schedule === "shifts" && (
+                <ScrollView
+                  style={{ flex: 1 }}
+                  horizontal={true}
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={{ flexGrow: 1 }}
                   >
                     <CalendarShiftComponent />
-                  </ScrollView>
-                ) : (
-                  <ScrollView
-                    style={{ flexGrow: 1 }}
-                    horizontal={true}
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={{ flexGrow: 1 }}
-                  >
-                    <CalendarShiftComponent />
-                  </ScrollView>
-                ))}
+                </ScrollView>
+              )}  
             </View>
           </View>
 
@@ -120,5 +139,26 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
     padding: 5,
+  },
+
+  colorContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 10,
+    gap: 5,
+    overflow: 'scroll',
+    marginHorizontal: 10,
+  },
+  colorText: {
+    fontSize: 12,
+    fontWeight: "bold",
+    fontFamily: "BarlowMedium",
+    color: "black",
+    textTransform: "lowercase",
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 5,
   },
 });

@@ -35,6 +35,7 @@ export default interface CheckoutContextType {
   setOveragePlan: (plan: number) => void;
   currentPlan: CurrentPlanDetails | undefined;
   fetchSubscriptionHistory: () => Promise<SubscriptionHistoryInterface[]>;
+  handleDirectOveragePayment: () => void;
 }
 
 export interface BillingAddress {
@@ -83,7 +84,6 @@ export interface SubscriptionPlanTiers {
   minimum_employees?: number;
 }
 
-
 export interface CurrentPlanDetails {
   plan_name: string;
   current_employees: number;
@@ -102,5 +102,5 @@ export interface SubscriptionHistoryInterface {
   start_date: string;
   renewal_date: string;
   status: "active" | "expiring" | "overdue";
-  billing_cycle?:string;
+  billing_cycle?: string;
 }

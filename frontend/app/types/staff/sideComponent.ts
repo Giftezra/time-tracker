@@ -14,6 +14,9 @@ export default interface SideComponentContextType {
   currentShiftIndex: number;
   handleStartShift(shiftId: string): Promise<void>;
   handleEndShift(shiftId: string): Promise<void>;
+  makeTaskComment(shiftId: string, comment: string): Promise<void>;
+  isCommentModalVisible: boolean;
+  setIsCommentModalVisible: (visible: boolean) => void;
 }
 
 export interface LiveEventInterface {

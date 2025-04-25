@@ -1,7 +1,15 @@
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import {
+  Image,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  Animated,
+} from "react-native";
 import React, { useEffect, useState } from "react";
 import { userData } from "@/app/utils/loadData";
 import { AntDesign } from "@expo/vector-icons";
+import { useTextBounceAnimation } from "@/app/utils/animations/dashboard";
 
 const image = require("@/assets/images/user image.jpg");
 
@@ -12,6 +20,7 @@ const StaffDashboardHeader = () => {
     company_name: "",
     company_service: "",
   });
+  const { bounceValue, startBounceAnimation } = useTextBounceAnimation();
 
   /**
    * Use the hook to load the user data and set the state of the staffData
@@ -35,13 +44,18 @@ const StaffDashboardHeader = () => {
 
       <View style={styles.container}>
         <Text style={styles.welcomeText}>Welcome back</Text>
-        <Text style={styles.nameText}>{staffData.name}</Text>
+        <Animated.Text
+          style={[
+            styles.nameText,
+            { transform: [{ translateY: bounceValue }] },
+          ]}
+        >
+          {staffData.name}
+        </Animated.Text>
 
-        <View style={styles.otherTextContainer}>
-          <Text style={styles.othertext}>
-            Ready to tackle today's tasks and make an impact?
-          </Text>
-        </View>
+        <Text style={styles.othertext}>
+          Ready to tackle today's tasks and make an impact?
+        </Text>
       </View>
     </View>
   );
@@ -51,7 +65,7 @@ export default StaffDashboardHeader;
 
 const styles = StyleSheet.create({
   maincontainer: {
-    padding: 16,
+    padding: 10,
     flexDirection: "column",
     backgroundColor: "#FFFFFF",
     borderBottomWidth: 1,
@@ -126,8 +140,11 @@ const styles = StyleSheet.create({
   othertext: {
     fontSize: 15,
     fontFamily: "BarlowRegular",
-    fontWeight: "400",
-    color: "#4A4A4A",
-    lineHeight: 22,
+    fontWeight: "700",
+    color: "blue",
+    padding: 5,
+    letterSpacing: 0.5,
+    fontVariant: ["small-caps"],
+    fontStyle: "italic",
   },
 });

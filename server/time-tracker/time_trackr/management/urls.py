@@ -15,7 +15,9 @@ from rest_framework_simplejwt.views import (
 from .view.main.messages import (
     DirectMessageConsumer, 
     get_chat_rooms,
-    get_chat_history
+    get_chat_history,
+    delete_conversation,
+    delete_message
 )
 
 urlpatterns = [
@@ -86,4 +88,6 @@ urlpatterns = [
     # Chat related endpoints
     path('chat-rooms/', get_chat_rooms, name='get_chat_rooms'),
     path('chat-history/', get_chat_history, name='get_chat_history'),
+    path('delete/conversation/', delete_conversation, name='delete_conversation'),
+    path('delete/message/', delete_message, name='delete_message'),
 ]

@@ -153,29 +153,6 @@ def send_contract_updated_email(self,contract_name, client_name, old_end_date, n
 
 
 
-@shared_task
-def send_trial_ending_email(self,company_name, days_left, owner_email):
-    """Send email notification to company owner about trial period ending"""
-    context = {
-        'company_name': company_name,
-        'days_left': days_left,
-        'login_url': settings.LOGIN_URL,
-        'support_email': settings.SUPPORT_EMAIL,
-    }
-    
-    html_message = render_to_string(self, 'emails/trial_ending_notification.html', context)
-    plain_message = strip_tags(html_message)
-    
-    send_mail(
-        subject=f'Your Time Trackr Trial Ends in {days_left} Days',
-        message=plain_message,
-        html_message=html_message,
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=[owner_email],
-        fail_silently=False
-    )
-
-
 
 @shared_task
 def calculate_overage(self):

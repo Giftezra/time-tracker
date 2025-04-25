@@ -115,7 +115,9 @@ const MobileDashboard = () => {
 
         <View style={styles.section}>
           <ThemedHeaderText text="Leader Board" />
-          <LeaderBoardComponent />
+          <View style={styles.leaderboardContainer}>
+            <LeaderBoardComponent />
+          </View>
         </View>
 
         <View style={styles.section}>
@@ -192,5 +194,9 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     marginLeft: 5,
     padding: 5,
+  },
+
+  leaderboardContainer: {
+    marginTop: 10,
   },
 });

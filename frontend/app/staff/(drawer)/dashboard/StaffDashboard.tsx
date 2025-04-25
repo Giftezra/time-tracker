@@ -5,11 +5,8 @@ import {
   GestureHandlerRootView,
   ScrollView,
 } from "react-native-gesture-handler";
-import { SafeAreaProvider } from "react-native-safe-area-context";
 import DashboardOngoingTask from "@/app/component/staff/dashboard/dashboardOngoingTasks";
 import { useStaffDashboard } from "@/app/context/staff/dashboardProvider";
-import SubtitleThemedText from "@/app/component/helper/SubtitleThemedText";
-import InnerThemedText from "@/app/component/helper/InnerThemedText";
 import ThemedHeaderText from "@/app/component/helper/ThemedHeaderText";
 import StaffDashboardChart from "@/app/component/staff/dashboard/StaffDashboardChart";
 import { useAuth } from "@/app/authentication";
@@ -20,90 +17,105 @@ interface TaskCardProps {
   unit?: string;
 }
 
-const TaskCard: React.FC<TaskCardProps> = ({ title, value, unit }) => {
+const TaskCard = ({ task }: { task: TaskCardProps }) => {
   return (
     <View style={styles.cardContainer}>
-      <SubtitleThemedText text={title ?? ""} />
+      <Text style={styles.cardTitle}>{task.title}</Text>
       <View style={styles.cardValueContainer}>
-        <InnerThemedText text={value?.toString() ?? ""} />
-        {unit && <Text style={styles.cardUnit}>{unit}</Text>}
+        <Text style={styles.cardValue}>{task.value?.toString() ?? ""}</Text>
+        {task.unit && <Text style={styles.cardUnit}>{task.unit}</Text>}
       </View>
     </View>
   );
 };
 
 const StaffDashboard: React.FC = () => {
-  const { completedShifts } = useStaffDashboard();
+  const { dashboardData } = useStaffDashboard();
   const { screenWidth } = useAuth();
+  const [layout, setLayout] = useState(0);
 
   return (
-    <SafeAreaProvider style={styles.safeArea}>
-      <GestureHandlerRootView style={styles.mainContainer}>
-        <View style={styles.headerSection}>
-          <StaffDashboardHeader />
+    <GestureHandlerRootView style={styles.mainContainer}>
+      <View style={styles.headerSection}>
+        <StaffDashboardHeader />
+      </View>
+
+      <View style={styles.tasksSection}>
+        <DashboardOngoingTask />
+      </View>
+
+      <ScrollView style={styles.reviewSection}>
+        {/* Staff Dashboard Chart */}
+        <View
+          style={styles.chartSection}
+          onLayout={(event) => {
+            const { width } = event.nativeEvent.layout;
+            setLayout(width);
+          }}
+        >
+          <StaffDashboardChart width={layout || screenWidth - 20} />
+        </View>
+        <ThemedHeaderText text="Monthly Performance Review" />
+        <View style={styles.statsContainer}>
+          <TaskCard
+            task={{
+              title: "Total Hours",
+              value: dashboardData?.total_hours ?? 0,
+              unit: "hrs",
+            }}
+          />
+          <TaskCard
+            task={{
+              title: "Completed Shifts",
+              value: dashboardData?.total_shifts ?? 0,
+            }}
+          />
         </View>
 
-        <View style={styles.tasksSection}>
-          <DashboardOngoingTask />
+        <View style={styles.statsContainer}>
+          <TaskCard
+            task={{
+              title: "Amount Earned",
+              value: dashboardData?.total_earnings ?? 0,
+              unit: "£",
+            }}
+          />
+          <TaskCard
+            task={{
+              title: "Assigned Shifts",
+              value: dashboardData?.total_shifts ?? 0,
+            }}
+          />
         </View>
-        
-        <ScrollView style={styles.reviewSection}>
-          {/* Staff Dashboard Chart */}
-          <View style={styles.chartSection}>
-            <StaffDashboardChart width={screenWidth} />
-          </View>
-          <ThemedHeaderText text="Monthly Performance Review" />
-
-          <View style={styles.statsContainer}>
-            <TaskCard
-              title="Total Hours"
-              value={completedShifts?.total_hours ?? 0}
-              unit="hrs"
-            />
-            <TaskCard
-              title="Completed Shifts"
-              value={completedShifts?.total_shifts ?? 0}
-            />
-          </View>
-
-          <View style={styles.statsContainer}>
-            <TaskCard
-              title="Amount Earned"
-              value={completedShifts?.total_earnings ?? 0}
-              unit="£"
-            />
-            <TaskCard
-              title="Assigned Shifts"
-              value={completedShifts?.pending_tasks ?? 0}
-            />
-          </View>
-        </ScrollView>
-      </GestureHandlerRootView>
-    </SafeAreaProvider>
+        <View style={styles.statsContainer}>
+          <TaskCard
+            task={{
+              title: "Cancelled Shifts",
+              value: dashboardData?.total_shifts ?? 0,
+            }}
+          />
+        </View>
+      </ScrollView>
+    </GestureHandlerRootView>
   );
 };
 
 export default StaffDashboard;
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-  },
   mainContainer: {
     flex: 1,
     padding: 5,
   },
   headerSection: {
-    marginBottom: 10,
+    marginBottom: 2,
   },
   tasksSection: {
-    marginBottom: 10,
-    padding: 5,
-    position: "sticky",
+    gap: 5,
+    padding: 2,
   },
   reviewSection: {
     flex: 1,
-    marginTop: 16,
   },
   sectionTitle: {
     fontSize: 20,
@@ -116,8 +128,8 @@ const styles = StyleSheet.create({
   statsContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 16,
     gap: 12,
+    padding: 5,
   },
   cardContainer: {
     flex: 1,
@@ -132,6 +144,8 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.1,
     shadowRadius: 4,
+    minWidth: 150,
+    maxWidth: 200,
   },
   cardTitle: {
     fontSize: 14,
@@ -157,6 +171,8 @@ const styles = StyleSheet.create({
     fontFamily: "BarlowRegular",
   },
   chartSection: {
-    marginBottom: 16,
+    height: 350,
+    width: "100%",
+    padding: 10,
   },
 });

@@ -20,6 +20,7 @@ import {
   ScrollView,
   Alert,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import React, { useState } from "react";
 import {
@@ -31,6 +32,8 @@ import SearchInputContainer from "../../helper/SearchInput";
 import { useCalendar } from "@/app/context/management/calendar/calendarContext";
 import AlertConfig from "@/app/types/management/AlertConfig";
 import AlertModal from "../../helper/AlertModal";
+import PrintModal from "./PrintModal";
+import { Tooltip } from "./Tooltip";
 
 /**
  * CalendarHeader component for managing calendar view and shift reports
@@ -43,11 +46,8 @@ const CalendarHeader = () => {
     getShift,
     search,
     setSearch,
-    handleSchedule,
-    handleWeekSeleced,
     gotoPreviousWeek,
     gotoNextWeek,
-    currentWeek,
     weekDays,
     employees,
     weekRange,
@@ -63,6 +63,7 @@ const CalendarHeader = () => {
   const [sendingReportError, setSendingReportError] = useState<string | null>(
     null
   );
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
 
   // Date selection state
   const [selectedStartDate, setSelectedStartDate] = useState({
@@ -81,6 +82,19 @@ const CalendarHeader = () => {
   const months = Array.from({ length: 12 }, (_, i) => i + 1);
   const years = Array.from({ length: 50 }, (_, i) => 2020 + i);
 
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString("en-US", {
+      month: "long",
+      year: "numeric",
+    });
+  };
+
+  // Add function to get current month and year
+  const getCurrentMonthYear = () => {
+    const firstDate = weekDays[0];
+    return formatDate(firstDate.toDate());
+  };
+
   /**
    * Handles the print/export functionality for shift reports
    * Sends the report to the user's email address after confirmation
@@ -91,14 +105,18 @@ const CalendarHeader = () => {
     const endDate = `${selectedEndDate.year}-${selectedEndDate.month}-${selectedEndDate.day}`;
 
     const sendReport = async () => {
+      setIsGeneratingReport(true);
       try {
         await emailShiftReport(startDate, endDate);
         setIsPrintModalVisible(false);
+        Alert.alert("Success", "Report has been sent to your email!");
       } catch (error) {
         console.error("Error sending report:", error);
         setSendingReportError(
           "Error sending report. Please check your internet connection and try again."
         );
+      } finally {
+        setIsGeneratingReport(false);
       }
     };
 
@@ -139,315 +157,77 @@ const CalendarHeader = () => {
     }) ?? false;
 
   return (
-    <View style={[styles.mainContainer, { padding: 5 }]}>
-      {/* Search input section */}
-      <View style={styles.searchContainer}>
-        <SearchInputContainer
-          onPress={() => console.log("search")}
-          value={search}
-          setValue={setSearch}
-          placeholder="Search shifts..."
-          text="Search Shifts"
-        />
-      </View>
-
+    <View style={[styles.mainContainer, { padding: 12 }]}>
       {/* Header title section */}
-      <View style={[styles.rowContainer, { columnGap: 10, marginBottom: 10 }]}>
-        <Text
-          style={{
-            fontSize: 18,
-            fontWeight: "500",
-            fontFamily: "BarlowRegular",
-            textTransform: "capitalize",
-          }}
-        >
-          shifts
-        </Text>
-
-        <Text
-          style={{
-            fontSize: 13,
-            fontWeight: "500",
-            fontFamily: "BarlowRegular",
-            textTransform: "capitalize",
-          }}
-        >
-          shifts
-        </Text>
+      <View style={[styles.rowContainer, { marginBottom: 16 }]}>
+        <View style={styles.headerTitleContainer}>
+          <Text style={styles.headerTitle}>Schedule</Text>
+          <Text style={styles.currentMonthYear}>{getCurrentMonthYear()}</Text>
+        </View>
       </View>
 
       {/* Week navigation and actions section */}
-      <View
-        style={[
-          styles.rowContainer,
-          { justifyContent: "space-between", width: "100%" },
-        ]}
-      >
+      <View style={styles.navigationContainer}>
         {/* Week navigation controls */}
-        <View
-          style={[
-            styles.rowContainer,
-            { justifyContent: "center", columnGap: 10 },
-          ]}
-        >
-          <Pressable style={{ padding: 10 }} onPress={gotoPreviousWeek}>
-            <Text style={{ fontSize: 20 }}>⬅️</Text>
+        <View style={styles.weekNavigation}>
+          <Pressable style={styles.navigationButton} onPress={gotoPreviousWeek}>
+            <AntDesign name="left" size={20} color="#555" />
           </Pressable>
-          <Text
-            style={{
-              fontSize: 13,
-              fontWeight: "500",
-              fontFamily: "BarlowLight",
-              textTransform: "capitalize",
-            }}
-          >
-            {weekRange}
-          </Text>
-          <Pressable style={{ padding: 10 }} onPress={gotoNextWeek}>
-            <Text style={{ fontSize: 20 }}>➡️</Text>
+
+          <Text style={styles.weekRangeText}>{weekRange}</Text>
+
+          <Pressable style={styles.navigationButton} onPress={gotoNextWeek}>
+            <AntDesign name="right" size={20} color="#555" />
           </Pressable>
         </View>
 
         {/* Action buttons */}
-        <View
-          style={[
-            styles.rowContainer,
-            { columnGap: 20, justifyContent: "flex-end", marginEnd: 5 },
-          ]}
-        >
-          <Pressable
-            onPress={() => setIsPrintModalVisible(true)}
-            disabled={!hasAnyShifts}
-            style={({ pressed }) => [
-              styles.iconButton,
-              pressed && styles.iconButtonPressed,
-              !hasAnyShifts && styles.iconButtonDisabled,
-            ]}
+        <View style={styles.actionButtons}>
+          <Tooltip
+            visible={!hasAnyShifts}
+            content="Add shifts to enable printing"
           >
-            <Text style={{ fontSize: 20 }}>🖨️</Text>
-          </Pressable>
-          <Pressable>
+            <Pressable
+              onPress={() => setIsPrintModalVisible(true)}
+              disabled={!hasAnyShifts || isGeneratingReport}
+              style={({ pressed }) => [
+                styles.iconButton,
+                pressed && styles.iconButtonPressed,
+                !hasAnyShifts && styles.iconButtonDisabled,
+              ]}
+            >
+              {isGeneratingReport ? (
+                <ActivityIndicator size="small" color="#4CAF50" />
+              ) : (
+                <MaterialCommunityIcons
+                  name="printer"
+                  size={22}
+                  color={hasAnyShifts ? "#4CAF50" : "#999"}
+                />
+              )}
+            </Pressable>
+          </Tooltip>
+
+          <Pressable style={styles.moreButton}>
             <MaterialCommunityIcons
               name="dots-horizontal"
               size={24}
-              color="black"
+              color="#555"
             />
           </Pressable>
         </View>
       </View>
 
       {/* Date range selection modal */}
-      <Modal
-        visible={isPrintModalVisible}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setIsPrintModalVisible(false)}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Select Date Range</Text>
-
-            <View style={styles.dateSection}>
-              {/* Start date picker */}
-              <Text style={styles.dateLabel}>Start Date:</Text>
-              <View style={styles.datePickerContainer}>
-                <ScrollView
-                  style={styles.picker}
-                  showsVerticalScrollIndicator={false}
-                >
-                  {days.map((day) => (
-                    <Pressable
-                      key={`start-day-${day}`}
-                      onPress={() =>
-                        setSelectedStartDate({ ...selectedStartDate, day })
-                      }
-                      style={[
-                        styles.pickerItem,
-                        selectedStartDate.day === day && styles.selectedItem,
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.pickerText,
-                          selectedStartDate.day === day && styles.selectedText,
-                        ]}
-                      >
-                        {day}
-                      </Text>
-                    </Pressable>
-                  ))}
-                </ScrollView>
-                <ScrollView
-                  style={styles.picker}
-                  showsVerticalScrollIndicator={false}
-                >
-                  {months.map((month) => (
-                    <Pressable
-                      key={`start-month-${month}`}
-                      onPress={() =>
-                        setSelectedStartDate({ ...selectedStartDate, month })
-                      }
-                      style={[
-                        styles.pickerItem,
-                        selectedStartDate.month === month &&
-                          styles.selectedItem,
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.pickerText,
-                          selectedStartDate.month === month &&
-                            styles.selectedText,
-                        ]}
-                      >
-                        {month}
-                      </Text>
-                    </Pressable>
-                  ))}
-                </ScrollView>
-                <ScrollView
-                  style={styles.picker}
-                  showsVerticalScrollIndicator={false}
-                >
-                  {years.map((year) => (
-                    <Pressable
-                      key={`start-year-${year}`}
-                      onPress={() =>
-                        setSelectedStartDate({ ...selectedStartDate, year })
-                      }
-                      style={[
-                        styles.pickerItem,
-                        selectedStartDate.year === year && styles.selectedItem,
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.pickerText,
-                          selectedStartDate.year === year &&
-                            styles.selectedText,
-                        ]}
-                      >
-                        {year}
-                      </Text>
-                    </Pressable>
-                  ))}
-                </ScrollView>
-              </View>
-
-              {/* End date picker */}
-              <Text style={styles.dateLabel}>End Date:</Text>
-              <View style={styles.datePickerContainer}>
-                <ScrollView
-                  style={styles.picker}
-                  showsVerticalScrollIndicator={false}
-                >
-                  {days.map((day) => (
-                    <Pressable
-                      key={`end-day-${day}`}
-                      onPress={() =>
-                        setSelectedEndDate({ ...selectedEndDate, day })
-                      }
-                      style={[
-                        styles.pickerItem,
-                        selectedEndDate.day === day && styles.selectedItem,
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.pickerText,
-                          selectedEndDate.day === day && styles.selectedText,
-                        ]}
-                      >
-                        {day}
-                      </Text>
-                    </Pressable>
-                  ))}
-                </ScrollView>
-                <ScrollView
-                  style={styles.picker}
-                  showsVerticalScrollIndicator={false}
-                >
-                  {months.map((month) => (
-                    <Pressable
-                      key={`end-month-${month}`}
-                      onPress={() =>
-                        setSelectedEndDate({ ...selectedEndDate, month })
-                      }
-                      style={[
-                        styles.pickerItem,
-                        selectedEndDate.month === month && styles.selectedItem,
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.pickerText,
-                          selectedEndDate.month === month &&
-                            styles.selectedText,
-                        ]}
-                      >
-                        {month}
-                      </Text>
-                    </Pressable>
-                  ))}
-                </ScrollView>
-                <ScrollView
-                  style={styles.picker}
-                  showsVerticalScrollIndicator={false}
-                >
-                  {years.map((year) => (
-                    <Pressable
-                      key={`end-year-${year}`}
-                      onPress={() =>
-                        setSelectedEndDate({ ...selectedEndDate, year })
-                      }
-                      style={[
-                        styles.pickerItem,
-                        selectedEndDate.year === year && styles.selectedItem,
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.pickerText,
-                          selectedEndDate.year === year && styles.selectedText,
-                        ]}
-                      >
-                        {year}
-                      </Text>
-                    </Pressable>
-                  ))}
-                </ScrollView>
-              </View>
-
-              {/* Action buttons */}
-              <View style={styles.buttonContainer}>
-                <Pressable
-                  style={[styles.button, styles.cancelButton]}
-                  onPress={() => setIsPrintModalVisible(false)}
-                >
-                  <Text style={styles.buttonText}>Cancel</Text>
-                </Pressable>
-                <Pressable
-                  style={[styles.button, styles.printButton]}
-                  onPress={handlePrint}
-                >
-                  <Text style={styles.buttonText}>Print</Text>
-                </Pressable>
-              </View>
-            </View>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Alert modal for confirmations */}
-      {isAlertVisible && (
-        <AlertModal
-          isVisible={alertConfig?.isVisible || false}
-          onClose={() => alertConfig?.onClose?.()}
-          onConfirm={() => alertConfig?.onConfirm?.()}
-          title={alertConfig?.title || ""}
-          message={alertConfig?.message || ""}
-        />
-      )}
+      <PrintModal
+        isVisible={isPrintModalVisible}
+        onClose={() => setIsPrintModalVisible(false)}
+        onPrint={handlePrint}
+        selectedStartDate={selectedStartDate}
+        selectedEndDate={selectedEndDate}
+        setSelectedStartDate={setSelectedStartDate}
+        setSelectedEndDate={setSelectedEndDate}
+      />
     </View>
   );
 };
@@ -552,15 +332,79 @@ const styles = StyleSheet.create({
   },
   iconButton: {
     padding: 10,
-    borderRadius: 12,
-    backgroundColor: "rgba(76, 175, 80, 0.1)", // Light green background
+    borderRadius: 8,
+    backgroundColor: "rgba(76, 175, 80, 0.1)",
+    minWidth: 42,
+    alignItems: "center",
   },
   iconButtonPressed: {
-    backgroundColor: "rgba(76, 175, 80, 0.2)", // Darker green when pressed
+    backgroundColor: "rgba(76, 175, 80, 0.2)",
     transform: [{ scale: 0.95 }],
   },
   iconButtonDisabled: {
-    backgroundColor: "#F5F5F5", // Light gray background when disabled
+    backgroundColor: "#F5F5F5",
     opacity: 0.7,
+  },
+  colorContainer: {
+    flexDirection: "column",
+    justifyContent: "space-between",
+    marginBottom: 10,
+  },
+  colorText: {
+    fontSize: 14,
+    fontFamily: "BarlowRegular",
+    fontWeight: "500",
+  },
+  headerTitleContainer: {
+    flexDirection: "column",
+    gap: 4,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: "600",
+    fontFamily: "BarlowRegular",
+    color: "#333",
+  },
+  currentMonthYear: {
+    fontSize: 15,
+    fontFamily: "BarlowLight",
+    color: "#666",
+  },
+  navigationContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    width: "100%",
+    paddingVertical: 8,
+  },
+  weekNavigation: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    backgroundColor: "#f5f5f5",
+    padding: 4,
+    borderRadius: 8,
+  },
+  navigationButton: {
+    padding: 8,
+    borderRadius: 6,
+    backgroundColor: "#fff",
+  },
+  weekRangeText: {
+    fontSize: 14,
+    fontFamily: "BarlowRegular",
+    color: "#333",
+    minWidth: 120,
+    textAlign: "center",
+  },
+  actionButtons: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  moreButton: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: "#f5f5f5",
   },
 });

@@ -35,7 +35,14 @@ const SearchInputContainer = ({
           style={styles.textinput}
           placeholder={placeholder}
           value={value}
-          onChangeText={setValue}
+          onChangeText={(text) => {
+            if (setValue) {
+              setValue(text);
+            }
+            if (onPress) {
+              onPress();
+            }
+          }}
         />
         <TouchableOpacity
           onPress={onPress}
@@ -43,7 +50,6 @@ const SearchInputContainer = ({
         >
           <Text style={styles.buttontext}>Search</Text>
         </TouchableOpacity>
-
       </View>
     </View>
   );
@@ -56,6 +62,7 @@ const styles = StyleSheet.create({
     width: "100%",
     marginVertical: 10,
     borderRadius: 5,
+    borderWidth: 0.4,
   },
 
   inputContainer: {
@@ -89,15 +96,31 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     color: "#fff",
   },
-  overlayText:{
-    fontFamily: "BarlowRegular",
-    fontWeight: "500",
-    fontSize: 14,
+  overlayText: {
+    fontSize: Platform.OS === "web" ? 10 : 12,
+    textTransform: "capitalize",
+    fontFamily: "BarlowMedium",
+    fontWeight: "600",
     letterSpacing: 0.5,
   },
+  
   overlayTextContainer: {
     position: "absolute",
-    left: 30,
     top: -10,
+    left: 10,
+    zIndex: 100,
+    paddingHorizontal: 5,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#fff",
+    padding: 2,
+    borderRadius: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    minWidth: 100,
+    paddingVertical: 3
   },
 });

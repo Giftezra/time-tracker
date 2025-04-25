@@ -4,7 +4,7 @@ import * as Progress from "react-native-progress";
 import { userData } from "@/app/utils/loadData";
 import { useStaffDashboard } from "@/app/context/staff/dashboardProvider";
 import { useThemeColor } from "@/hooks/useThemeColor";
-
+import { useSideComponentContext } from "@/app/context/staff/sideComponentProvider";
 /**
  * This component is used to display the users ongoing tasks on the dashboard.
  * It displays a calculation that uses the current time and the task end time to show a progress bar.
@@ -12,11 +12,13 @@ import { useThemeColor } from "@/hooks/useThemeColor";
  */
 const DashboardOngoingTask = () => {
   const user = userData();
-  const { ongoingTask, progress } = useStaffDashboard();
+  const { progress } = useStaffDashboard();
+  const { event } = useSideComponentContext();
   const innerbackground = useThemeColor({}, "innerBackground");
   const text = useThemeColor({}, "text");
+  const highlight = useThemeColor({}, "highlight");
 
-  if (!ongoingTask) {
+  if (event.status !== "started") {
     return (
       <View
         style={[
@@ -25,14 +27,15 @@ const DashboardOngoingTask = () => {
         ]}
       >
         <Text style={[styles.companyNameText, { color: text }]}>
-          No Ongoing Shift
+          You currently have no active shifts yet
         </Text>
-        <Text style={[styles.shiftText, { color: text }]}>
-          You currently have no active shifts
+        <Text style={[styles.shiftText, { color: highlight }]}>
+          refresh live events to see your active shifts
         </Text>
       </View>
     );
   }
+
 
   /**
    * This method is used to calculate the color of the progress bar based on the progress of the task.
@@ -42,37 +45,25 @@ const DashboardOngoingTask = () => {
   const getProgressBarColor = (progress: number) => {
     switch (true) {
       case progress < 0.33:
-        return "#4CAF50";
+        return "gray";
       case progress < 0.66:
-        return "#FFC107";
+        return "orange";
       default:
-        return "#FF5722";
+        return "green";
     }
   };
-
-  // Format times for display
-  const startTime = new Date(
-    ongoingTask?.shift_start_time || ""
-  ).toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-  const endTime = new Date(ongoingTask?.task_end_time || "").toLocaleTimeString(
-    [],
-    {
-      hour: "2-digit",
-      minute: "2-digit",
-    }
-  );
 
   return (
     <View style={[styles.mainContainer, { backgroundColor: innerbackground }]}>
       <View style={styles.container}>
-        <Text style={[styles.shiftText, { color: text }]}>
-          {`Current shift: ${ongoingTask?.contract_name || ""}`}
+        <Text style={[styles.shiftText, { color: 'green', fontSize:14, textTransform:'capitalize', fontWeight:'700'}]}>
+          {event?.contract_name}
         </Text>
         <Text style={[styles.timeText, { color: text }]}>
-          {`${startTime} - ${endTime}`}
+          {`${event?.start_time?.slice(0, 5)} - ${event?.end_time?.slice(
+            0,
+            5
+          )}`}
         </Text>
         <Progress.Bar
           progress={progress || 0}
@@ -95,29 +86,29 @@ export default DashboardOngoingTask;
 const styles = StyleSheet.create({
   mainContainer: {
     padding: 5,
-    rowGap: 5,
     borderRadius: 5,
     borderWidth: 0.5,
     marginHorizontal: 5,
   },
 
   container: {
+    gap: 5,
     padding: 5,
-    rowGap: 5,
   },
 
   companyNameText: {
-    fontSize: 20,
-    fontFamily: "BarlowRegular",
+    fontSize: 15,
+    fontFamily: "BarlowMedium",
     fontWeight: "600",
     textTransform: "capitalize",
+    padding: 5,
   },
 
   shiftText: {
     fontSize: 12,
-    fontFamily: "BarlowLight",
-    fontWeight: "400",
-    textTransform: "capitalize",
+    fontFamily: "BarlowMedium",
+    fontWeight: "600",
+    textTransform: "lowercase",
   },
 
   timeText: {

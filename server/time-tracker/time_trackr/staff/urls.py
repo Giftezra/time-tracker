@@ -1,9 +1,9 @@
 from django.urls import path, include
 from .view.main.staff_event import get_shift_by_date, decline_shift, accept_shift, get_shift_details, get_calendar_shifts
-from .view.main.staff_task_manager import start_shift, end_shift,apply_task, get_day_task, get_task_details, get_monthly_task, get_current_day_shifts
+from .view.main.staff_task_manager import start_shift, end_shift,apply_task, get_day_task, get_task_details, get_monthly_task, get_current_day_shifts, create_task_comment
 
-from .view.main.staff_timesheet import get_timesheet_data, get_ongoing_shift
-from .view.main.staff_dashboard import get_active_shift_data, get_completed_shifts
+from .view.main.staff_timesheet import get_timesheet_data
+from .view.main.staff_dashboard import get_staff_dashboard_data, get_staff_growth_statistics
 
 from .view.main.staff_availability import create_availablity, update_availability, get_marked_availabilities, delete_availability, get_day_availabilities
 
@@ -18,12 +18,12 @@ urlpatterns = [
 
   path('get/marked/availabilities/', get_marked_availabilities, name='get_marked_availabilities'), 
   path('get/timesheet/data/', get_timesheet_data, name='get_timesheet_data'),
-  path('get/current/ongoing/shift/', get_active_shift_data, name='get_active_shift_data'),
-  path('get/ongoing/shift/', get_ongoing_shift, name='get_ongoing_shift'),
-  path('get/completed/shifts/', get_completed_shifts, name='get_completed_shifts'),
+  path('get/staff/dashboard/data/', get_staff_dashboard_data, name='get_staff_dashboard_data'),
   path('get/day/availability/', get_day_availabilities, name='get_day_availabilities'),
+  path('get/staff/growth/statistics/', get_staff_growth_statistics, name='get_staff_growth_statistics'),
   path('delete/availability/', delete_availability, name='delete_availability'),
   
+  path('create/task/comment/', create_task_comment, name='create_task_comment'),
   path('create/availability/', create_availablity, name='create_availablity'),
   path('update/availability/', update_availability, name='update_availability'),
   path('accept/shift/', accept_shift, name='accept_shift'),

@@ -3,77 +3,19 @@ import { View, Text, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useEmployeeContext } from "@/app/context/management/employee/employeeContext";
 import { WorklogInterface } from "@/app/types/management/employee";
-
+import { useSideComponentContext } from "@/app/context/staff/sideComponentProvider";
 const WorkLog = ({workLog}:{workLog: WorklogInterface}) => {
-  const { startShift, endShift, shiftError, setAlertConfig, setIsAlertVisible } = useEmployeeContext();
-  const text = useThemeColor({}, "text");
+  const {handleStartShift, handleEndShift} = useSideComponentContext();
+
+  const text = '#000'
   const highlight = useThemeColor({}, "highlight");
   const primaryColor = useThemeColor({}, "primaryColor");
   const secondaryColor = useThemeColor({}, "secondaryColor");
-  const innerBackground = useThemeColor({}, "innerBackground");
   const otherText = useThemeColor({}, "otherText");
-
-  const handleStartShift = async () => {
-    try {
-        if (!workLog?.id) {
-          setIsAlertVisible(true);
-          setAlertConfig({
-            title: "Error",
-            message: "No shift ID found",
-            onConfirm: () => {
-              setIsAlertVisible(false);
-            },
-            isVisible: true,
-          });
-        return;
-      }else{
-        await startShift(workLog.id);
-      }
-    } catch (error) {
-      setIsAlertVisible(true);
-      setAlertConfig({
-        title: "Error",
-        message: shiftError || "Failed to start shift",
-        onConfirm: () => {
-          setIsAlertVisible(false);
-        },
-        isVisible: true,
-      });
-    }
-  };
-
-  const handleEndShift = async () => {
-    try {
-      if (!workLog?.id) {
-        setIsAlertVisible(true);
-        setAlertConfig({
-          title: "Error",
-          message: "No shift ID found",
-          onConfirm: () => {
-            setIsAlertVisible(false);
-          },
-          isVisible: true,
-        });
-        return;
-      }else{
-        await endShift(workLog.id);
-      }
-    } catch (error) {
-      setIsAlertVisible(true);
-      setAlertConfig({
-        title: "Error",
-        message: shiftError || "Failed to end shift",
-        onConfirm: () => {
-          setIsAlertVisible(false);
-        },
-        isVisible: true,
-      });
-    }
-  };
 
   return (
     <View
-      style={[styles.worklogContainer, { backgroundColor: innerBackground }]}
+      style={[styles.worklogContainer,]}
     >
       <Text style={[styles.worklogDetailsText, { color: text }]}>
         {workLog?.name} work log
@@ -122,7 +64,7 @@ const WorkLog = ({workLog}:{workLog: WorklogInterface}) => {
                 },
               ]}
               disabled={workLog?.status === "started"}
-              onPress={handleStartShift}
+              onPress={() => handleStartShift(workLog?.id ?? "")}
             >
               <Text
                 style={[
@@ -148,11 +90,11 @@ const WorkLog = ({workLog}:{workLog: WorklogInterface}) => {
                   backgroundColor: primaryColor,
                   shadowColor: primaryColor,
                   borderBlockColor: highlight,
-                    opacity: workLog?.status !== "started" ? 0.5 : 1,
+                  opacity: workLog?.status !== "started" ? 0.5 : 1,
                 },
               ]}
               disabled={workLog?.status !== "started"}
-              onPress={handleEndShift}
+              onPress={() => handleEndShift(workLog?.id ?? "")}
             >
               <Text style={styles.clockinClockoutButtonText}>end shift</Text>
             </TouchableOpacity>
@@ -166,13 +108,13 @@ const WorkLog = ({workLog}:{workLog: WorklogInterface}) => {
 const styles = StyleSheet.create({
   worklogContainer: {
     flex: 1,
-    flexGrow: 1,
-    flexWrap: "wrap",
     flexDirection: "column",
     justifyContent: "space-between",
-    padding: 5,
+    padding: 10,
     borderWidth: 1,
     marginHorizontal: 5,
+    gap:20,
+    borderRadius:10,
   },
   worklogDetailsText: {
     fontSize: 12,

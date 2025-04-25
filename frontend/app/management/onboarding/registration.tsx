@@ -189,12 +189,6 @@ const RegistrationComponent = () => {
           </ScrollView>
         </GestureHandlerRootView>
       </KeyboardAvoidingView>
-      <AlertModal
-        isVisible={isAlertModalVisible}
-        onConfirm={alertConfig.onConfirm}
-        title={alertConfig.title}
-        message={alertConfig.message}
-      />
     </SafeAreaView>
   );
 };

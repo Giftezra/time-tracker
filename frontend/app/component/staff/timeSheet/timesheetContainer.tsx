@@ -6,10 +6,9 @@ import { Pressable, SectionList, StyleSheet, Text, View } from "react-native";
 import React from "react";
 import TimeSheetComponent from "./timeSheet";
 import { TimeSheetType } from "@/app/types/staff/timeSheet";
-import { FlatList, GestureHandlerRootView } from "react-native-gesture-handler";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { AntDesign } from "@expo/vector-icons";
 import { useTimeSheetContext } from "@/app/context/staff/timeSheetProvider";
-import { useTask } from "@/app/context/staff/staffTaskProvider";
 
 const TimeSheetContainerComponent = () => {
   // Use the timesheet context to get the data and group the data by week

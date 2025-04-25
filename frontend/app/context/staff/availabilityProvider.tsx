@@ -427,38 +427,135 @@ const AvailabilityProvider = ({ children }: { children: React.ReactNode }) => {
    * Return a message from the backend with the appropriate status code. and display it to the user.
    */
   const deleteAvailability = async (id: number) => {
-    try {
-      const response = await axiosInstance.delete("/api/delete/availability/", {
-        data: {
-          availability_id: id,
-        },
-      });
-      if (response.status === 200) {
-        setIsAlertVisible(true);
-        setAlertConfig({
-          title: "Success",
-          message: response.data.message,
-          onConfirm() {
-            setIsAlertVisible(false);
-          },
-          isVisible: true,
-          type: "success",
-        });
-      } else {
-        setIsAlertVisible(true);
-        setAlertConfig({
-          title: "Error",
-          message: response.data.error,
-          onConfirm() {
-            setIsAlertVisible(false);
-          },
-          isVisible: true,
-          type: "error",
-        });
-      }
-    } catch (error) {
-      console.log(error);
-    }
+    // Confirm if the user is sure they want to delete their availability for the day.
+    setIsAlertVisible(true);
+    setAlertConfig({
+      title: "Confirm",
+      message:
+        "Are you sure you want to delete your availability for this day?",
+      onConfirm: async () => {
+        setIsAlertVisible(false);
+        try {
+          const response = await axiosInstance.delete(
+            "/api/delete/availability/",
+            {
+              data: {
+                availability_id: id,
+              },
+            }
+          );
+          if (response.status === 200) {
+            // Get the new availability dates by calling the fetchAvailabilityDates method
+            setIsAlertVisible(true);
+            setAlertConfig({
+              title: "Success",
+              message: response.data.message,
+              onConfirm: async () => {
+                setIsAlertVisible(false);
+                await fetchAvailabilityDates();
+              },
+              isVisible: true,
+              type: "success",
+            });
+          } else {
+            setIsAlertVisible(true);
+            setAlertConfig({
+              title: "Error",
+              message: response.data.error,
+              onConfirm() {
+                setIsAlertVisible(false);
+              },
+              isVisible: true,
+              type: "error",
+            });
+          }
+        } catch (error) {
+          console.log(error);
+        } finally {
+          setIsLoading(false);
+        }
+      },
+      isVisible: true,
+      onClose() {
+        setIsAlertVisible(false);
+      },
+    });
+  };
+
+  /**
+   * Update the availability for a specific day by the id and day.
+   * @param id - The id of the availability to update.
+   * @param startTime - The start time to update the availability to.
+   * @param endTime - The end time to update the availability to.
+   * Return a message from the backend with the appropriate status code. and display it to the user.
+   */
+  const updateAvailability = async (
+    id: number,
+    startTime: string,
+    endTime: string
+  ) => {
+    // Confirm if the user is sure they want to update their availability for the day.
+    setIsAlertVisible(true);
+    setAlertConfig({
+      title: "Confirm",
+      message: `You are about to update your available time for this day, to begin at ${startTime} and end at ${endTime}. Would you like to proceed?`,
+      onConfirm: async () => {
+        setIsAlertVisible(false);
+        try {
+          setIsLoading(true);
+          const response = await axiosInstance.put(
+            "/api/update/availability/",
+            {
+              availability_id: id,
+              start_time: startTime,
+              end_time: endTime,
+            }
+          );
+          if (response.status === 200) {
+            setIsAlertVisible(true);
+            setAlertConfig({
+              title: "Success",
+              message: response.data.message,
+              onConfirm: async () => {
+                // Fetch the new availability dates by calling the fetchAvailabilityDates method
+                setIsAlertVisible(false);
+                await fetchAvailabilityDates();
+              },
+              isVisible: true,
+              type: "success",
+            });
+          } else {
+            setIsAlertVisible(true);
+            setAlertConfig({
+              title: "Error",
+              message: response.data.error,
+              onConfirm() {
+                setIsAlertVisible(false);
+              },
+              isVisible: true,
+              type: "error",
+            });
+          }
+        } catch (error) {
+          setIsAlertVisible(true);
+          setAlertConfig({
+            title: "Error",
+            message: "Failed to update availability",
+            onConfirm() {
+              setIsAlertVisible(false);
+            },
+            isVisible: true,
+            type: "error",
+          });
+        } finally {
+          setIsLoading(false);
+        }
+      },
+      isVisible: true,
+      onClose() {
+        setIsAlertVisible(false);
+      },
+    });
   };
 
   const value: AvailibityProviderInterface = {
@@ -498,6 +595,7 @@ const AvailabilityProvider = ({ children }: { children: React.ReactNode }) => {
     dayAvailability,
     showDayAvailability,
     setShowDayAvailability,
+    updateAvailability,
   };
 
   return (

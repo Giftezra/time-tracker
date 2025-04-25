@@ -6,16 +6,13 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.utils import timezone
 from django.db import models
-
 from django.shortcuts import get_object_or_404
 from django.db.models import Count, Q
 from django.db.models.functions import ExtractMonth
-
 from ...models import Company, Contracts, Client
 from staff.models import Staff, Availability, Leave
 from management.models import Task, Shift
-
-from .decorators import owner_required, staff_required, admin_required, superuser_required
+from .decorators import owner_required, admin_required
 
 
 
@@ -91,10 +88,8 @@ def get_today_events(request):
     for staff in staffs:
       # Calculate age
       age = today.year - staff.user.dob.year
-      # Adjust age if birthday hasn't occurred this year
       if today < datetime.date(today.year, staff.user.dob.month, staff.user.dob.day):
         age -= 1
-
       todays_events.append({
         'name': staff.user.get_full_name(),
       })
@@ -124,7 +119,8 @@ def get_contract_statistics(request):
         # Get the year from query params or use current year
         try:
             year = int(request.GET.get('year'))
-            print('contract year', year)
+            if year == None:
+                year = datetime.datetime.now().year
         except ValueError:
             return Response({
                 'error': 'Invalid year parameter'

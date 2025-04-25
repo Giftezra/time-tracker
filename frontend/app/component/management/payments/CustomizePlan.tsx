@@ -2,7 +2,6 @@ import {
   StyleSheet,
   Text,
   View,
-  TextInput,
   TouchableOpacity,
   ScrollView,
   KeyboardAvoidingView,
@@ -57,7 +56,6 @@ const CustomizePlan = () => {
         numberOfEmployees: count,
         rate: basePrice / count,
       });
-      setShowCheckout(true);
     }
   };
 
@@ -173,7 +171,7 @@ const CustomizePlan = () => {
               style={[styles.button, { backgroundColor: activeBtn }]}
               onPress={handleContinue}
             >
-              <Text style={styles.buttonText}>Continue</Text>
+              <Text style={styles.buttonText}>Make Payment</Text>
             </TouchableOpacity>
           </View>
         )}

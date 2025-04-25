@@ -28,10 +28,6 @@ const SubscriptionPlansComponent = () => {
   const activeBtn = useThemeColor({}, "inactivebtn");
   const calendarText = ["Monthly", "Annually"];
 
-  const handleContinue = () => {
-    // Remove this function as we'll handle the logic directly in the component
-  };
-
   /* Show the checkout component when showCheckout is true and we have a selected plan */
   if (showCheckout && selectedPlan) {
     return (
@@ -46,8 +42,8 @@ const SubscriptionPlansComponent = () => {
     );
   }
 
-  /* Show the CustomizePlan component when a Custom plan is selected but checkout hasn't started */
-  if (selectedPlan?.name === "Custom" && !showCheckout) {
+  /* Show the CustomizePlan component when a Custom plan is selected */
+  if (selectedPlan?.name?.toLowerCase() === "custom") {
     return <CustomizePlan />;
   }
 
@@ -93,8 +89,20 @@ const SubscriptionPlansComponent = () => {
             subscriptionPlan={item}
             isSelected={selectedPlan?.id === item.id}
             onSelect={() => {
-              setSelectedPlan(item);
-              if (item.name !== "Custom") {
+              console.log("Setting selected plan:", item);
+              setSelectedPlan({
+                ...item,
+                id: item.id,
+                numberOfEmployees: item.numberOfEmployees || 1,
+                rate: item.rate || 0,
+              });
+
+              // Handle different plan types
+              if (item.name?.toLowerCase() === "custom") {
+                // Don't show checkout for custom plan
+                setShowCheckout(false);
+              } else {
+                // Show checkout for all other plans
                 setShowCheckout(true);
               }
             }}

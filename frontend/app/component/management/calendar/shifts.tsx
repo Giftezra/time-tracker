@@ -68,7 +68,7 @@ const CalendarShiftComponent = () => {
       <View style={styles.flailistRow}>
         {/* Employee details - now uses calculated height */}
         <View style={[styles.employeesDetails, { minHeight: maxShiftHeight }]}>
-          <Text style={[styles.employeeDetailsText, { color: text }]}>
+          <Text style={[styles.employeeDetailsText, { color: "#000" }]}>
             {employee.employee_name}
           </Text>
         </View>
@@ -87,7 +87,7 @@ const CalendarShiftComponent = () => {
               ]}
             >
               {!shifts ? (
-                <View style={{ borderEndWidth: 1,gap:2}}>
+                <View style={{ borderEndWidth: 1, gap: 2 }}>
                   <Text style={styles.shiftCellText}>No shifts</Text>
                 </View>
               ) : (
@@ -105,9 +105,9 @@ const CalendarShiftComponent = () => {
                                 : shift.status === "pending"
                                 ? "yellow"
                                 : shift.status === "started"
-                                ? "blue"
+                                ? "lightblue"
                                 : shift.status === "cancelled"
-                                ? "red"
+                                ? "#D32F2F"
                                 : shift.status === "completed"
                                 ? "green"
                                 : secondaryColor,
@@ -115,7 +115,7 @@ const CalendarShiftComponent = () => {
                         ]}
                       >
                         {/* Overlay for the shift */}
-                        <View style={styles.flailistRow}>
+                        <View style={[styles.flailistRow]}>
                           {selectedShift?.shiftId === shift.shiftId &&
                             selectedShift?.employeeId ===
                               employee.employee_id &&
@@ -161,10 +161,16 @@ const CalendarShiftComponent = () => {
                             </Pressable>
                           </View>
                         </View>
-
-                        <Text style={styles.shiftCellText}>
-                          {`${shift.start_time} - ${shift.end_time}`}
-                        </Text>
+                        {/* Display the start and end time */}
+                        <View style={styles.timeContainer}>
+                          <Text style={styles.shiftCellText}>
+                            {`${shift.start_time?.slice(0, 5)}`}
+                          </Text>
+                          <Text style={styles.shiftCellText}>{`-`}</Text>
+                          <Text style={styles.shiftCellText}>
+                            {`${shift.end_time?.slice(0, 5)}`}
+                          </Text>
+                        </View>
                       </View>
                     )
                   )}
@@ -177,6 +183,8 @@ const CalendarShiftComponent = () => {
     );
   };
 
+  /* Check if they are any users with a shift assigned to them for the week in view,
+   * or return a boolean value of false if there are no shifts assigned to any users for the week in view. */
   const hasAnyShifts = employees.some((employee) => {
     return weekDays.some((day) => {
       const shifts = getShift(Number(employee.employee_id), day);
@@ -184,6 +192,7 @@ const CalendarShiftComponent = () => {
     });
   });
 
+  /* Return a message if there are no shifts assigned to any users for the week in view. */
   if (!hasAnyShifts) {
     return (
       <View style={[styles.emptyContainer]}>
@@ -193,19 +202,26 @@ const CalendarShiftComponent = () => {
   }
 
   return (
-    <View style={[styles.mainContainer, {backgroundColor:innerBackgroundColor}]}>
+    <View style={[styles.mainContainer]}>
       {/* Weekdays Header contains the week display */}
       <View style={styles.topheaderRow}>
-        <Text style={[styles.weekdayText, { color: text }]}>Employees</Text>
+        <Text
+          style={[
+            styles.weekdayText,
+            { color: "#000", fontSize: 14, fontFamily: "BarlowMedium", fontWeight:'700' },
+          ]}
+        >
+          Employees
+        </Text>
         {weekDays.map((day, index) => (
           <View
             key={index}
             style={[styles.weekdayContainer, { alignItems: "flex-end" }]}
           >
-            <Text style={[styles.weekdayText, { color: text }]}>
+            <Text style={[styles.weekdayText, { color: "#000" }]}>
               {day.format("MMM DD")}
             </Text>
-            <Text style={[styles.weekdayText, { color: text }]}>
+            <Text style={[styles.weekdayText, { color: "#000" }]}>
               {day.format("ddd")}
             </Text>
           </View>
@@ -226,8 +242,8 @@ export default CalendarShiftComponent;
 
 const styles = StyleSheet.create({
   mainContainer: {
-    flexGrow: 1,
-    flexShrink: 0,
+    flex: 1,
+    borderTopWidth: 1,
   },
 
   emptyContainer: {
@@ -238,7 +254,7 @@ const styles = StyleSheet.create({
 
   flailistRow: {
     flexDirection: "row",
-    alignItems: "stretch",
+    justifyContent: "space-between",
   },
 
   overlay: {
@@ -333,5 +349,11 @@ const styles = StyleSheet.create({
     padding: 4,
     borderRadius: 4,
     marginVertical: 2,
+  },
+
+  timeContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
 });

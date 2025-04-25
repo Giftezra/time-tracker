@@ -147,12 +147,12 @@ const ManagementEmployeee = () => {
 
       {/* Display the modal for the add employee component */}
       <Modal visible={isModalOpen} onRequestClose={() => setIsModalOpen(false)}>
-        <View style={{ flex: 1 }}>
+        <View style={styles.modalContainer}>
           <Pressable
             onPress={() => setIsModalOpen(false)}
             style={styles.modalCloseButton}
           >
-            <MaterialIcons name="close" size={24} color="black" />
+            <MaterialIcons name="close" size={20} color="black" />
           </Pressable>
 
           <AddEmployeeComponent setIsModalOpen={setIsModalOpen} />
@@ -162,12 +162,12 @@ const ManagementEmployeee = () => {
       {/* Display the modal for the employee analytics component to display major data about the employee */}
       {!isLoading && (
         <Modal visible={isModalVisible} onRequestClose={handleModalClose}>
-          <View style={{ flex: 1 }}>
+          <View style={styles.modalContainer}>
             <Pressable
               onPress={handleModalClose}
               style={styles.modalCloseButton}
             >
-              <MaterialIcons name="close" size={30} color="black" />
+              <MaterialIcons name="close" size={22} color="red" />
             </Pressable>
 
             <EmployeeAnalyticsComponent
@@ -257,11 +257,15 @@ const styles = StyleSheet.create({
   },
 
   modalCloseButton: {
+    position: "absolute",
+    top: 0,
+    right: 5,
     padding: 5,
-    borderRadius: 30,
-    borderWidth: 1,
-    borderColor: "black",
-    alignSelf: "flex-end",
-    margin: 5,
+    zIndex:100
+  },
+
+  modalContainer: {
+    flex: 1,
+    gap:10,
   },
 });

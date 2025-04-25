@@ -14,15 +14,24 @@ import AvailableDay from "./AvailableDay";
 import { DayAvailabilityInterface } from "@/app/types/staff/availability";
 
 const AvailabilityDetailsComponent = ({ onPress }: { onPress: () => void }) => {
-  const { markedDates, isLoading, isDateDisabled, getDayAvailability, showDayAvailability, setShowDayAvailability, dayAvailability } =
-    useAvailability();
+  const {
+    markedDates,
+    isLoading,
+    isDateDisabled,
+    getDayAvailability,
+    showDayAvailability,
+    setShowDayAvailability,
+    dayAvailability,
+    deleteAvailability,
+    updateAvailability,
+  } = useAvailability();
 
   const handleDayPress = async (day: any) => {
     if (isDateDisabled(day.dateString, markedDates)) {
       return; // Ignore press on disabled dates
     }
     const date = day.dateString;
-    console.log('date', date)
+    console.log("date", date);
     await getDayAvailability(date);
   };
 
@@ -60,11 +69,7 @@ const AvailabilityDetailsComponent = ({ onPress }: { onPress: () => void }) => {
 
                 return (
                   <TouchableOpacity
-                    onPress={() =>
-                      !isDisabled &&
-                      date &&
-                      handleDayPress(date)
-                    }
+                    onPress={() => !isDisabled && date && handleDayPress(date)}
                     style={[
                       styles.dayContainer,
                       isDisabled && styles.disabledDay,
@@ -111,8 +116,14 @@ const AvailabilityDetailsComponent = ({ onPress }: { onPress: () => void }) => {
         <View style={styles.dayAvailabilityContainer}>
           <AvailableDay
             availability={dayAvailability}
-            onDelete={() => {}}
-            onUpdate={() => {}}
+            onDelete={() => deleteAvailability(dayAvailability?.id || 0)}
+            onUpdate={() =>
+              updateAvailability(
+                dayAvailability?.id || 0,
+                dayAvailability?.start_time || "",
+                dayAvailability?.end_time || ""
+              )
+            }
             closeDisplay={() => setShowDayAvailability(false)}
           />
         </View>
@@ -182,8 +193,8 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    padding:5,
-    borderRadius:20,
+    padding: 5,
+    borderRadius: 20,
   },
   dayText: {
     fontSize: 16,
@@ -202,8 +213,8 @@ const styles = StyleSheet.create({
   },
   unavailableDay: {
     backgroundColor: "blue",
-    padding:7,
-    borderRadius:20,
+    padding: 7,
+    borderRadius: 20,
   },
   unavailableText: {
     color: "#c8c8c8",
@@ -211,19 +222,23 @@ const styles = StyleSheet.create({
 
   dayAvailabilityContainer: {
     position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    top:0,
+    top: "50%", // Center vertically
+    left: "50%", // Center horizontally
+    transform: [{ translateX: -150 }, { translateY: -150 }], // Offset by half the container size
     zIndex: 1000,
-    marginHorizontal: 10,
     backgroundColor: "white",
-    maxHeight: 300,
-    maxWidth: 300,
-    borderRadius: 5,
+    width: 300, // Fixed width
+    height: 300, // Fixed height
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: "gray",
-    justifyContent: "center",
-    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
 });

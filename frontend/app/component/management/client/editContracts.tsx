@@ -102,101 +102,122 @@ const EditContractComponent = ({
   };
 
   /** Handle the save button press */
-  const handleSaveButtonPress =  async () => {
+  const handleSaveButtonPress = async () => {
     if (contract) {
       await updateContract(contract);
     }
   };
 
   return (
-    <KeyboardAvoidingView style={styles.container}>
-      <TextInput
-        style={styles.input}
-        placeholder="Contract Name"
-        value={contract?.name}
-        onChangeText={(value) => handleInputChange("name", value)}
-      />
-
-      <TextInput
-        style={styles.input}
-        placeholder="Address"
-        value={contract?.address}
-        onChangeText={(value) => handleInputChange("address", value)}
-      />
-
-      <TextInput
-        style={styles.input}
-        placeholder="Postcode"
-        value={contract?.postcode}
-        onChangeText={(value) => handleInputChange("postcode", value)}
-      />
-
-      <TextInput
-        style={styles.input}
-        placeholder="City"
-        value={contract?.city}
-        onChangeText={(value) => handleInputChange("city", value)}
-      />
-      {/* Start Date Section */}
-      <Pressable
-        style={styles.dateButton}
-        onPress={() => setShowStartDateScroller(!showStartDateScroller)}
-      >
-        <Text style={styles.dateButtonText}>
-          Start Date: {formatDate(startDay, startMonth, startYear)}
+    <View style={styles.container}>
+      {/* Add Header Section */}
+      <View style={styles.headerContainer}>
+        <Text style={styles.headerTitle}>Edit Contract Details</Text>
+        <Text style={styles.headerSubtitle}>
+          {contract?.name || "New Contract"}
         </Text>
-        <MaterialCommunityIcons name="calendar" size={24} color="black" />
-      </Pressable>
+      </View>
 
-      {showStartDateScroller && (
-        <DateScroller
-          day={startDay}
-          month={startMonth}
-          year={startYear}
-          onChangeDay={(day) =>
-            handleStartDateChange(day, startMonth, startYear)
-          }
-          onChangeMonth={(month) =>
-            handleStartDateChange(startDay, month, startYear)
-          }
-          onChangeYear={(year) =>
-            handleStartDateChange(startDay, startMonth, year)
-          }
+      <View style={styles.formContainer}>
+        <TextInput
+          style={styles.input}
+          placeholder="Contract Name"
+          value={contract?.name}
+          onChangeText={(value) => handleInputChange("name", value)}
+          placeholderTextColor="#6c757d"
         />
-      )}
 
-      {/* End Date Section */}
-      <Pressable
-        style={styles.dateButton}
-        onPress={() => setShowEndDateScroller(!showEndDateScroller)}
-      >
-        <Text style={styles.dateButtonText}>
-          End Date: {formatDate(endDay, endMonth, endYear)}
-        </Text>
-
-        <MaterialCommunityIcons name="calendar" size={24} color="black" />
-      </Pressable>
-
-      {showEndDateScroller && (
-        <DateScroller
-          day={endDay}
-          month={endMonth}
-          year={endYear}
-          onChangeDay={(day) => handleEndDateChange(day, endMonth, endYear)}
-          onChangeMonth={(month) => handleEndDateChange(endDay, month, endYear)}
-          onChangeYear={(year) => handleEndDateChange(endDay, endMonth, year)}
+        <TextInput
+          style={styles.input}
+          placeholder="Address"
+          value={contract?.address}
+          onChangeText={(value) => handleInputChange("address", value)}
+          placeholderTextColor="#6c757d"
         />
-      )}
+
+        <TextInput
+          style={styles.input}
+          placeholder="Postcode"
+          value={contract?.postcode}
+          onChangeText={(value) => handleInputChange("postcode", value)}
+          placeholderTextColor="#6c757d"
+        />
+
+        <TextInput
+          style={styles.input}
+          placeholder="City"
+          value={contract?.city}
+          onChangeText={(value) => handleInputChange("city", value)}
+          placeholderTextColor="#6c757d"
+        />
+
+        {/* Start Date Section */}
+        <Pressable
+          style={styles.dateButton}
+          onPress={() => setShowStartDateScroller(!showStartDateScroller)}
+        >
+          <Text style={styles.dateButtonText}>
+            Start Date: {formatDate(startDay, startMonth, startYear)}
+          </Text>
+          <MaterialCommunityIcons name="calendar" size={24} color="black" />
+        </Pressable>
+
+        {showStartDateScroller && (
+          <DateScroller
+            day={startDay}
+            month={startMonth}
+            year={startYear}
+            onChangeDay={(day) =>
+              handleStartDateChange(day, startMonth, startYear)
+            }
+            onChangeMonth={(month) =>
+              handleStartDateChange(startDay, month, startYear)
+            }
+            onChangeYear={(year) =>
+              handleStartDateChange(startDay, startMonth, year)
+            }
+          />
+        )}
+
+        {/* End Date Section */}
+        <Pressable
+          style={styles.dateButton}
+          onPress={() => setShowEndDateScroller(!showEndDateScroller)}
+        >
+          <Text style={styles.dateButtonText}>
+            End Date: {formatDate(endDay, endMonth, endYear)}
+          </Text>
+
+          <MaterialCommunityIcons name="calendar" size={24} color="black" />
+        </Pressable>
+
+        {showEndDateScroller && (
+          <DateScroller
+            day={endDay}
+            month={endMonth}
+            year={endYear}
+            onChangeDay={(day) => handleEndDateChange(day, endMonth, endYear)}
+            onChangeMonth={(month) =>
+              handleEndDateChange(endDay, month, endYear)
+            }
+            onChangeYear={(year) => handleEndDateChange(endDay, endMonth, year)}
+          />
+        )}
+      </View>
 
       <Pressable
-        style={styles.saveButton}
+        style={[
+          styles.saveButton,
+          isUpdateContractLoading && styles.saveButtonDisabled,
+        ]}
         onPress={() => handleSaveButtonPress()}
+        disabled={isUpdateContractLoading}
       >
         <Text style={styles.saveButtonText}>
           {isUpdateContractLoading ? "Saving..." : "Save Changes"}
         </Text>
       </Pressable>
-    </KeyboardAvoidingView>
+    </View>
   );
 };
 
@@ -204,45 +225,80 @@ export default EditContractComponent;
 
 const styles = StyleSheet.create({
   container: {
-    padding: 16,
+    flex: 1,
     backgroundColor: "#fff",
+  },
+  headerContainer: {
+    backgroundColor: "#fff",
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "#e9ecef",
+    marginBottom: 16,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontFamily: "BarlowSemiBold",
+    color: "#212529",
+    marginBottom: 4,
+  },
+  headerSubtitle: {
+    fontSize: 16,
+    fontFamily: "BarlowRegular",
+    color: "#6c757d",
+  },
+  formContainer: {
+    padding: 16,
   },
   input: {
     borderWidth: 1,
-    borderColor: "#e9ecef",
-    borderRadius: 5,
-    padding: 12,
-    marginBottom: 12,
+    borderColor: "#dee2e6",
+    borderRadius: 8,
+    padding: 14,
+    marginBottom: 16,
     fontSize: 16,
     fontFamily: "BarlowRegular",
+    backgroundColor: "#f8f9fa",
+    color: "#212529",
   },
   dateButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     backgroundColor: "#f8f9fa",
-    padding: 12,
-    borderRadius: 5,
-    marginBottom: 12,
+    padding: 14,
+    borderRadius: 8,
+    marginBottom: 16,
     borderWidth: 1,
-    borderColor: "#e9ecef",
+    borderColor: "#dee2e6",
   },
   dateButtonText: {
     fontSize: 16,
     fontFamily: "BarlowRegular",
-    color: "#4a4a4a",
+    color: "#212529",
   },
   saveButton: {
     backgroundColor: "#0066ff",
     padding: 16,
     borderRadius: 8,
     alignItems: "center",
-    marginTop: 16,
+    marginTop: "auto",
+    marginBottom: 20,
+    marginHorizontal: 16,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  saveButtonDisabled: {
+    backgroundColor: "#99c2ff",
   },
   saveButtonText: {
     color: "#fff",
     fontSize: 16,
-    fontFamily: "BarlowRegular",
-    fontWeight: "600",
+    fontFamily: "BarlowSemiBold",
   },
 });

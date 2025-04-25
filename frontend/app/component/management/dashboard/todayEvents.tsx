@@ -8,8 +8,6 @@ import { EventItem } from "@/app/types/management/dashboard";
 const TodayEventsComponent = ({ event }: { event: EventItem[] }) => {
   const [eventTotal, setEventTotal] = useState(0);
   const [firstEvent, setFirstEvent] = useState("");
-
-  const background = useThemeColor({}, "innerBackground");
   const text = useThemeColor({}, "text");
 
   useEffect(() => {
@@ -30,16 +28,16 @@ const TodayEventsComponent = ({ event }: { event: EventItem[] }) => {
   }, [event]);
 
   return (
-    <View style={[styles.mainContainer, { backgroundColor: background }]}>
+    <View style={[styles.mainContainer]}>
       <View style={styles.container}>
         <Text style={[styles.titleText, { color: text }]}>
           Employees birthday
         </Text>
 
         <Text style={[styles.contentText, { color: text }]}>
-          <Text style = {styles.contentText}>{firstEvent}</Text>
+          <Text style={styles.contentText}>{firstEvent}</Text>
           {eventTotal > 0 && (
-            <Text style = {styles.contentText}>{` and ${eventTotal} other${
+            <Text style={styles.contentText}>{` and ${eventTotal} other${
               eventTotal > 1 ? "s" : ""
             }`}</Text>
           )}
@@ -59,22 +57,12 @@ const styles = StyleSheet.create({
   mainContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    padding: 16,
+    padding: 12,
     alignItems: "center",
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "rgba(0, 0, 0, 0.1)",
+    borderRadius: 12,
+    borderWidth: 0.3,
     width: "100%",
     marginVertical: 8,
-    // Subtle shadow for light elevation
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
   },
   container: {
     flex: 1,
@@ -82,21 +70,22 @@ const styles = StyleSheet.create({
     paddingRight: 16,
   },
   titleText: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: "600",
     fontFamily: "BarlowLight",
     textTransform: "uppercase",
     marginBottom: 4,
-    letterSpacing: 0.5,
+    letterSpacing: 0.8,
+    opacity: 0.8,
   },
   contentText: {
-    fontSize: 14,
+    fontSize: 15,
     fontFamily: "BarlowLight",
     lineHeight: 20,
     textTransform: "capitalize",
   },
   arrowContainer: {
-    padding: 4,
+    padding: 8,
     alignItems: "center",
     justifyContent: "center",
   },
