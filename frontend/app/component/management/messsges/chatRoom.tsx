@@ -31,6 +31,7 @@ import { FontAwesome } from "@expo/vector-icons";
 const ChatRoomComponent = ({
   onConversationSelect,
   onHandleModalVisibility,
+  onDirectMessage,
 }: {
   onConversationSelect: (
     chatRoomId: string,
@@ -38,6 +39,7 @@ const ChatRoomComponent = ({
     time: string
   ) => void;
   onHandleModalVisibility: (id: string | null) => void;
+  onDirectMessage: (userId: string, userName: string) => void;
 }) => {
   const { chatRooms, deleteConversation, connectWebSocket, setActiveChatRoom, fetchChatRooms } =
     useMessageContext();
@@ -72,6 +74,10 @@ const ChatRoomComponent = ({
       </View>
     );
   }
+
+  const handleDirectMessagePress = (userId: string, userName: string) => {
+    onDirectMessage(userId, userName);
+  };
 
   /* Render the chat room */
   const renderChatRoom = ({ item: chat, index }: { item: any; index: number }) => (

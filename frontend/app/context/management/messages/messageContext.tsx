@@ -37,6 +37,7 @@ const MessageProvider: React.FC<MessageProviderProps> = ({ children }) => {
   >(undefined);
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
+
   useEffect(() => {
     const fetchChatRooms = async () => {
       try {
@@ -51,7 +52,7 @@ const MessageProvider: React.FC<MessageProviderProps> = ({ children }) => {
       }
     };
     fetchChatRooms();
-  }, []);
+  }, [token]);
 
   /**
    * Call the server side code using the axios instance to fetch the chat rooms from the database.
@@ -105,7 +106,7 @@ const MessageProvider: React.FC<MessageProviderProps> = ({ children }) => {
    * @returns
    */
   const connectWebSocket = useCallback(
-    (userId: string) => {
+    async (userId: string) => {
       const baseUrl = BASE_URL().replace(/\/$/, "");
       const cleanUserId = userId.toString().trim();
       const wsUrl = `${baseUrl}/ws/dm/${cleanUserId}/?token=${token}`;
@@ -144,6 +145,7 @@ const MessageProvider: React.FC<MessageProviderProps> = ({ children }) => {
     },
     [token, fetchChatHistory]
   );
+
 
   /**
    * The method is used to send a message to the server.

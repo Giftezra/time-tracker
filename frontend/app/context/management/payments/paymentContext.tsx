@@ -244,8 +244,24 @@ const PaymentContext = ({ children }: { children: React.ReactNode }) => {
       if (response.status === 200) {
         // Refresh the current plan details
         await fetchCurrentPlan();
+        setIsAlertVisible(true);
+        setAlertConfig({
+          title: "Success",
+          message: response.data.message,
+          onConfirm: () => setIsAlertVisible(false),
+          isVisible: true,
+        });
         return true;
-      }
+      }else{
+        setIsAlertVisible(true);
+        setAlertConfig({
+          title: "Error",
+          message: response.data.error,
+          onConfirm: () => setIsAlertVisible(false),
+          isVisible: true,
+          type: "error",
+        });
+      } 
       return false;
     } catch (error: any) {
       console.error(
@@ -277,30 +293,7 @@ const PaymentContext = ({ children }: { children: React.ReactNode }) => {
 
       if (!error) {
         const updated = await updateSubscriptionPlan();
-        // If the plan is updated successfully, show the user a success alert.
-        if (updated) {
-          setIsAlertVisible(true);
-          setAlertConfig({
-            title: "Payment successful",
-            message: "Your subscription has been updated successfully!",
-            onConfirm: () => {
-              setIsAlertVisible(false);
-              setShowCheckout(false);
-              setCurrentPage("My Plans");
-            },
-            isVisible: true,
-          });
-        } else if (!updated) {
-          setIsAlertVisible(true);
-          setAlertConfig({
-            title: "Status",
-            message:
-              "Payment successful but failed to update subscription. Please contact support.",
-            onConfirm: () => setIsAlertVisible(false),
-            isVisible: true,
-            type: "error",
-          });
-        }
+        // If the plan is updated successfully, show the user a success al
       } else {
         // Handle failed payment error
         setIsAlertVisible(true);
@@ -345,8 +338,10 @@ const PaymentContext = ({ children }: { children: React.ReactNode }) => {
       if (response.status === 200) {
         const history: SubscriptionHistoryInterface[] =
           response.data.subscription_history;
+        console.log(response.data.message);
         return history;
       } else {
+        console.log(response.data.error);
         return [];
       }
     } catch (error) {

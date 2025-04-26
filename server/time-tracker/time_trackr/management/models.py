@@ -484,7 +484,7 @@ class SubscriptionPlan(models.Model):
         ('annually', 'Annually'),
     ]
     
-    company = models.OneToOneField(Company, on_delete=models.CASCADE, related_name='subscription_plan_company')
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='subscription_plan_company')
     tier = models.ForeignKey(SubscriptionTier, on_delete=models.SET_NULL, null=True, related_name='subscription_plan_tier')
     billing_cycle = models.CharField(max_length=10, choices=COMPANY_BILLING_CYCLE)
     start_date = models.DateField()

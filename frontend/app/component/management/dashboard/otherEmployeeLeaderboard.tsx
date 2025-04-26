@@ -21,6 +21,7 @@ const OtherEmployeeOnLeaderboard = ({
   taskCompleted,
   setIsModalVisible,
   onProfilePress,
+  onMessagePress,
 }: {
   id: string;
   name: string;
@@ -30,6 +31,7 @@ const OtherEmployeeOnLeaderboard = ({
   taskCompleted: number;
   setIsModalVisible: (value: boolean) => void;
   onProfilePress: (id: string) => void;
+  onMessagePress: (id: string, name: string) => void;
 }) => {
   const { handlePhone } = useDashboardContext();
   const { setAlertConfig, setIsAlertVisible } = useAuth();
@@ -55,6 +57,23 @@ const OtherEmployeeOnLeaderboard = ({
       },
     });
   };
+
+    const handleMessagePress = () => {
+      setIsAlertVisible(true);
+      setAlertConfig({
+        title: "Confirmation",
+        message: "Open chat?",
+        onConfirm: () => {
+          setIsAlertVisible(false);
+          onMessagePress(id!, name!);
+        },
+        type: "error",
+        isVisible: true,
+        onClose() {
+          setIsAlertVisible(false);
+        },
+      });
+    };
 
   return (
     <View style={[styles.maincontainer]}>
@@ -84,7 +103,7 @@ const OtherEmployeeOnLeaderboard = ({
             >
               {taskCompleted}
             </Text>
-            <Pressable>
+            <Pressable onPress={handleMessagePress}>
               <MaterialIcons name="message" size={20} color={"red"} />
             </Pressable>
             <Pressable onPress={handleProfilePress}>

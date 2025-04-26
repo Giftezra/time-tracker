@@ -27,6 +27,7 @@ const LeaderBoardCardComponent = ({
   setIsModalVisible,
   phone,
   onProfilePress,
+  onMessagePress,
 }: {
   id?: string;
   name: string;
@@ -36,6 +37,7 @@ const LeaderBoardCardComponent = ({
   setIsModalVisible: (value: boolean) => void;
   phone: string;
   onProfilePress: (id: string) => void;
+  onMessagePress: (id: string, name: string) => void;
 }) => {
   // Import the useDashboardContext hook and import the methods from the context to be used in the component
   const { setEmployeeId, handlePhone } = useDashboardContext();
@@ -54,6 +56,23 @@ const LeaderBoardCardComponent = ({
           onProfilePress(id);
           setIsModalVisible(true);
         }
+      },
+      type: "error",
+      isVisible: true,
+      onClose() {
+        setIsAlertVisible(false);
+      },
+    });
+  };
+
+  const handleMessagePress = () => {
+    setIsAlertVisible(true);
+    setAlertConfig({
+      title: "Confirmation",
+      message: "Open chat?",
+      onConfirm: () => {
+        setIsAlertVisible(false);
+        onMessagePress(id!, name!);
       },
       type: "error",
       isVisible: true,
@@ -98,7 +117,7 @@ const LeaderBoardCardComponent = ({
         <View style={styles.divider} />
         <TouchableOpacity
           style={styles.actionButton}
-          onPress={() => setEmployeeId(id!)}
+          onPress={handleMessagePress}
         >
           <ButtonText text="Send Message" />
         </TouchableOpacity>

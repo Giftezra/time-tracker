@@ -27,19 +27,36 @@ import { useAuth } from "@/app/authentication";
 import { useMessageContext } from "@/app/context/management/messages/messageContext";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { ChatRoomType } from "@/app/types/management/messages";
-
 const ManagementMessages = () => {
   const { windowWidth } = useAuth();
-  const { activeChatRoom } = useMessageContext();
+  const { activeChatRoom, setActiveChatRoom, connectWebSocket } =
+    useMessageContext();
   const [isModalVisible, setIsModalVisible] = useState(false);
 
-  /**
-   * Set the modal visibility to true if the user clicks on any conversation
-   * @param id
-   */
+  // Handle when a conversation is selected from the chat list
   const handleModalVisibility = (id: string | null) => {
     if (id !== null) {
       setIsModalVisible(true);
+    }
+  };
+
+  // Handle direct message requests (e.g., from Leaderboard)
+  const handleDirectMessage = async (userId: string, userName: string) => {
+    try {
+      await connectWebSocket(userId);
+
+      setActiveChatRoom({
+        userId,
+        name: userName,
+        id: `temp-${userId}`,
+        lastMessage: null,
+        time: null,
+      });
+
+      // Open the message modal/view
+      setIsModalVisible(true);
+    } catch (error) {
+      console.error("Error starting conversation:", error);
     }
   };
 
@@ -62,10 +79,9 @@ const ManagementMessages = () => {
                 <ChatRoomComponent
                   onConversationSelect={handleModalVisibility}
                   onHandleModalVisibility={handleModalVisibility}
+                  onDirectMessage={handleDirectMessage} // Pass the handler down
                 />
               </View>
-              {/* Display inactivity page when the user is yet to click on any conversation.
-        Display the message component when the user clicks on the conversation to chat with */}
               <View style={{ flex: 2 }}>
                 {activeChatRoom === null ? (
                   <View style={styles.emptyMessagecontainer}>
@@ -83,15 +99,11 @@ const ManagementMessages = () => {
             </View>
           </GestureHandlerRootView>
         ) : (
-          /**
-           * The mobile view for the message component displays the conversation component and the message component.
-           *
-           * When the user clicks on any conversation, the message component is displayed using  a modal
-           */
           <View style={{ flex: 1, width: "100%" }}>
             <ChatRoomComponent
               onConversationSelect={handleModalVisibility}
               onHandleModalVisibility={handleModalVisibility}
+              onDirectMessage={handleDirectMessage} // Pass the handler down
             />
             <Modal
               visible={isModalVisible}

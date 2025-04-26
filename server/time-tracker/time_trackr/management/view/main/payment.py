@@ -116,8 +116,8 @@ def get_current_plan(request):
     # Get the company object associated with the user
     try:
         company = Company.objects.get(owner=request.user)
-        # Since the user is allowed to upgrade or change their plan, we need to get the latest subscription plan
-        subscription_plan = SubscriptionPlan.objects.filter(company=company).order_by('-start_date').first()
+        # Get the subscription plan associated with the company
+        subscription_plan = SubscriptionPlan.objects.filter(company=company, is_active=True).first()
         # Get all employees that are currently active in the company
         # Count the number of active employees
         active_employees = Staff.objects.filter(company=company, is_active=True).count()
@@ -160,12 +160,15 @@ def update_subscription_plan(request):
         except SubscriptionTier.DoesNotExist:
             return Response({'error': 'Subscription tier not found'}, status=status.HTTP_404_NOT_FOUND)
         
-        # Get the current timezone-aware datetime for start and renewal dates
+        # Get current datetime for start and renewal dates
         start_date = datetime.now(timezone.utc).date()
         renewal_date = start_date + timedelta(days=365 if billing_period == 'annually' else 30)
         
-        # First update or create the subscription plan
-        subscription_plan = SubscriptionPlan.objects.create(
+        # Deactivate any existing active plan
+        SubscriptionPlan.objects.filter(company=company, is_active=True).update(is_active=False)
+        
+        # Create new subscription plan
+        new_plan = SubscriptionPlan.objects.create(
             company=company,
             tier=tier,
             billing_cycle=billing_period,
@@ -173,13 +176,13 @@ def update_subscription_plan(request):
             renewal_date=renewal_date,
             is_active=True,
         )
-
-        # Create new subscription history record
+        
+        # Create new subscription history record linked to the new plan
         SubscriptionHistory.objects.create(
-            subscription=subscription_plan,
+            subscription=new_plan,
             start_date=start_date,
             renewal_date=renewal_date,
-            is_active=True  # Set the new record as active
+            is_active=True
         )
 
         return Response({'message': 'Subscription updated successfully'}, status=status.HTTP_200_OK)
@@ -200,23 +203,42 @@ def get_subscription_history(request):
     try:
         # Get the associated company
         company = Company.objects.get(owner=request.user)
-        # Get the owners current subscription plan
-        # Which is then used to get the subscription history which would contain the previous subscription plans
-        # Return the subscription history data
-        subscription_history = SubscriptionHistory.objects.filter(subscription__company=company)
+        
+        # Get subscription history ordered by start date (newest first)
+        subscription_history = SubscriptionHistory.objects.filter(
+            subscription__company=company
+        ).select_related('subscription', 'subscription__tier').order_by('-start_date')
+        
         subscription_history_data = []
         for history in subscription_history:
-            # Get the status of the subscription given the renewal date and if the subscription is active
-            history_status = 'active' if history.subscription.is_active else 'expiring' if history.subscription.renewal_date < timezone.now().date() else 'overdue'
+            # Skip if subscription or tier is None
+            if not history.subscription or not history.subscription.tier:
+                continue
+                
+            # Determine status
+            now = timezone.now().date()
+            if history.subscription.is_active:
+                history_status = 'active'
+            elif history.renewal_date < now:
+                history_status = 'expired'
+            else:
+                history_status = 'active'  # This case shouldn't happen but added for safety
+
             subscription_history_data.append({
                 'id': history.id,
                 'start_date': history.start_date,
                 'renewal_date': history.renewal_date,
                 'tier': history.subscription.tier.name,
+                'tier_id': history.subscription.tier.id,
                 'billing_cycle': history.subscription.billing_cycle,
                 'status': history_status,
+                'is_active': history.is_active,
             })
+            
         return Response({'subscription_history': subscription_history_data}, status=status.HTTP_200_OK)
+        
+    except Company.DoesNotExist:
+        return Response({'error': 'Company not found'}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
@@ -233,7 +255,6 @@ def stripe_webhook(request):
             payload, sig_header, settings.STRIPE_WEBHOOK_SECRET
         )
         
-        # Handle successful payment
         if event['type'] == 'payment_intent.succeeded':
             payment_intent = event['data']['object']
             metadata = payment_intent.metadata
@@ -249,8 +270,11 @@ def stripe_webhook(request):
                     days=365 if billing_period == 'annually' else 30
                 )
                 
-                # Update or create subscription
-                subscription_plan = SubscriptionPlan.objects.create(
+                # Deactivate existing active plan
+                SubscriptionPlan.objects.filter(company=company, is_active=True).update(is_active=False)
+                
+                # Create new subscription plan
+                new_plan = SubscriptionPlan.objects.create(
                     company=company,
                     tier=tier,
                     billing_cycle=billing_period,
@@ -258,13 +282,10 @@ def stripe_webhook(request):
                     renewal_date=renewal_date,
                     is_active=True,
                 )
-                
-                # Mark previous history records as inactive
-                SubscriptionHistory.objects.filter(subscription=subscription_plan).update(is_active=False)
-                
+                    
                 # Create history record
                 SubscriptionHistory.objects.create(
-                    subscription=subscription_plan,
+                    subscription=new_plan,
                     start_date=start_date,
                     renewal_date=renewal_date,
                     is_active=True
@@ -273,7 +294,6 @@ def stripe_webhook(request):
                 return Response({'status': 'subscription updated'}, status=200)
                 
             except Exception as e:
-                # Log the error but don't return 500 to Stripe
                 print(f"Error processing webhook: {str(e)}")
                 return Response({'error': str(e)}, status=200)
                 

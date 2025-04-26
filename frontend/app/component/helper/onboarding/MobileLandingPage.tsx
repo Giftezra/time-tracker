@@ -176,7 +176,7 @@ const MobileLandingPage = () => {
       <View style={styles.headercontainer}>
         <View style={styles.navContainer}>
           <Image
-            source={require("@/assets/icons/time-icon.jpg")}
+            source={require("@/assets/icons/time-icon.png")}
             style={styles.logo}
           />
 
@@ -222,7 +222,7 @@ const MobileLandingPage = () => {
         {/* Center the content to display the logo and the text */}
         <View style={{ alignItems: "center" }}>
           <Image
-            source={require("@/assets/icons/time-icon.jpg")}
+            source={require("@/assets/icons/time-icon.png")}
             style={{
               width: 150,
               height: 150,

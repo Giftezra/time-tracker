@@ -20,10 +20,13 @@ import SubtitleThemedText from "../../helper/SubtitleThemedText";
 import ButtonText from "../../helper/ButtonText";
 import InnerThemedText from "../../helper/InnerThemedText";
 import { useAuth } from "@/app/authentication";
+import { useMessageContext } from "@/app/context/management/messages/messageContext";
+import { router } from "expo-router";
 const LeaderBoardComponent = () => {
   const { topPerformers, setIsModalVisible, handleEmployeeAnalytics } =
     useDashboardContext();
-  const { setAlertConfig, setIsAlertVisible } = useAuth();
+  const { setActiveChatRoom, connectWebSocket, fetchChatRooms } =
+    useMessageContext();
 
   const [topEmployeeData, setTopEmployeeData] = useState<LeaderBoardData[]>([]);
   const [otherEmployeeData, setOtherEmployeeData] = useState<LeaderBoardData[]>(
@@ -37,6 +40,22 @@ const LeaderBoardComponent = () => {
       }
     },
     [handleEmployeeAnalytics]
+  );
+
+  const handleMessagePress = useCallback(
+    async (employeeId: string, employeeName: string) => {
+      await fetchChatRooms();
+      await connectWebSocket(employeeId);
+      const newChatRoom = {
+        id: 'temp-id',
+        name: employeeName,
+        lastMessage: null,
+        time: null,
+        userId: employeeId,
+      };
+      setActiveChatRoom(newChatRoom);
+    },
+    [connectWebSocket, fetchChatRooms]
   );
 
   /* The hook check the top performers data, and it sets the top employees with the most rank to the topEmployeeData state, and the rest to the otherEmployeeData state */
@@ -71,6 +90,7 @@ const LeaderBoardComponent = () => {
             setIsModalVisible={setIsModalVisible}
             phone={item.phone || ""}
             onProfilePress={handleAnalytics}
+            onMessagePress={handleMessagePress}
           />
         ))}
       </ScrollView>
@@ -101,6 +121,7 @@ const LeaderBoardComponent = () => {
                 taskCompleted={item.taskCompleted || 0}
                 setIsModalVisible={setIsModalVisible}
                 onProfilePress={handleAnalytics}
+                onMessagePress={handleMessagePress}
               />
             ))}
           </ScrollView>
